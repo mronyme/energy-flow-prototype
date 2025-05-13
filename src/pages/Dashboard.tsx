@@ -8,6 +8,7 @@ import TrendLineChart from '../components/dashboard/TrendLineChart';
 import { Bolt, BarChart3, Wallet } from 'lucide-react';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useSearchParams } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
 
 const Dashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -109,6 +110,21 @@ const Dashboard = () => {
           </Select>
         </div>
       </div>
+      
+      {detailView && (
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="px-3 py-1 bg-blue-50">
+            {detailView === 'kwh' ? 'Energy Consumption' : 
+             detailView === 'co2' ? 'CO₂ Emissions' : 'Cost'} Detail View
+          </Badge>
+          <button 
+            onClick={() => setSearchParams({})}
+            className="text-sm text-primary underline hover:text-primary/80 transition-all duration-100 ease-out"
+          >
+            Reset View
+          </button>
+        </div>
+      )}
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <KpiCard

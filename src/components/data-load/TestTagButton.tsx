@@ -1,6 +1,8 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 interface TestTagButtonProps {
   onClick: () => Promise<void>;
@@ -31,22 +33,19 @@ const TestTagButton: React.FC<TestTagButtonProps> = ({ onClick, status }) => {
         {isLoading ? 'Testing...' : 'Test Tag'}
       </Button>
       
-      {status === 'OK' && (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-          OK
-        </span>
-      )}
-      
-      {status === 'KO' && (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-          KO
-        </span>
-      )}
-      
-      {(status === 'active' || status === 'inactive') && (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+      {status && (
+        <Badge 
+          variant="outline"
+          className={cn(
+            "px-2.5 py-0.5 font-medium",
+            status === 'OK' && "bg-green-100 text-green-800",
+            status === 'KO' && "bg-red-100 text-red-800",
+            status === 'active' && "bg-blue-100 text-blue-800",
+            status === 'inactive' && "bg-gray-100 text-gray-800"
+          )}
+        >
           {status}
-        </span>
+        </Badge>
       )}
     </div>
   );
