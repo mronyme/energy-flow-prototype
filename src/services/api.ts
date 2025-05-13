@@ -179,6 +179,28 @@ const readingService = {
       console.error('Error deleting reading:', error);
       return false;
     }
+  },
+
+  // Add getMeterReadings method as an alias for compatibility
+  async getMeterReadings(meterId: string): Promise<Reading[]> {
+    try {
+      let { data, error } = await supabase
+        .from('reading')
+        .select('*')
+        .eq('meter_id', meterId)
+        .order('ts', { ascending: false });
+
+      if (error) throw error;
+      return data as Reading[];
+    } catch (error) {
+      console.error('Error getting meter readings:', error);
+      return [];
+    }
+  },
+
+  // Add saveReading method as an alias for compatibility
+  async saveReading(reading: Reading): Promise<Reading | null> {
+    return this.createReading(reading);
   }
 };
 
@@ -439,6 +461,7 @@ const kpiService = {
     }
   },
 
+  // Add getAllSitesKpi method for compatibility
   async getAllSitesKpi(startDate: string, endDate: string): Promise<KpiDaily[]> {
     try {
       let { data, error } = await supabase

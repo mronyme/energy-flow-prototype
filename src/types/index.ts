@@ -1,4 +1,3 @@
-
 export type Role = 'Operator' | 'DataManager' | 'Manager' | 'Admin';
 
 export type MeterType = 'ELEC' | 'GAS' | 'WATER';
@@ -92,9 +91,9 @@ export interface FileUploadProps {
 }
 
 export interface LogTableProps {
-  entries: ImportLog[];
+  entries?: ImportLog[];
+  logs?: ImportLog[];
   isLoading?: boolean;
-  logs?: ImportLog[]; // Add this for compatibility
   loading?: boolean; // Add this for compatibility
 }
 
