@@ -107,7 +107,9 @@ const PiPreview: React.FC = () => {
       );
       
       if (result.success) {
-        toast.success(`Tag '${tagName}' is available: ${result.value} ${result.unit || ''} ${result.timestamp || ''}`);
+        // Fix: Use the tag's unit from the tags array instead of result.unit which doesn't exist
+        const tagUnit = tags.find(t => t.name === tagName)?.unit || '';
+        toast.success(`Tag '${tagName}' is available: ${result.value} ${tagUnit} ${result.timestamp || ''}`);
       } else {
         toast.error(`Tag '${tagName}' is not available`);
       }
