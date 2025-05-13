@@ -1,96 +1,78 @@
 
-/**
- * Validates if a value is outside the threshold compared to historical mean
- * Threshold set at ±15% as per requirements
- */
-export const isOutOfThreshold = (value: number, historicalMean: number): boolean => {
-  if (historicalMean === 0) return false;
-  
-  const deviation = Math.abs((value - historicalMean) / historicalMean) * 100;
-  return deviation > 15;
-};
+// Validation utilities for the MAXI V2 application
 
-/**
- * Categorizes an anomaly based on criteria defined in requirements
- * - SPIKE: ≥ +40% vs previous value
- * - MISSING: NULL value
- * - FLAT: > 48h of identical values
- */
-export const categorizeAnomaly = (
-  value: number | null,
-  previousValue: number | null,
-  isFlat: boolean
-): { type: 'SPIKE' | 'MISSING' | 'FLAT' | null; delta: number | null } => {
-  // Check for missing values
-  if (value === null) {
-    return { type: 'MISSING', delta: null };
-  }
-  
-  // Check for flat values (requires external detection of 48h identical values)
-  if (isFlat) {
-    return { type: 'FLAT', delta: 0 };
-  }
-  
-  // Check for spikes (≥ +40% increase)
-  if (previousValue !== null && previousValue > 0) {
-    const percentChange = ((value - previousValue) / previousValue) * 100;
-    if (percentChange >= 40) {
-      return { type: 'SPIKE', delta: percentChange };
-    }
-  }
-  
-  return { type: null, delta: null };
-};
-
-/**
- * Validates a CSV row based on required fields and data types
- */
-export const validateCsvRow = (row: Record<string, any>, requiredFields: string[]): boolean => {
-  // Check for required fields
-  for (const field of requiredFields) {
-    if (!row[field] && row[field] !== 0) {
-      return false;
-    }
-  }
-  
-  // Additional validation can be added based on field types
-  // For example, checking if numeric fields are actually numbers
-  
-  return true;
-};
-
-/**
- * Date utility functions for consistent date handling
- */
+// Date utilities for formatting and validation
 export const dateUtils = {
-  format: (date: Date | string): string => {
-    const d = typeof date === 'string' ? new Date(date) : date;
-    return d.toISOString().split('T')[0]; // YYYY-MM-DD
+  // Format a date to YYYY-MM-DD
+  format: (date: Date): string => {
+    return date.toISOString().split('T')[0];
   },
   
-  parse: (dateStr: string): Date => {
-    return new Date(dateStr);
+  // Parse a string date in YYYY-MM-DD format to a Date object
+  parse: (dateString: string): Date => {
+    return new Date(dateString);
   },
   
-  addDays: (date: Date, days: number): Date => {
-    const result = new Date(date);
-    result.setDate(result.getDate() + days);
-    return result;
+  // Check if a date is valid
+  isValid: (date: Date): boolean => {
+    return !isNaN(date.getTime());
   },
   
-  formatDisplay: (date: Date | string): string => {
-    const d = typeof date === 'string' ? new Date(date) : date;
-    return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  // Get today's date at midnight
+  today: (): Date => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
   },
   
-  formatDateTime: (date: Date | string): string => {
-    const d = typeof date === 'string' ? new Date(date) : date;
-    return d.toLocaleString('fr-FR', { 
-      day: '2-digit', 
-      month: '2-digit', 
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+  // Format a date to a readable string (e.g. "Jan 1, 2025")
+  formatReadable: (date: Date): string => {
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
     });
+  }
+};
+
+// Validation rules for readings and anomalies
+export const validationRules = {
+  // Check if a value is an anomalous spike (>= +40% from historical mean)
+  isSpike: (value: number, historicalMean: number): boolean => {
+    return value >= historicalMean * 1.4;
+  },
+  
+  // Check if a value is missing
+  isMissing: (value: any): boolean => {
+    return value === null || value === undefined;
+  },
+  
+  // Check if readings are flat for more than 48 hours
+  isFlat: (readings: number[], timestamps: string[]): boolean => {
+    if (readings.length < 2) return false;
+    
+    const firstValue = readings[0];
+    const allSame = readings.every(reading => reading === firstValue);
+    
+    if (!allSame) return false;
+    
+    // Check if the time span is >= 48 hours
+    const firstTimestamp = new Date(timestamps[0]).getTime();
+    const lastTimestamp = new Date(timestamps[timestamps.length - 1]).getTime();
+    const hoursDiff = (lastTimestamp - firstTimestamp) / (1000 * 60 * 60);
+    
+    return hoursDiff >= 48;
+  },
+  
+  // Check if a value is out of threshold (> ±15% from historical mean)
+  isOutOfThreshold: (value: number, historicalMean: number): boolean => {
+    return value < historicalMean * 0.85 || value > historicalMean * 1.15;
+  }
+};
+
+// Generate toast messages for import results
+export const toastMessages = {
+  importComplete: (rowsOk: number, rowsErr: number): string => {
+    return `Import complete: ${rowsOk} rows, ${rowsErr} errors`;
   }
 };

@@ -1,6 +1,9 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { Role } from '../types';
+import { toast } from 'sonner';
 
 interface User {
   id: string;
@@ -17,47 +20,105 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-// Mock users for the prototype
-const MOCK_USERS: User[] = [
-  { id: '1', email: 'operator@engie.com', role: 'Operator' },
-  { id: '2', email: 'datamanager@engie.com', role: 'DataManager' },
-  { id: '3', email: 'manager@engie.com', role: 'Manager' },
-  { id: '4', email: 'admin@engie.com', role: 'Admin' },
-];
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
+  // Check if user is already logged in
   useEffect(() => {
-    // Check for stored user on initial load
-    const storedUser = localStorage.getItem('maxi_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
-  }, []);
+    const checkUser = async () => {
+      try {
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        
+        if (authUser) {
+          // Get user role from profiles table
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', authUser.id)
+            .single();
+          
+          const role = profileData?.role as Role || 'Operator';
+          
+          setUser({
+            id: authUser.id,
+            email: authUser.email || '',
+            role
+          });
+        }
+      } catch (error) {
+        console.error('Error checking authentication status', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkUser();
+    
+    // Subscribe to auth changes
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          // Get user role from profiles table
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .single();
+          
+          const role = profileData?.role as Role || 'Operator';
+          
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            role
+          });
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+          navigate('/login');
+        }
+      }
+    );
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, [navigate]);
 
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
       
-      // Find user by email (case insensitive)
-      const foundUser = MOCK_USERS.find(
-        u => u.email.toLowerCase() === email.toLowerCase()
-      );
-      
-      if (!foundUser) {
-        throw new Error('Invalid credentials');
+      if (error) {
+        throw error;
       }
       
-      // In a real app, we would validate the password here
-      
-      // Store user in localStorage
-      localStorage.setItem('maxi_user', JSON.stringify(foundUser));
-      setUser(foundUser);
+      if (data?.user) {
+        // Get user role from profiles table
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single();
+        
+        const role = profileData?.role as Role || 'Operator';
+        
+        setUser({
+          id: data.user.id,
+          email: data.user.email || '',
+          role
+        });
+        
+        toast.success('Login successful');
+        navigate('/');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Invalid credentials');
     } finally {
       setLoading(false);
     }
@@ -66,12 +127,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Clear stored user
-      localStorage.removeItem('maxi_user');
+      await supabase.auth.signOut();
       setUser(null);
+      toast.success('Logged out successfully');
+      navigate('/login');
+    } catch (error: any) {
+      toast.error(error.message || 'Error logging out');
     } finally {
       setLoading(false);
     }

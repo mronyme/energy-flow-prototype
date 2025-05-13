@@ -9,16 +9,203 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      anomaly: {
+        Row: {
+          comment: string | null
+          delta: number | null
+          id: string
+          reading_id: string | null
+          type: string | null
+        }
+        Insert: {
+          comment?: string | null
+          delta?: number | null
+          id?: string
+          reading_id?: string | null
+          type?: string | null
+        }
+        Update: {
+          comment?: string | null
+          delta?: number | null
+          id?: string
+          reading_id?: string | null
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anomaly_reading_id_fkey"
+            columns: ["reading_id"]
+            isOneToOne: false
+            referencedRelation: "reading"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      import_log: {
+        Row: {
+          file_name: string
+          id: string
+          rows_err: number
+          rows_ok: number
+          ts: string | null
+          user_email: string
+        }
+        Insert: {
+          file_name: string
+          id?: string
+          rows_err: number
+          rows_ok: number
+          ts?: string | null
+          user_email: string
+        }
+        Update: {
+          file_name?: string
+          id?: string
+          rows_err?: number
+          rows_ok?: number
+          ts?: string | null
+          user_email?: string
+        }
+        Relationships: []
+      }
+      kpi_daily: {
+        Row: {
+          co2: number
+          cost_eur: number
+          day: string
+          id: string
+          kwh: number
+          site_id: string | null
+        }
+        Insert: {
+          co2: number
+          cost_eur: number
+          day: string
+          id?: string
+          kwh: number
+          site_id?: string | null
+        }
+        Update: {
+          co2?: number
+          cost_eur?: number
+          day?: string
+          id?: string
+          kwh?: number
+          site_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kpi_daily_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "site"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meter: {
+        Row: {
+          id: string
+          site_id: string | null
+          type: string
+        }
+        Insert: {
+          id?: string
+          site_id?: string | null
+          type: string
+        }
+        Update: {
+          id?: string
+          site_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meter_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "site"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
+      }
+      reading: {
+        Row: {
+          id: string
+          meter_id: string | null
+          ts: string
+          value: number
+        }
+        Insert: {
+          id?: string
+          meter_id?: string | null
+          ts: string
+          value: number
+        }
+        Update: {
+          id?: string
+          meter_id?: string | null
+          ts?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reading_meter_id_fkey"
+            columns: ["meter_id"]
+            isOneToOne: false
+            referencedRelation: "meter"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      site: {
+        Row: {
+          country: string
+          id: string
+          name: string
+        }
+        Insert: {
+          country: string
+          id?: string
+          name: string
+        }
+        Update: {
+          country?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "Operator" | "DataManager" | "Manager" | "Admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +320,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["Operator", "DataManager", "Manager", "Admin"],
+    },
   },
 } as const
