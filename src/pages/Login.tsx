@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -185,7 +184,7 @@ const Login = () => {
       <div className="max-w-md w-full space-y-8">
         <div>
           <div className="flex justify-center">
-            <img src="/logo.png" alt="ENGIE Logo" className="h-12 w-auto" />
+            <img src="/logo.svg" alt="ENGIE Logo" className="h-12 w-auto" />
           </div>
           <h2 className="mt-6 text-center text-3xl font-bold text-dark">
             MAXI V2

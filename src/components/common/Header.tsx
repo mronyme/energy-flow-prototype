@@ -51,7 +51,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
           <Menu size={20} aria-hidden="true" />
         </button>
         <div className="flex items-center gap-2">
-          <img src="/logo.png" alt="ENGIE Logo" className="h-8 w-auto" />
+          <img src="/logo.svg" alt="ENGIE Logo" className="h-8 w-auto" />
           <div className="flex flex-col">
             <span className="text-dark font-bold text-lg">MAXI V2</span>
             <span className="text-xs text-gray-500">Energy Monitoring Platform</span>
