@@ -1,4 +1,5 @@
 
+import { describe, test, expect } from '@jest/globals';
 import { dateUtils, validationRules, checkThresholds, validateCsvRow, toastMessages } from '../../utils/validation';
 
 // Date utils tests
@@ -159,7 +160,7 @@ describe('validationRules', () => {
 // Check thresholds test
 describe('checkThresholds', () => {
   test('should detect missing value', () => {
-    const result = checkThresholds(null, [100, 110, 90]);
+    const result = checkThresholds(null as any, [100, 110, 90]);
     expect(result.isAnomaly).toBe(true);
     expect(result.type).toBe('MISSING');
   });
