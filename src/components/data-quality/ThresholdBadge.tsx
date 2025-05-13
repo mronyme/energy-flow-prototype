@@ -34,11 +34,22 @@ const ThresholdBadge: React.FC<ThresholdBadgeProps> = ({
   }
   
   const formattedPercentage = `${percentageDiff > 0 ? '+' : ''}${percentageDiff.toFixed(1)}%`;
+
+  // Determine badge color based on percentage difference
+  const getBadgeColor = () => {
+    if (percentageDiff > 40) {  // SPIKE anomaly threshold
+      return 'bg-red-100 text-red-800 hover:bg-red-200';
+    } else if (percentageDiff < 0) {  // Below threshold
+      return 'bg-amber-100 text-amber-800 hover:bg-amber-200';
+    } else {  // Above threshold but not a spike
+      return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200';
+    }
+  };
   
   const badge = (
     <Badge 
       variant="outline" 
-      className={`font-medium bg-red-100 text-red-800 hover:bg-red-200 transition-all duration-100 ease-out ${className}`}
+      className={`font-medium ${getBadgeColor()} transition-all duration-100 ease-out ${className}`}
       aria-label={`Out-of-threshold value: ${formattedPercentage}`}
     >
       {formattedPercentage}
@@ -56,7 +67,7 @@ const ThresholdBadge: React.FC<ThresholdBadgeProps> = ({
           {badge}
         </TooltipTrigger>
         <TooltipContent className="text-xs" aria-live="polite">
-          Out-of-threshold value
+          {percentageDiff > 40 ? 'Spike detected' : 'Out-of-threshold value'}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

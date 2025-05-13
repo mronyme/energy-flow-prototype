@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -7,9 +7,10 @@ import FileUploadAdapter from '@/components/data-load/FileUploadAdapter';
 import WizardStep from '@/components/data-load/WizardStep';
 import { useAnnouncer } from '@/components/common/A11yAnnouncer';
 import { readingService, importLogService } from '@/services/api';
-import { useAuth } from '@/hooks/useAuth'; // Use the new hook path
+import { useAuth } from '@/hooks/useAuth'; 
 import * as csvUtils from '@/utils/csvUtils';
 import { Reading, ImportLog } from '@/types';
+import { useNavigate } from 'react-router-dom';
 
 const CsvImport: React.FC = () => {
   const [step, setStep] = useState(1);
@@ -19,6 +20,7 @@ const CsvImport: React.FC = () => {
   const [processing, setProcessing] = useState(false);
   const { announce } = useAnnouncer();
   const { user } = useAuth();
+  const navigate = useNavigate();
   
   // Define wizard steps
   const steps = [
@@ -71,13 +73,18 @@ const CsvImport: React.FC = () => {
       setStep(3);
       
       if (result.success) {
-        announce(`Import completed successfully. ${result.inserted} readings imported.`);
+        const message = `Import complete: ${result.inserted} rows, ${result.errors || 0} errors`;
+        announce(message);
+        toast.success(message);
       } else {
-        announce(`Import completed with errors. ${result.errors} readings failed.`, true);
+        const message = `Import completed with errors: ${result.inserted} rows, ${result.errors} errors`;
+        announce(message, true);
+        toast.error(message);
       }
     } catch (error) {
       console.error('Error importing readings:', error);
       announce('Error importing readings. Please try again.', true);
+      toast.error('Error importing readings. Please try again.');
     } finally {
       setProcessing(false);
     }
@@ -87,6 +94,11 @@ const CsvImport: React.FC = () => {
     if (step > 1) {
       setStep(step - 1);
     }
+  };
+
+  // Redirect to journal after import is complete and user confirms
+  const handleComplete = () => {
+    navigate('/data-quality/journal');
   };
   
   return (
@@ -176,7 +188,10 @@ const CsvImport: React.FC = () => {
               </div>
             )}
             
-            <Button variant="outline" onClick={() => setStep(1)}>Import Another File</Button>
+            <div className="flex justify-between">
+              <Button variant="outline" onClick={() => setStep(1)}>Import Another File</Button>
+              <Button onClick={handleComplete}>View Journal</Button>
+            </div>
           </div>
         )}
       </Card>

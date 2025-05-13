@@ -4,7 +4,7 @@ export interface PiTag {
   name: string;
   description: string;
   site_id?: string;
-  // Standardize status handling - make it a union type with specific values
+  // Use a union type with specific string literals for status
   status: 'OK' | 'KO' | 'active' | 'inactive';
   value?: number;
   unit?: string;

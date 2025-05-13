@@ -48,7 +48,7 @@ const EmissionFactors = () => {
     try {
       setSaving(true);
       await adminService.updateFactor(id, value);
-      toast.success('Emission factor updated');
+      toast.success('Factor updated');
 
       // Update local state
       setFactors(prev => 
@@ -56,6 +56,9 @@ const EmissionFactors = () => {
           factor.id === id ? { ...factor, value, updatedAt: new Date().toISOString().split('T')[0] } : factor
         )
       );
+      
+      // Show a blue badge next to the updated row (this would be implemented in DataGridEditable component)
+      announce('Factor updated successfully');
     } catch (error) {
       console.error('Error updating emission factor:', error);
       toast.error('Failed to update emission factor');
