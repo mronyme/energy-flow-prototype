@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth'; // Fixed import path
@@ -10,6 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Role } from '@/types';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAnnouncer } from '@/components/common/A11yAnnouncer';
+
+// Define demo password outside functions for consistent access across component
+const DEMO_PASSWORD = 'demo123456';
 
 const Login = () => {
   // Login form state
@@ -92,51 +96,65 @@ const Login = () => {
   const handleDemoLogin = async (demoEmail: string) => {
     try {
       setIsSubmitting(true);
-      const demoPassword = 'demo123456'; // Simple password for demo accounts
+      announce(`Attempting demo login with ${demoEmail}...`, true);
       
-      // Attempt to sign in directly first
-      await login(demoEmail, demoPassword);
+      // First check if the user already exists by attempting to sign in
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: demoEmail,
+        password: DEMO_PASSWORD
+      });
       
-      // If we get here without error, login was successful
-      toast.success('Demo login successful!');
-      announce('Demo login successful. Redirecting to dashboard.', true);
+      if (signInData?.user) {
+        // User exists and login was successful
+        toast.success('Demo login successful!');
+        announce('Demo login successful. Redirecting to dashboard.', true);
+        return;
+      }
+      
+      // User doesn't exist or credentials are wrong, attempt to create the account
+      console.log('Creating demo account:', demoEmail);
+      const role = getRoleFromEmail(demoEmail);
+      
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: demoEmail,
+        password: DEMO_PASSWORD,
+        options: {
+          data: {
+            role
+          }
+        }
+      });
+      
+      if (signUpError) {
+        throw signUpError;
+      }
+      
+      if (signUpData?.user) {
+        toast.success('Demo account created. Signing in...');
+        announce('Demo account created. Signing in...', true);
+        
+        // Try to sign in with the newly created account
+        const { data: finalSignInData, error: finalSignInError } = await supabase.auth.signInWithPassword({
+          email: demoEmail,
+          password: DEMO_PASSWORD
+        });
+        
+        if (finalSignInError) {
+          throw finalSignInError;
+        }
+        
+        if (finalSignInData?.user) {
+          toast.success('Demo login successful!');
+          announce('Demo login successful. Redirecting to dashboard.', true);
+        }
+      }
       
     } catch (error: any) {
-      console.log('Login failed, attempting to create demo account:', demoEmail);
-      
-      try {
-        // Create the demo user
-        const role = getRoleFromEmail(demoEmail);
-        await signup(demoEmail, demoPassword, role);
-        
-        toast.success('Demo account created. Logging in...');
-        announce('Demo account created. Logging in...', true);
-        
-        // Wait a moment to ensure the user is created in the database
-        setTimeout(async () => {
-          try {
-            await login(demoEmail, demoPassword);
-          } catch (loginErr) {
-            console.error('Error logging in after signup:', loginErr);
-            toast.error('Failed to log in with new demo account');
-            announce('Failed to log in with new demo account.', true);
-          } finally {
-            setIsSubmitting(false);
-          }
-        }, 1000);
-      } catch (signupError: any) {
-        console.error('Error creating demo account:', signupError);
-        
-        // If the error indicates the user already exists, try logging in again
-        if (signupError.message?.includes('already registered')) {
-          toast.error('Demo account exists but login failed. Please try again.');
-          announce('Demo account exists but login failed. Please try again.', true);
-        } else {
-          toast.error('Failed to create demo account');
-          announce('Failed to create demo account.', true);
-        }
-        setIsSubmitting(false);
-      }
+      console.error('Demo login error:', error);
+      toast.error(`Login failed: ${error.message || 'Unknown error'}`);
+      announce('Demo login failed. Please try again.', true);
+    } finally {
+      setIsSubmitting(false);
     }
   };
   

@@ -33,7 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.id);
         
-        if (event === 'SIGNED_IN' && session?.user) {
+        if (session?.user) {
           try {
             // Get user role from profiles table or create profile if it doesn't exist
             const { data: profileData, error: profileError } = await supabase
@@ -44,9 +44,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             
             if (profileError) {
               if (profileError.code === 'PGRST116') {
-                // Profile doesn't exist, create it with default role
+                // Profile doesn't exist, create it with default role or role from metadata
                 const metadata = session.user.user_metadata || {};
                 const role = (metadata.role as Role) || 'Operator';
+                
+                console.log('Creating profile for user:', session.user.id, 'with role:', role);
                 
                 const { error: insertError } = await supabase
                   .from('profiles')
@@ -57,6 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 
                 if (insertError) {
                   console.error('Error creating user profile:', insertError);
+                  toast.error('Error setting up user profile');
                   return;
                 }
                 
@@ -65,8 +68,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   email: session.user.email || '',
                   role
                 });
+                
+                toast.success(`Logged in as ${role}`);
               } else {
                 console.error('Error fetching user profile:', profileError);
+                toast.error('Error loading user profile');
                 return;
               }
             } else {
@@ -77,6 +83,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 email: session.user.email || '',
                 role
               });
+              
+              if (event === 'SIGNED_IN') {
+                toast.success(`Welcome back`);
+              }
             }
             
             // Redirect to dashboard if on login page
@@ -85,6 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           } catch (err) {
             console.error('Error processing auth state change:', err);
+            toast.error('Authentication error');
           }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
@@ -110,9 +121,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           if (profileError) {
             if (profileError.code === 'PGRST116') {
-              // Profile doesn't exist, create it with default role
+              // Profile doesn't exist, create it with default role or role from metadata
               const metadata = session.user.user_metadata || {};
               const role = (metadata.role as Role) || 'Operator';
+              
+              console.log('Creating profile for existing user:', session.user.id);
               
               const { error: insertError } = await supabase
                 .from('profiles')
@@ -122,7 +135,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 });
               
               if (insertError) {
-                console.error('Error creating user profile:', insertError);
+                console.error('Error creating user profile during session check:', insertError);
                 setLoading(false);
                 return;
               }
@@ -133,7 +146,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 role
               });
             } else {
-              console.error('Error fetching user profile:', profileError);
+              console.error('Error fetching user profile during session check:', profileError);
               setLoading(false);
               return;
             }
@@ -222,8 +235,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       if (data?.user) {
-        // For demo purposes, let's also create the profile immediately
-        // This ensures the profile exists when they try to log in
+        // Create the profile record immediately
         try {
           const { error: profileError } = await supabase
             .from('profiles')
@@ -234,6 +246,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             
           if (profileError) {
             console.error('Error creating profile during signup:', profileError);
+            toast.error('Account created but profile setup failed');
           }
         } catch (profileErr) {
           console.error('Failed to create profile during signup:', profileErr);
