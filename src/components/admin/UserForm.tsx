@@ -32,7 +32,11 @@ const UserForm: React.FC<UserFormProps> = ({ onSubmit, isSubmitting = false }) =
 
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      await onSubmit(values);
+      await onSubmit({
+        email: values.email,
+        password: values.password,
+        role: values.role
+      });
       form.reset();
     } catch (error) {
       console.error('Form submission error:', error);

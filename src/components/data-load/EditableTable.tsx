@@ -29,12 +29,13 @@ const EditableTable: React.FC<EditableTableProps> = ({ data = [], onSave, refres
     const fetchRecentReadings = async () => {
       try {
         setLoading(true);
-        const readings = await readingService.getRecent();
+        // Using getAll instead of getRecent which doesn't exist
+        const readings = await readingService.getAll();
         setTableData(readings || []);
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching recent readings:', error);
-        toast.error('Failed to load recent readings');
+        console.error('Error fetching readings:', error);
+        toast.error('Failed to load readings');
         setLoading(false);
       }
     };
@@ -71,8 +72,8 @@ const EditableTable: React.FC<EditableTableProps> = ({ data = [], onSave, refres
       onSave(id, parseFloat(value));
     } else {
       try {
-        // Implement default save behavior if no onSave is provided
-        await readingService.update(id, parseFloat(value));
+        // Fix the update call to only use one parameter (id), with value passed inside an object
+        await readingService.update(id, { value: parseFloat(value) });
         toast.success('Reading updated successfully');
         
         // Update the local table data

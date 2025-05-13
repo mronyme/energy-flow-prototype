@@ -225,19 +225,19 @@ const Anomalies: React.FC = () => {
         <AlertCardSummary
           title="Missing Readings"
           count={anomalies.filter(a => a.type === 'MISSING').length}
-          type="MISSING"
+          type="error"
           icon={Ban}
         />
         <AlertCardSummary
           title="Spikes"
           count={anomalies.filter(a => a.type === 'SPIKE').length}
-          type="SPIKE"
+          type="warning"
           icon={AlertTriangle}
         />
         <AlertCardSummary
           title="Flat Values"
           count={anomalies.filter(a => a.type === 'FLAT').length}
-          type="FLAT"
+          type="info"
           icon={Info}
         />
       </div>
