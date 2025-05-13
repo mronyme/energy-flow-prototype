@@ -1,165 +1,140 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
 import TagTableRO from '@/components/data-load/TagTableRO';
-import TestTagButton from '@/components/data-load/TestTagButton';
 import { piService } from '@/services/api';
-import { PiTag } from '@/types/pi-tag';
+import { toast } from 'sonner';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useAnnouncer } from '@/components/common/A11yAnnouncer';
+import { Select } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 
-const PiPreview = () => {
-  const [sites, setSites] = useState<{ id: string; name: string }[]>([]);
-  const [selectedSite, setSelectedSite] = useState<string>('');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [piTags, setPiTags] = useState<PiTag[]>([]);
+interface PiTag {
+  id: string;
+  name: string;
+  description: string;
+  unit: string;
+  status: boolean | null;
+}
+
+const PiPreview: React.FC = () => {
+  const [tags, setTags] = useState<PiTag[]>([]);
+  const [sites, setSites] = useState<{id: string, name: string}[]>([]);
+  const [selectedSite, setSelectedSite] = useState<string>('all');
   const [loading, setLoading] = useState(false);
+  const isMobile = useIsMobile();
+  const { announcer, announce } = useAnnouncer();
 
+  // Fetch sites on component mount
   useEffect(() => {
     const fetchSites = async () => {
       try {
         const sitesData = await piService.getSites();
         setSites(sitesData);
-        if (sitesData.length > 0) {
-          setSelectedSite(sitesData[0].id);
-        }
       } catch (error) {
         console.error('Error fetching sites:', error);
+        toast.error('Failed to load sites');
       }
     };
 
     fetchSites();
   }, []);
 
+  // Fetch tags when selected site changes
   useEffect(() => {
-    if (!selectedSite) return;
-    
-    const fetchPiTags = async () => {
+    const fetchTags = async () => {
       try {
         setLoading(true);
-        const tagsData = await piService.getTagsBySite(selectedSite);
+        const tagsData = selectedSite === 'all'
+          ? await piService.getTags()
+          : await piService.getTagsBySite(selectedSite);
         
-        // All tags initially have null status until tested
-        setPiTags(tagsData.map(tag => ({
+        // Initialize tags with null status
+        setTags(tagsData.map(tag => ({
           ...tag,
           status: null
         })));
+        
+        setLoading(false);
       } catch (error) {
         console.error('Error fetching PI tags:', error);
-      } finally {
+        toast.error('Failed to load PI tags');
         setLoading(false);
       }
     };
 
-    fetchPiTags();
+    fetchTags();
   }, [selectedSite]);
 
-  const handleTestTag = async (tagId: string) => {
-    try {
-      // Find the tag
-      const tag = piTags.find(t => t.id === tagId);
-      if (!tag) return;
-      
-      // Call PI service to test the tag
-      const result = await piService.testTag(tag.name);
-      
-      // Update tag status (IF-04: Green badge "OK" or red "KO")
-      setPiTags(prev => 
-        prev.map(t => 
-          t.id === tagId ? { ...t, status: result ? 'OK' : 'KO' } : t
-        )
-      );
-      
-    } catch (error) {
-      console.error('Error testing tag:', error);
-      // Update as KO if there's an error
-      setPiTags(prev => 
-        prev.map(t => 
-          t.id === tagId ? { ...t, status: 'KO' } : t
-        )
-      );
-    }
+  // Handle tag test results
+  const handleTagTest = (tagName: string, result: boolean) => {
+    // Update tag status
+    setTags(prevTags => prevTags.map(tag => {
+      if (tag.name === tagName) {
+        return { ...tag, status: result };
+      }
+      return tag;
+    }));
+
+    // Announce result for screen readers
+    announce(
+      `Tag ${tagName} test ${result ? 'successful' : 'failed'}`,
+      !result // Make failures assertive
+    );
   };
 
-  const filteredTags = searchQuery
-    ? piTags.filter(tag => 
-        tag.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        tag.description.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : piTags;
-
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <h1 className="text-2xl font-bold text-dark">PI Tag Preview</h1>
+    <div>
+      {announcer} {/* Screen reader announcements */}
+      
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-dark mb-2">PI Tag Preview</h1>
+        <p className="text-gray-600">
+          Preview configured PI tags and test their availability. This is a read-only view.
+        </p>
       </div>
-
-      <Card className="shadow-sm ring-1 ring-dark/10">
-        <CardHeader>
-          <CardTitle>Available PI Tags</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-700">
-                Site
-              </label>
-              <Select value={selectedSite} onValueChange={setSelectedSite}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select site" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sites.map((site) => (
-                    <SelectItem key={site.id} value={site.id}>
-                      {site.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-700">
-                Search Tags
-              </label>
-              <div className="relative">
-                <Input 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by name or description"
-                  className="pl-10"
-                />
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-              </div>
-            </div>
+      
+      <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
+        <div className="w-full md:w-64">
+          <Label htmlFor="site-select">Filter by Site</Label>
+          <select
+            id="site-select"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+            value={selectedSite}
+            onChange={(e) => setSelectedSite(e.target.value)}
+            disabled={loading}
+            aria-label="Select site to filter PI tags"
+          >
+            <option value="all">All Sites</option>
+            {sites.map((site) => (
+              <option key={site.id} value={site.id}>
+                {site.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        
+        <div aria-live="polite" className="text-sm text-gray-500 mt-2 md:mt-8">
+          {loading ? 'Loading tags...' : `${tags.length} tags found`}
+        </div>
+      </div>
+      
+      {loading ? (
+        <div className="flex justify-center items-center p-12" role="status" aria-live="polite">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          <span className="sr-only">Loading PI tags...</span>
+        </div>
+      ) : (
+        <div className={isMobile ? "overflow-x-auto pb-4" : ""}>
+          <TagTableRO tags={tags} onTagTest={handleTagTest} />
+          
+          <div className="mt-4 text-sm text-gray-500">
+            <p>
+              <span className="font-medium">Note:</span> This is a preview of available PI tags. 
+              Click "Test tag" to verify if a tag is accessible.
+            </p>
           </div>
-
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-            </div>
-          ) : filteredTags.length > 0 ? (
-            <TagTableRO 
-              data={filteredTags}
-              actionColumn={(tag) => (
-                <TestTagButton 
-                  status={tag.status}
-                  onClick={() => handleTestTag(tag.id)}
-                />
-              )}
-            />
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              {selectedSite 
-                ? searchQuery 
-                  ? "No tags found matching your search" 
-                  : "No PI tags found for this site"
-                : "Select a site to view PI tags"}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        </div>
+      )}
     </div>
   );
 };

@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
+import SkipLink from "./components/common/SkipLink";
 
 // Pages
 import Login from "./pages/Login";
@@ -26,6 +27,7 @@ const App = () => (
     <BrowserRouter>
       <AuthProvider>
         <TooltipProvider>
+          <SkipLink />
           <Toaster />
           <Sonner />
           <Routes>

@@ -11,8 +11,10 @@ import {
   AlertTriangle, 
   ClipboardList, 
   Settings,
-  Users
+  Users,
+  ChevronRight
 } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -22,6 +24,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle }) => {
   const { user } = useAuth();
   const location = useLocation();
+  const isMobile = useIsMobile();
   
   // Group states for expandable sections
   const [dataLoadOpen, setDataLoadOpen] = useState(false);
@@ -68,18 +71,25 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle }) => {
   };
 
   return (
-    <div className={`
-      fixed inset-y-0 left-0 z-20 
-      w-64 bg-white border-r border-gray-200 
-      transform transition-transform duration-200 ease-in-out
-      ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-      md:translate-x-0 md:static
-    `}>
+    <div 
+      id="main-sidebar"
+      className={`
+        fixed inset-y-0 left-0 z-20 
+        w-64 bg-white border-r border-gray-200 
+        transform transition-transform duration-200 ease-in-out
+        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+        md:translate-x-0 md:static
+      `}
+      role="navigation"
+      aria-label="Main navigation"
+      aria-hidden={isMobile && !isOpen ? "true" : "false"}
+    >
       <div className="h-full flex flex-col">
         <div className="p-4 border-b border-gray-200 md:hidden">
           <button 
             onClick={toggle}
             className="text-gray-500 hover:text-gray-700"
+            aria-label="Close sidebar"
           >
             Close
           </button>
@@ -88,8 +98,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle }) => {
         <div className="flex-1 overflow-y-auto py-4">
           <nav className="space-y-1 px-2">
             {/* Dashboard - All roles */}
-            <Link to="/" className={navLinkClass(isActive('/'))}>
-              <ChartBar size={18} />
+            <Link to="/" className={navLinkClass(isActive('/'))} aria-current={isActive('/') ? 'page' : undefined}>
+              <ChartBar size={18} aria-hidden="true" />
               <span>Dashboard</span>
             </Link>
             
@@ -99,34 +109,57 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle }) => {
                 <div 
                   className={groupHeaderClass(dataLoadOpen)}
                   onClick={() => setDataLoadOpen(!dataLoadOpen)}
+                  role="button"
+                  aria-expanded={dataLoadOpen}
+                  aria-controls="data-loading-menu"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setDataLoadOpen(!dataLoadOpen);
+                    }
+                  }}
                 >
                   <div className="flex items-center gap-3">
-                    <GaugeCircle size={18} />
+                    <GaugeCircle size={18} aria-hidden="true" />
                     <span>Data Loading</span>
                   </div>
-                  <svg 
+                  <ChevronRight
                     className={`w-4 h-4 transition-transform ${dataLoadOpen ? 'rotate-90' : ''}`}
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
+                    aria-hidden="true"
+                  />
                 </div>
                 
-                <div className={groupContentClass(dataLoadOpen)}>
-                  <Link to="/data-load/manual-entry" className={navLinkClass(isActive('/data-load/manual-entry'))}>
-                    <FileText size={18} />
+                <div 
+                  id="data-loading-menu" 
+                  className={groupContentClass(dataLoadOpen)}
+                  role="region" 
+                  aria-labelledby="data-loading-header"
+                >
+                  <Link 
+                    to="/data-load/manual-entry" 
+                    className={navLinkClass(isActive('/data-load/manual-entry'))}
+                    aria-current={isActive('/data-load/manual-entry') ? 'page' : undefined}
+                  >
+                    <FileText size={18} aria-hidden="true" />
                     <span>Manual Entry</span>
                   </Link>
                   
-                  <Link to="/data-load/csv-import" className={navLinkClass(isActive('/data-load/csv-import'))}>
-                    <Upload size={18} />
+                  <Link 
+                    to="/data-load/csv-import" 
+                    className={navLinkClass(isActive('/data-load/csv-import'))}
+                    aria-current={isActive('/data-load/csv-import') ? 'page' : undefined}
+                  >
+                    <Upload size={18} aria-hidden="true" />
                     <span>CSV Import</span>
                   </Link>
                   
-                  <Link to="/data-load/pi-preview" className={navLinkClass(isActive('/data-load/pi-preview'))}>
-                    <Database size={18} />
+                  <Link 
+                    to="/data-load/pi-preview" 
+                    className={navLinkClass(isActive('/data-load/pi-preview'))}
+                    aria-current={isActive('/data-load/pi-preview') ? 'page' : undefined}
+                  >
+                    <Database size={18} aria-hidden="true" />
                     <span>PI Preview</span>
                   </Link>
                 </div>
@@ -139,29 +172,48 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle }) => {
                 <div 
                   className={groupHeaderClass(dataQualityOpen)}
                   onClick={() => setDataQualityOpen(!dataQualityOpen)}
+                  role="button"
+                  aria-expanded={dataQualityOpen}
+                  aria-controls="data-quality-menu"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setDataQualityOpen(!dataQualityOpen);
+                    }
+                  }}
                 >
                   <div className="flex items-center gap-3">
-                    <AlertTriangle size={18} />
+                    <AlertTriangle size={18} aria-hidden="true" />
                     <span>Data Quality</span>
                   </div>
-                  <svg 
+                  <ChevronRight
                     className={`w-4 h-4 transition-transform ${dataQualityOpen ? 'rotate-90' : ''}`}
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
+                    aria-hidden="true"
+                  />
                 </div>
                 
-                <div className={groupContentClass(dataQualityOpen)}>
-                  <Link to="/data-quality/anomalies" className={navLinkClass(isActive('/data-quality/anomalies'))}>
-                    <AlertTriangle size={18} />
+                <div 
+                  id="data-quality-menu" 
+                  className={groupContentClass(dataQualityOpen)}
+                  role="region" 
+                  aria-labelledby="data-quality-header"
+                >
+                  <Link 
+                    to="/data-quality/anomalies" 
+                    className={navLinkClass(isActive('/data-quality/anomalies'))}
+                    aria-current={isActive('/data-quality/anomalies') ? 'page' : undefined}
+                  >
+                    <AlertTriangle size={18} aria-hidden="true" />
                     <span>Anomalies</span>
                   </Link>
                   
-                  <Link to="/data-quality/journal" className={navLinkClass(isActive('/data-quality/journal'))}>
-                    <ClipboardList size={18} />
+                  <Link 
+                    to="/data-quality/journal" 
+                    className={navLinkClass(isActive('/data-quality/journal'))}
+                    aria-current={isActive('/data-quality/journal') ? 'page' : undefined}
+                  >
+                    <ClipboardList size={18} aria-hidden="true" />
                     <span>Import Journal</span>
                   </Link>
                 </div>
@@ -174,29 +226,48 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle }) => {
                 <div 
                   className={groupHeaderClass(adminOpen)}
                   onClick={() => setAdminOpen(!adminOpen)}
+                  role="button"
+                  aria-expanded={adminOpen}
+                  aria-controls="admin-menu"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setAdminOpen(!adminOpen);
+                    }
+                  }}
                 >
                   <div className="flex items-center gap-3">
-                    <Settings size={18} />
+                    <Settings size={18} aria-hidden="true" />
                     <span>Administration</span>
                   </div>
-                  <svg 
+                  <ChevronRight
                     className={`w-4 h-4 transition-transform ${adminOpen ? 'rotate-90' : ''}`}
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
+                    aria-hidden="true"
+                  />
                 </div>
                 
-                <div className={groupContentClass(adminOpen)}>
-                  <Link to="/admin/units-factors" className={navLinkClass(isActive('/admin/units-factors'))}>
-                    <Settings size={18} />
+                <div 
+                  id="admin-menu" 
+                  className={groupContentClass(adminOpen)}
+                  role="region" 
+                  aria-labelledby="admin-header"
+                >
+                  <Link 
+                    to="/admin/units-factors" 
+                    className={navLinkClass(isActive('/admin/units-factors'))}
+                    aria-current={isActive('/admin/units-factors') ? 'page' : undefined}
+                  >
+                    <Settings size={18} aria-hidden="true" />
                     <span>Emission Factors</span>
                   </Link>
                   
-                  <Link to="/admin/users" className={navLinkClass(isActive('/admin/users'))}>
-                    <Users size={18} />
+                  <Link 
+                    to="/admin/users" 
+                    className={navLinkClass(isActive('/admin/users'))}
+                    aria-current={isActive('/admin/users') ? 'page' : undefined}
+                  >
+                    <Users size={18} aria-hidden="true" />
                     <span>Users</span>
                   </Link>
                 </div>

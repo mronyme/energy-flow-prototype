@@ -1,29 +1,57 @@
+
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { CalendarIcon } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { format, subDays } from 'date-fns';
-import { cn } from '@/lib/utils';
-import AlertCard from '@/components/data-quality/AlertCard';
-import CorrectionModal from '@/components/data-quality/CorrectionModal';
+import { AlertCard } from '@/components/data-quality/AlertCard';
+import { CorrectionModal } from '@/components/data-quality/CorrectionModal';
+import { AnomalyBadge } from '@/components/data-quality/AnomalyBadge';
 import { anomalyService } from '@/services/api';
 import { toast } from 'sonner';
-import { AnomalyType } from '@/types';
-import { Anomaly, AnomalyFilter } from '@/types/pi-tag';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useAnnouncer } from '@/components/common/A11yAnnouncer';
+import DatePicker from '@/components/ui/date-picker';
+import { format, subDays } from 'date-fns';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { AlertTriangle } from 'lucide-react';
 
-const Anomalies = () => {
-  const [sites, setSites] = useState<{ id: string; name: string }[]>([]);
-  const [selectedSite, setSelectedSite] = useState<string>('all');
-  const [startDate, setStartDate] = useState<Date>(subDays(new Date(), 30));
-  const [endDate, setEndDate] = useState<Date>(new Date());
+interface Anomaly {
+  id: string;
+  readingId: string;
+  meterId: string;
+  meterName: string;
+  siteName: string;
+  date: string;
+  value: number | null;
+  type: 'MISSING' | 'SPIKE' | 'FLAT';
+  delta: number | null;
+  site: string;
+  meter: string;
+  comment: string;
+}
+
+const Anomalies: React.FC = () => {
   const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
+  const [sites, setSites] = useState<{id: string, name: string}[]>([]);
+  const [selectedSite, setSelectedSite] = useState<string>('all');
   const [loading, setLoading] = useState(false);
+  const isMobile = useIsMobile();
+  const { announcer, announce } = useAnnouncer();
+  
+  // Date filter state
+  const [startDate, setStartDate] = useState<Date>(subDays(new Date(), 7));
+  const [endDate, setEndDate] = useState<Date>(new Date());
+  
+  // Correction modal state
   const [selectedAnomaly, setSelectedAnomaly] = useState<Anomaly | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   
+  // Reset modal state when closed
+  useEffect(() => {
+    if (!modalOpen) {
+      setSelectedAnomaly(null);
+    }
+  }, [modalOpen]);
+  
+  // Load sites on mount
   useEffect(() => {
     const fetchSites = async () => {
       try {
@@ -31,208 +59,253 @@ const Anomalies = () => {
         setSites(sitesData);
       } catch (error) {
         console.error('Error fetching sites:', error);
+        toast.error('Failed to load sites');
       }
     };
-
+    
     fetchSites();
   }, []);
   
-  const fetchAnomalies = async () => {
+  // Load anomalies based on selected filters
+  const loadAnomalies = async () => {
     try {
       setLoading(true);
-      const formattedStartDate = format(startDate, 'yyyy-MM-dd');
-      const formattedEndDate = format(endDate, 'yyyy-MM-dd');
+      const anomalyData = await anomalyService.getAnomalies({
+        siteId: selectedSite,
+        startDate: format(startDate, 'yyyy-MM-dd'),
+        endDate: format(endDate, 'yyyy-MM-dd')
+      });
       
-      const filters: AnomalyFilter = {
-        startDate: formattedStartDate,
-        endDate: formattedEndDate
-      };
+      setAnomalies(anomalyData);
+      setLoading(false);
       
-      if (selectedSite !== 'all') {
-        filters.siteId = selectedSite;
-      }
+      // Announce for screen readers
+      announce(`Loaded ${anomalyData.length} anomalies`);
       
-      const anomaliesData = await anomalyService.getAnomalies(filters);
-      setAnomalies(anomaliesData);
     } catch (error) {
       console.error('Error fetching anomalies:', error);
       toast.error('Failed to load anomalies');
-    } finally {
       setLoading(false);
     }
   };
   
   useEffect(() => {
-    fetchAnomalies();
+    loadAnomalies();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedSite, startDate, endDate]);
   
-  const handleAnomalyClick = (anomaly: Anomaly) => {
-    // IF-05: Double-click row -> Open CorrectionModal pre-filled
-    setSelectedAnomaly(anomaly);
-    setModalOpen(true);
-  };
-  
-  const handleSaveCorrection = async (readingId: string, newValue: number, comment: string) => {
+  // Handle anomaly correction (IF-06)
+  const handleSaveCorrection = async (
+    readingId: string, 
+    value: number, 
+    comment: string
+  ) => {
     try {
+      // Call API to update the reading
       await anomalyService.correctAnomaly({
         readingId,
-        value: newValue,
+        value,
         comment
       });
       
-      // IF-06: Green toast "Correction saved"
-      toast.success('Correction saved');
+      // Success message
+      toast.success("Correction saved");
+      announce("Anomaly correction saved successfully");
       
-      // Refresh anomalies list
-      fetchAnomalies();
-      
-      // Close modal
+      // Close modal and refresh data
       setModalOpen(false);
-      setSelectedAnomaly(null);
+      loadAnomalies();
+      
     } catch (error) {
-      console.error('Error saving correction:', error);
+      console.error('Error correcting anomaly:', error);
       toast.error('Failed to save correction');
     }
   };
   
+  // Handle row click to open correction modal (IF-05)
+  const handleRowClick = (anomaly: Anomaly) => {
+    setSelectedAnomaly(anomaly);
+    setModalOpen(true);
+    
+    // Announce for screen readers
+    announce(`Opening correction modal for ${anomaly.meterName} at ${anomaly.siteName}`);
+  };
+  
+  // Handle filter updates
+  const applyFilters = () => {
+    loadAnomalies();
+  };
+  
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <h1 className="text-2xl font-bold text-dark">Anomalies</h1>
+    <>
+      {announcer} {/* Screen reader announcements */}
+      
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-dark mb-2">Anomalies</h1>
+        <p className="text-gray-600">
+          Detect and fix anomalies in meter readings.
+        </p>
       </div>
       
-      <Card className="shadow-sm ring-1 ring-dark/10">
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-700">
-                Site
-              </label>
-              <Select value={selectedSite} onValueChange={setSelectedSite}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select site" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Sites</SelectItem>
-                  {sites.map((site) => (
-                    <SelectItem key={site.id} value={site.id}>
-                      {site.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-700">
-                Start Date
-              </label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !startDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {startDate ? format(startDate, 'PPP') : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={startDate}
-                    onSelect={(date) => date && setStartDate(date)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-700">
-                End Date
-              </label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !endDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {endDate ? format(endDate, 'PPP') : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={endDate}
-                    onSelect={(date) => date && setEndDate(date)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+      {/* Filters */}
+      <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <Label htmlFor="site-select">Site</Label>
+            <select
+              id="site-select"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              value={selectedSite}
+              onChange={(e) => setSelectedSite(e.target.value)}
+              disabled={loading}
+              aria-label="Filter anomalies by site"
+            >
+              <option value="all">All Sites</option>
+              {sites.map((site) => (
+                <option key={site.id} value={site.id}>
+                  {site.name}
+                </option>
+              ))}
+            </select>
           </div>
-        </CardContent>
-      </Card>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {loading ? (
-          <div className="col-span-full flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-          </div>
-        ) : anomalies.length > 0 ? (
-          anomalies.map((anomaly) => (
-            <AlertCard
-              key={anomaly.id}
-              title={anomaly.meterName}
-              type={anomaly.type}
-              date={anomaly.date}
-              value={anomaly.value}
-              delta={anomaly.delta}
-              site={anomaly.siteName}
-              meter={anomaly.meterName}
-              onClick={() => handleAnomalyClick(anomaly)}
+          
+          <div>
+            <Label htmlFor="start-date">From</Label>
+            <DatePicker
+              selected={startDate}
+              onSelect={setStartDate}
+              disabled={loading}
+              label="Start date"
             />
-          ))
-        ) : (
-          <div className="col-span-full text-center py-8 text-gray-500">
-            No anomalies found for the selected criteria
           </div>
-        )}
+          
+          <div>
+            <Label htmlFor="end-date">To</Label>
+            <DatePicker
+              selected={endDate}
+              onSelect={setEndDate}
+              disabled={loading}
+              label="End date"
+            />
+          </div>
+        </div>
+        
+        <div className="mt-4 flex justify-end">
+          <Button onClick={applyFilters} disabled={loading}>
+            Apply Filters
+          </Button>
+        </div>
       </div>
       
+      {/* Anomaly summary */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <AlertCard
+          title="Missing Readings"
+          count={anomalies.filter(a => a.type === 'MISSING').length}
+          type="warning"
+          icon={AlertTriangle}
+        />
+        <AlertCard
+          title="Spikes"
+          count={anomalies.filter(a => a.type === 'SPIKE').length}
+          type="error"
+          icon={AlertTriangle}
+        />
+        <AlertCard
+          title="Flat Values"
+          count={anomalies.filter(a => a.type === 'FLAT').length}
+          type="info"
+          icon={AlertTriangle}
+        />
+      </div>
+      
+      {/* Anomalies table */}
+      {loading ? (
+        <div className="flex justify-center items-center p-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          <span className="sr-only">Loading anomalies...</span>
+        </div>
+      ) : (
+        <div className={isMobile ? "overflow-x-auto" : ""}>
+          <table className="w-full bg-white rounded-lg shadow-sm">
+            <caption className="sr-only">
+              List of detected anomalies in meter readings
+            </caption>
+            <thead className="bg-gray-50">
+              <tr>
+                <th scope="col" className="px-4 py-3 text-left text-sm font-medium text-gray-600">
+                  Site
+                </th>
+                <th scope="col" className="px-4 py-3 text-left text-sm font-medium text-gray-600">
+                  Meter
+                </th>
+                <th scope="col" className="px-4 py-3 text-left text-sm font-medium text-gray-600">
+                  Date
+                </th>
+                <th scope="col" className="px-4 py-3 text-right text-sm font-medium text-gray-600">
+                  Value
+                </th>
+                <th scope="col" className="px-4 py-3 text-center text-sm font-medium text-gray-600">
+                  Type
+                </th>
+                <th scope="col" className="px-4 py-3 text-right text-sm font-medium text-gray-600">
+                  Delta
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {anomalies.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-6 text-center text-gray-500">
+                    No anomalies found for the selected filters
+                  </td>
+                </tr>
+              ) : (
+                anomalies.map((anomaly) => (
+                  <tr 
+                    key={anomaly.id}
+                    className="cursor-pointer hover:bg-gray-50 transition-standard"
+                    onClick={() => handleRowClick(anomaly)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleRowClick(anomaly);
+                      }
+                    }}
+                    tabIndex={0}
+                    role="button"
+                    aria-label={`Anomaly at ${anomaly.siteName}, ${anomaly.meterName}, ${anomaly.date}`}
+                  >
+                    <td className="px-4 py-3 text-sm">{anomaly.siteName}</td>
+                    <td className="px-4 py-3 text-sm">{anomaly.meterName}</td>
+                    <td className="px-4 py-3 text-sm">{anomaly.date}</td>
+                    <td className="px-4 py-3 text-sm text-right">
+                      {anomaly.value === null ? '—' : anomaly.value.toFixed(2)}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <AnomalyBadge type={anomaly.type} />
+                    </td>
+                    <td className="px-4 py-3 text-sm text-right">
+                      {anomaly.delta === null ? '—' : `${anomaly.delta.toFixed(2)}%`}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+      
+      {/* Correction Modal */}
       {selectedAnomaly && (
         <CorrectionModal
           isOpen={modalOpen}
-          onClose={() => {
-            setModalOpen(false);
-            setSelectedAnomaly(null);
-          }}
-          anomaly={{
-            id: selectedAnomaly.id,
-            readingId: selectedAnomaly.readingId,
-            value: selectedAnomaly.value || 0,
-            timestamp: selectedAnomaly.date,
-            type: selectedAnomaly.type,
-            delta: selectedAnomaly.delta || 0,
-            comment: selectedAnomaly.comment || '',
-            siteName: selectedAnomaly.siteName,
-            meterType: selectedAnomaly.type
-          }}
+          onClose={() => setModalOpen(false)}
+          anomaly={selectedAnomaly}
           onSave={handleSaveCorrection}
         />
       )}
-    </div>
+    </>
   );
 };
 

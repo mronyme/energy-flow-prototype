@@ -1,62 +1,88 @@
 
-import React from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PiTag } from '@/types/pi-tag';
+import React, { useState } from 'react';
+import { TestTagButton } from './TestTagButton';
 
-interface TagTableROProps {
-  data: PiTag[];
-  actionColumn?: (tag: PiTag) => React.ReactNode;
+interface PiTag {
+  id: string;
+  name: string;
+  description: string;
+  unit: string;
+  status: boolean | null;
 }
 
-const TagTableRO: React.FC<TagTableROProps> = ({ data, actionColumn }) => {
-  // Helper function to get appropriate class based on status
-  const getStatusClass = (status: string | null) => {
-    switch (status) {
-      case 'OK':
-        return 'bg-green-100 text-green-800';
-      case 'KO':
-        return 'bg-red-100 text-red-800';
-      case 'active':
-        return 'bg-blue-100 text-blue-800';
-      case 'inactive':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+interface TagTableROProps {
+  tags: PiTag[];
+  onTagTest: (tagName: string, result: boolean) => void;
+}
 
+const TagTableRO: React.FC<TagTableROProps> = ({ tags, onTagTest }) => {
   return (
-    <div className="bg-white rounded-lg shadow-sm ring-1 ring-dark/10 overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>ID</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Unit</TableHead>
-            <TableHead>Status</TableHead>
-            {actionColumn && <TableHead>Action</TableHead>}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data.map((tag) => (
-            <TableRow key={tag.id}>
-              <TableCell className="font-mono text-xs">{tag.id}</TableCell>
-              <TableCell className="font-medium">{tag.name}</TableCell>
-              <TableCell>{tag.description}</TableCell>
-              <TableCell>{tag.unit}</TableCell>
-              <TableCell>
-                {tag.status && (
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusClass(tag.status)}`}>
-                    {tag.status}
-                  </span>
-                )}
-              </TableCell>
-              {actionColumn && <TableCell>{actionColumn(tag)}</TableCell>}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+    <div className="overflow-x-auto" role="region" aria-labelledby="tag-table-label">
+      <h2 id="tag-table-label" className="sr-only">PI Tags Preview Table</h2>
+      
+      <table className="w-full bg-white border rounded-md shadow-sm">
+        <caption className="sr-only">Available PI tags with their details and test status</caption>
+        
+        <thead className="bg-gray-50">
+          <tr>
+            <th scope="col" className="px-4 py-3 text-left text-sm font-medium text-gray-600">
+              Tag Name
+            </th>
+            <th scope="col" className="px-4 py-3 text-left text-sm font-medium text-gray-600">
+              Description
+            </th>
+            <th scope="col" className="px-4 py-3 text-left text-sm font-medium text-gray-600">
+              Unit
+            </th>
+            <th scope="col" className="px-4 py-3 text-center text-sm font-medium text-gray-600">
+              Status
+            </th>
+            <th scope="col" className="px-4 py-3 text-center text-sm font-medium text-gray-600">
+              Action
+            </th>
+          </tr>
+        </thead>
+        
+        <tbody className="divide-y divide-gray-200">
+          {tags.length === 0 ? (
+            <tr>
+              <td colSpan={5} className="px-4 py-3 text-center text-gray-500">
+                No tags available for preview
+              </td>
+            </tr>
+          ) : (
+            tags.map((tag) => (
+              <tr key={tag.id}>
+                <td className="px-4 py-3 text-sm font-medium">{tag.name}</td>
+                <td className="px-4 py-3 text-sm text-gray-600">{tag.description}</td>
+                <td className="px-4 py-3 text-sm text-gray-600">{tag.unit}</td>
+                <td className="px-4 py-3 text-center">
+                  {tag.status === null ? (
+                    <span className="inline-block w-4 h-4 rounded-full bg-gray-300" 
+                          aria-label="Status: Not tested"></span>
+                  ) : tag.status ? (
+                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-800" 
+                          aria-label="Status: OK">
+                      <span aria-hidden="true">OK</span>
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-100 text-red-800" 
+                          aria-label="Status: Failed">
+                      <span aria-hidden="true">KO</span>
+                    </span>
+                  )}
+                </td>
+                <td className="px-4 py-3 text-center">
+                  <TestTagButton 
+                    tagName={tag.name} 
+                    onTestComplete={(result) => onTagTest(tag.name, result)} 
+                  />
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
     </div>
   );
 };

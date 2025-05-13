@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -12,6 +13,7 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const isMobile = useIsMobile();
   
   const getPageTitle = () => {
     switch (true) {
@@ -37,13 +39,16 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
   };
 
   return (
-    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 shadow-sm">
+    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 shadow-sm" role="banner">
       <div className="flex items-center gap-4">
         <button 
           onClick={toggleSidebar}
           className="p-2 text-gray-600 hover:bg-gray-100 rounded-md transition-standard md:hidden"
+          aria-label="Toggle sidebar navigation"
+          aria-expanded={isMobile ? "false" : "true"}
+          aria-controls="main-sidebar"
         >
-          <Menu size={20} />
+          <Menu size={20} aria-hidden="true" />
         </button>
         <div className="flex items-center gap-2">
           <img src="/logo.png" alt="ENGIE Logo" className="h-8 w-auto" />
@@ -54,7 +59,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
         </div>
       </div>
       
-      <h1 className="text-xl font-semibold text-dark hidden md:block">
+      <h1 className="text-xl font-semibold text-dark hidden md:block" id="page-title">
         {getPageTitle()}
       </h1>
       
@@ -69,13 +74,14 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
               variant="outline" 
               size="sm" 
               onClick={() => logout()}
+              aria-label="Log out"
             >
               Logout
             </Button>
           </>
         ) : (
           <Link to="/login">
-            <Button size="sm">Login</Button>
+            <Button size="sm" aria-label="Log in to the application">Login</Button>
           </Link>
         )}
       </div>

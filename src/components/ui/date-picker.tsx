@@ -12,6 +12,7 @@ interface DatePickerProps {
   onSelect: (date: Date | undefined) => void;
   disabled?: boolean;
   className?: string;
+  label?: string;
 }
 
 export function DatePicker({
@@ -19,11 +20,15 @@ export function DatePicker({
   onSelect,
   disabled = false,
   className,
+  label = "Date",
 }: DatePickerProps) {
+  const id = React.useId();
+  
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button
+          id={id}
           variant="outline"
           className={cn(
             "w-full justify-start text-left font-normal",
@@ -31,8 +36,10 @@ export function DatePicker({
             className
           )}
           disabled={disabled}
+          aria-label={`${label}: ${selected ? format(selected, "PPP") : "No date selected"}`}
+          aria-haspopup="dialog"
         >
-          <CalendarIcon className="mr-2 h-4 w-4" />
+          <CalendarIcon className="mr-2 h-4 w-4" aria-hidden="true" />
           {selected ? format(selected, "PPP") : <span>Pick a date</span>}
         </Button>
       </PopoverTrigger>
@@ -43,6 +50,7 @@ export function DatePicker({
           onSelect={onSelect}
           initialFocus
           className="pointer-events-auto"
+          disabled={disabled}
         />
       </PopoverContent>
     </Popover>

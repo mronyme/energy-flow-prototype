@@ -1,123 +1,115 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
 import UserList from '@/components/admin/UserList';
 import UserForm from '@/components/admin/UserForm';
 import { adminService } from '@/services/api';
 import { toast } from 'sonner';
-import { Role, User } from '@/types';
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useAnnouncer } from '@/components/common/A11yAnnouncer';
 
-const Users = () => {
+type User = {
+  id: string;
+  email: string;
+  role: 'Operator' | 'DataManager' | 'Manager' | 'Admin';
+};
+
+const Users: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [creating, setCreating] = useState(false);
-  
+  const { announcer, announce } = useAnnouncer();
+
+  // Fetch users on component mount
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const usersData = await adminService.getUsers();
+      setUsers(usersData);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast.error('Failed to load users');
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoading(true);
-        const usersData = await adminService.getUsers();
-        setUsers(usersData);
-      } catch (error) {
-        console.error('Error fetching users:', error);
-        toast.error('Failed to load users');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     fetchUsers();
   }, []);
-  
-  const handleUserSelect = (user: User) => {
-    setSelectedUser(user);
-    // In a real app, this would open a user details/edit view
-    toast.info(`Selected user: ${user.email}`);
-  };
-  
-  const handleOpenCreateDialog = () => {
-    setDialogOpen(true);
-  };
-  
-  const handleCreateUser = async (email: string, role: Role) => {
+
+  // Handle user creation
+  const handleCreateUser = async (formData: {
+    email: string;
+    password: string;
+    role: 'Operator' | 'DataManager' | 'Manager' | 'Admin';
+  }) => {
     try {
-      setCreating(true);
+      setLoading(true);
       
-      // For the prototype, we'll use a placeholder password
-      const password = 'Password123!'; // In a real app, this would be handled differently
-      
-      // Call service to create user
-      const result = await adminService.createUser({
-        email,
-        password,
-        role
-      });
+      // Call API to create user (IF-09)
+      const result = await adminService.createUser(formData);
       
       if (result.success) {
-        // Add new user to list
-        setUsers(prev => [...prev, result.user]);
+        // Success message
+        toast.success("User created");
+        announce("User created successfully", false);
         
-        // IF-09: Green toast "User created"
-        toast.success('User created');
-        
-        // Close dialog
+        // Close dialog and refresh list
         setDialogOpen(false);
+        await fetchUsers();
       }
+      
+      setLoading(false);
     } catch (error) {
       console.error('Error creating user:', error);
       toast.error('Failed to create user');
-    } finally {
-      setCreating(false);
+      setLoading(false);
     }
   };
-  
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <h1 className="text-2xl font-bold text-dark">User Management</h1>
+    <>
+      {announcer} {/* Screen reader announcements */}
+      
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-dark mb-2">User Management</h1>
+        <p className="text-gray-600">
+          Create and manage users with different roles.
+        </p>
+      </div>
+      
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-lg font-semibold">Users</h2>
+          <p className="text-sm text-gray-500">{users.length} users total</p>
+        </div>
         
-        <Button 
-          onClick={handleOpenCreateDialog}
-          className="transition-all duration-100 ease-out"
-        >
-          <Plus className="mr-2 h-4 w-4" />
+        <Button onClick={() => setDialogOpen(true)}>
           Create User
         </Button>
       </div>
       
-      <Card className="shadow-sm ring-1 ring-dark/10">
-        <CardHeader>
-          <CardTitle>Users</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-            </div>
-          ) : users.length > 0 ? (
-            <UserList users={users} onSelect={handleUserSelect} />
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              No users found
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* User List */}
+      {loading ? (
+        <div className="flex justify-center items-center p-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          <span className="sr-only">Loading users...</span>
+        </div>
+      ) : (
+        <UserList users={users} />
+      )}
       
+      {/* Create User Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Create New User</DialogTitle>
           </DialogHeader>
-          <UserForm onSubmit={handleCreateUser} isSubmitting={creating} />
+          <UserForm onSubmit={handleCreateUser} isSubmitting={loading} />
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 };
 

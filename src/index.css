@@ -44,6 +44,20 @@
   body {
     @apply bg-background text-foreground font-sans;
   }
+
+  /* Global focus styles for all focusable elements */
+  :focus-visible {
+    @apply outline-none ring-2 ring-primary ring-offset-2;
+  }
+
+  /* Skip links for keyboard navigation */
+  .sr-only-focusable:not(:focus) {
+    @apply sr-only;
+  }
+
+  .sr-only-focusable:focus {
+    @apply not-sr-only fixed top-1 left-1 z-50 bg-white p-4 shadow-lg;
+  }
 }
 
 @layer components {
@@ -59,6 +73,7 @@
     @apply text-xs font-medium rounded px-2 py-0.5;
   }
   
+  /* Improved color contrast for badges to meet WCAG 2.1 AA */
   .alert-badge-error {
     @apply alert-badge bg-red-100 text-red-800;
   }
@@ -73,5 +88,60 @@
   
   .alert-badge-info {
     @apply alert-badge bg-blue-100 text-blue-800;
+  }
+
+  /* Accessible focus indicators */
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
+  }
+
+  /* Mobile responsive utilities */
+  .mobile-container {
+    @apply px-4 md:px-6 lg:px-8;
+  }
+  
+  .content-container {
+    @apply max-w-7xl mx-auto w-full;
+  }
+}
+
+/* Fix Windows high-contrast mode visibility issues */
+@media (forced-colors: active) {
+  .button, .link, [role="button"], button, a {
+    forced-color-adjust: none;
+  }
+}
+
+/* Screen reader only content */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Animation utilities */
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Mobile responsive layout helpers */
+@media (max-width: 640px) {
+  .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
   }
 }
