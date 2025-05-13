@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { AlertCardSummary } from '@/components/data-quality/AlertCard';
 import CorrectionModal from '@/components/data-quality/CorrectionModal';
@@ -12,7 +11,7 @@ import { format, subDays } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, Ban, Info } from 'lucide-react';
-import { AnomalyType } from '@/types';
+import { AnomalyType, MeterType } from '@/types';
 import { toastMessages } from '@/utils/validation';
 
 // Updated interface to match the CorrectionModal component's expected props
@@ -29,7 +28,7 @@ interface AnomalyData {
   comment: string | null;
   site: string;
   meter: string;
-  meterType: string;
+  meterType: MeterType;
   timestamp: string;
 }
 
@@ -91,8 +90,7 @@ const Anomalies: React.FC = () => {
         site: anomaly.siteName, // Add site property for compatibility
         meter: anomaly.meterName, // Add meter property for compatibility
         comment: anomaly.comment || null, // Ensure comment is never undefined
-        meterType: anomaly.type === 'ELEC' ? 'ELEC' : 
-                  anomaly.type === 'GAS' ? 'GAS' : 'WATER' // Fix: Add meterType property
+        meterType: anomaly.meterType // Fix: Use the meterType property directly
       }));
       
       setAnomalies(mappedAnomalies);
