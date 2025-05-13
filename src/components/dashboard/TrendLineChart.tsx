@@ -17,21 +17,30 @@ interface TrendLineChartProps {
     day: string;
     [key: string]: any;
   }>;
-  dataKeys: Array<{
+  dataKeys?: Array<{
     key: string;
     color: string;
     name: string;
   }>;
   xAxisDataKey?: string;
   title?: string;
+  focusMetric?: string;
 }
 
 const TrendLineChart: React.FC<TrendLineChartProps> = ({
   data,
   dataKeys,
   xAxisDataKey = 'day',
-  title
+  title,
+  focusMetric
 }) => {
+  // Default dataKeys if not provided
+  const chartDataKeys = dataKeys || [
+    { key: 'kwh', color: '#3b82f6', name: 'Consumption (kWh)' },
+    { key: 'co2', color: '#10b981', name: 'CO₂ Emissions' },
+    { key: 'cost_eur', color: '#f59e0b', name: 'Cost (EUR)' }
+  ];
+  
   // Format X-axis tick values for date strings
   const formatXAxis = (value: string) => {
     if (!value) return '';
@@ -65,16 +74,17 @@ const TrendLineChart: React.FC<TrendLineChartProps> = ({
             />
             <Legend />
             
-            {dataKeys.map((dataKey) => (
+            {chartDataKeys.map((dataKey) => (
               <Line
                 key={dataKey.key}
                 type="monotone"
                 dataKey={dataKey.key}
                 name={dataKey.name}
                 stroke={dataKey.color}
-                strokeWidth={2}
+                strokeWidth={focusMetric === dataKey.key ? 3 : 2}
                 dot={{ r: 4 }}
                 activeDot={{ r: 6 }}
+                opacity={focusMetric && focusMetric !== dataKey.key ? 0.3 : 1}
               />
             ))}
           </LineChart>

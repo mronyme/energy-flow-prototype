@@ -9,9 +9,10 @@ import { AnomalyData } from '@/types/anomaly-data';
 export interface AlertCardProps {
   anomalyData: AnomalyData;
   onClick: () => void;
+  selected?: boolean;
 }
 
-const AlertCard: React.FC<AlertCardProps> = ({ anomalyData, onClick }) => {
+const AlertCard: React.FC<AlertCardProps> = ({ anomalyData, onClick, selected = false }) => {
   const {
     type,
     delta,
@@ -27,7 +28,9 @@ const AlertCard: React.FC<AlertCardProps> = ({ anomalyData, onClick }) => {
   
   return (
     <Card 
-      className="relative overflow-hidden hover:shadow-md transition-all duration-100 ease-out cursor-pointer"
+      className={`relative overflow-hidden hover:shadow-md transition-all duration-100 ease-out cursor-pointer ${
+        selected ? 'ring-2 ring-primary' : ''
+      }`}
       onClick={onClick}
     >
       <div className="p-4">

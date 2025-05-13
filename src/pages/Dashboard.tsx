@@ -1,274 +1,235 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import KpiCard from '@/components/dashboard/KpiCard';
 import TrendLineChart from '@/components/dashboard/TrendLineChart';
-import { useDashboardData } from '@/hooks/useDashboardData';
-import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { dateUtils } from '@/utils/validation';
-import { Site } from '@/types';
-import ExportPanel from '@/components/dashboard/ExportPanel';
-import { ArrowLeft } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { BarChartIcon, LineChartIcon, PieChartIcon, Download, Calendar } from 'lucide-react';
+import { useDashboardData } from '@/hooks/useDashboardData';
+import ExportPanel from '@/components/dashboard/ExportPanel';
+import { DatePicker } from '@/components/ui/date-picker';
 
 const Dashboard: React.FC = () => {
-  const [searchParams] = useSearchParams();
-  const detailView = searchParams.get('view');
-  const siteParam = searchParams.get('site') || 'all';
-  const periodParam = searchParams.get('period') || 'week';
+  const [selectedSite, setSelectedSite] = useState<string>('all');
+  const [selectedPeriod, setSelectedPeriod] = useState<string>('month');
+  const [selectedKpi, setSelectedKpi] = useState<string>('kwh');
+  const [startDate, setStartDate] = useState<Date>(new Date(new Date().setDate(1))); // First day of current month
+  const [endDate, setEndDate] = useState<Date>(new Date());
+  const [showExport, setShowExport] = useState(false);
   
-  const [selectedSite, setSelectedSite] = useState<string>(siteParam);
-  const [periodType, setPeriodType] = useState<'week' | 'month'>(periodParam as 'week' | 'month');
-  const [currentDetailView, setCurrentDetailView] = useState<string | null>(detailView);
+  const { data: dashboardData, isLoading, error } = useDashboardData(selectedSite, startDate, endDate);
   
-  const navigate = useNavigate();
-  const location = useLocation();
-  
-  // Get dashboard data using our custom hook
-  const {
-    sites,
-    chartData,
-    loading,
-    totalKwh,
-    totalCo2,
-    totalCost,
-    kwhChange,
-    co2Change,
-    costChange
-  } = useDashboardData(periodType, selectedSite);
-  
-  console.info('Dashboard renders with chart data:', chartData.length, 'items');
-  console.info('Current detail view:', currentDetailView);
-  
-  // Effect to handle URL parameter changes
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const viewParam = params.get('view');
-    const siteParam = params.get('site');
-    const periodParam = params.get('period');
-    
-    setCurrentDetailView(viewParam);
-    
-    if (siteParam) {
-      setSelectedSite(siteParam);
-    }
-    
-    if (periodParam === 'week' || periodParam === 'month') {
-      setPeriodType(periodParam);
-    }
-  }, [location.search]);
-  
-  // Handle site change
   const handleSiteChange = (value: string) => {
     setSelectedSite(value);
-    
-    // Update URL without losing other parameters
-    const params = new URLSearchParams(location.search);
-    params.set('site', value);
-    
-    navigate({
-      pathname: location.pathname,
-      search: params.toString()
-    });
   };
   
-  // Handle period type change
-  const handlePeriodChange = (value: 'week' | 'month') => {
-    setPeriodType(value);
+  const handlePeriodChange = (value: string) => {
+    setSelectedPeriod(value);
     
-    // Update URL without losing other parameters
-    const params = new URLSearchParams(location.search);
-    params.set('period', value);
+    // Adjust date range based on selected period
+    const today = new Date();
+    let newStartDate = new Date();
     
-    navigate({
-      pathname: location.pathname,
-      search: params.toString()
-    });
-  };
-  
-  // Handle KPI card click for drill-down
-  const handleKpiCardClick = (kpiType: string) => {
-    // Update URL with the selected KPI type
-    const params = new URLSearchParams(location.search);
-    params.set('view', kpiType);
-    
-    navigate({
-      pathname: location.pathname,
-      search: params.toString()
-    });
-  };
-  
-  // Handle back button click to clear detail view
-  const handleBackClick = () => {
-    const params = new URLSearchParams(location.search);
-    params.delete('view');
-    
-    navigate({
-      pathname: location.pathname,
-      search: params.toString()
-    });
-  };
-  
-  // Get current site name
-  const getCurrentSiteName = () => {
-    if (selectedSite === 'all') return 'All Sites';
-    const site = sites.find(s => s.id === selectedSite);
-    return site ? site.name : 'Unknown Site';
-  };
-  
-  // Get date range for the current period
-  const getDateRange = () => {
-    const endDate = new Date();
-    const startDate = new Date();
-    
-    if (periodType === 'week') {
-      startDate.setDate(startDate.getDate() - 7);
-    } else {
-      startDate.setDate(startDate.getDate() - 30);
+    switch (value) {
+      case 'week':
+        newStartDate = new Date(today);
+        newStartDate.setDate(today.getDate() - 7);
+        break;
+      case 'month':
+        newStartDate = new Date(today.getFullYear(), today.getMonth(), 1);
+        break;
+      case 'quarter':
+        newStartDate = new Date(today.getFullYear(), Math.floor(today.getMonth() / 3) * 3, 1);
+        break;
+      case 'year':
+        newStartDate = new Date(today.getFullYear(), 0, 1);
+        break;
     }
     
-    return { startDate, endDate };
+    setStartDate(newStartDate);
+    setEndDate(today);
   };
   
-  // Prepare chart title based on current view
-  const getChartTitle = () => {
-    const siteName = getCurrentSiteName();
-    let kpiTitle = 'Energy Consumption';
-    
-    if (currentDetailView === 'co2') {
-      kpiTitle = 'CO₂ Emissions';
-    } else if (currentDetailView === 'cost') {
-      kpiTitle = 'Energy Cost';
-    }
-    
-    return `${kpiTitle} - ${siteName}`;
+  const handleKpiSelect = (kpi: string) => {
+    setSelectedKpi(kpi);
   };
+  
+  const toggleExportPanel = () => {
+    setShowExport(!showExport);
+  };
+  
+  // Calculate summary metrics
+  const totalKwh = dashboardData?.reduce((sum, day) => sum + day.kwh, 0) || 0;
+  const totalCo2 = dashboardData?.reduce((sum, day) => sum + day.co2, 0) || 0;
+  const totalCost = dashboardData?.reduce((sum, day) => sum + day.cost_eur, 0) || 0;
+  
+  // Calculate change vs previous period (simplified for demo)
+  // In a real app, we would fetch comparison data
+  const kwhChange = 5.2;
+  const co2Change = -3.8;
+  const costChange = 7.1;
+  
+  // Define dataKeys for the chart
+  const dataKeys = [
+    { key: 'kwh', color: '#3b82f6', name: 'Consumption (kWh)' },
+    { key: 'co2', color: '#10b981', name: 'CO₂ Emissions' },
+    { key: 'cost_eur', color: '#f59e0b', name: 'Cost (EUR)' }
+  ];
   
   return (
-    <div className="space-y-4 p-4 pt-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
+    <div className="container mx-auto py-8">
+      <div className="flex flex-col md:flex-row justify-between items-start mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
+          <p className="text-gray-500">Monitor and analyze your energy consumption.</p>
+        </div>
         
-        <div className="flex flex-wrap gap-2">
-          <Select value={selectedSite} onValueChange={handleSiteChange}>
+        <div className="flex flex-col sm:flex-row gap-4 mt-4 md:mt-0">
+          <Select
+            value={selectedSite}
+            onValueChange={handleSiteChange}
+          >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Select site" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Sites</SelectItem>
-              {sites.map((site) => (
-                <SelectItem key={site.id} value={site.id}>
-                  {site.name}
-                </SelectItem>
-              ))}
+              <SelectItem value="site1">Paris HQ</SelectItem>
+              <SelectItem value="site2">Frankfurt DC</SelectItem>
+              <SelectItem value="site3">Madrid Office</SelectItem>
             </SelectContent>
           </Select>
           
-          <Tabs value={periodType} onValueChange={(v) => handlePeriodChange(v as 'week' | 'month')}>
-            <TabsList>
-              <TabsTrigger value="week">Week</TabsTrigger>
-              <TabsTrigger value="month">Month</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <Select
+            value={selectedPeriod}
+            onValueChange={handlePeriodChange}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select period" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="week">Last 7 days</SelectItem>
+              <SelectItem value="month">This Month</SelectItem>
+              <SelectItem value="quarter">This Quarter</SelectItem>
+              <SelectItem value="year">This Year</SelectItem>
+              <SelectItem value="custom">Custom Range</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
       
-      {!currentDetailView ? (
-        // Overview with all KPIs
-        <>
-          <div className="grid gap-4 md:grid-cols-3">
-            <KpiCard
-              title="Energy Consumption"
-              value={totalKwh}
-              unit="kWh"
-              change={kwhChange}
-              onClick={() => handleKpiCardClick('energy')}
-            />
-            <KpiCard
-              title="CO₂ Emissions"
-              value={totalCo2}
-              unit="kg CO₂"
-              change={co2Change}
-              onClick={() => handleKpiCardClick('co2')}
-            />
-            <KpiCard
-              title="Energy Cost"
-              value={totalCost}
-              unit="€"
-              change={costChange}
-              onClick={() => handleKpiCardClick('cost')}
+      {selectedPeriod === 'custom' && (
+        <div className="flex flex-wrap gap-4 mb-6">
+          <div>
+            <Label>Start Date</Label>
+            <DatePicker
+              selected={startDate}
+              onSelect={setStartDate}
+              maxDate={new Date()}
             />
           </div>
+          <div>
+            <Label>End Date</Label>
+            <DatePicker
+              selected={endDate}
+              onSelect={setEndDate}
+              maxDate={new Date()}
+              minDate={startDate}
+            />
+          </div>
+        </div>
+      )}
+      
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <KpiCard
+          title="Energy Consumption"
+          value={totalKwh.toLocaleString()}
+          unit="kWh"
+          change={kwhChange}
+          icon={<BarChartIcon />}
+          onClick={() => handleKpiSelect('kwh')}
+          isActive={selectedKpi === 'kwh'}
+        />
+        
+        <KpiCard
+          title="CO₂ Emissions"
+          value={totalCo2.toLocaleString()}
+          unit="kg"
+          change={co2Change}
+          icon={<LineChartIcon />}
+          onClick={() => handleKpiSelect('co2')}
+          isActive={selectedKpi === 'co2'}
+        />
+        
+        <KpiCard
+          title="Energy Cost"
+          value={totalCost.toLocaleString()}
+          unit="EUR"
+          change={costChange}
+          icon={<PieChartIcon />}
+          onClick={() => handleKpiSelect('cost_eur')}
+          isActive={selectedKpi === 'cost_eur'}
+        />
+      </div>
+      
+      {/* Tabs for different views */}
+      <Tabs defaultValue="chart">
+        <div className="flex justify-between items-center mb-4">
+          <TabsList>
+            <TabsTrigger value="chart">Chart</TabsTrigger>
+            <TabsTrigger value="details">Details</TabsTrigger>
+          </TabsList>
           
+          <Button variant="outline" onClick={toggleExportPanel}>
+            <Download className="w-4 h-4 mr-2" />
+            Export Data
+          </Button>
+        </div>
+        
+        <TabsContent value="chart" className="space-y-6">
+          {/* Main chart */}
+          <TrendLineChart 
+            data={dashboardData || []} 
+            dataKeys={dataKeys}
+            focusMetric={selectedKpi}
+          />
+          
+          {/* Additional charts could go here */}
+        </TabsContent>
+        
+        <TabsContent value="details">
+          {/* Detailed view with tables would go here */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <div>
-                <CardTitle>Energy Monitoring Overview</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  {dateUtils.formatDisplay(getDateRange().startDate.toISOString())} - {dateUtils.formatDisplay(getDateRange().endDate.toISOString())}
-                </p>
-              </div>
-              
-              <ExportPanel 
-                data={chartData} 
-                siteName={getCurrentSiteName()}
-                dateRange={getDateRange()}
-              />
+            <CardHeader>
+              <CardTitle>Detailed Consumption Data</CardTitle>
             </CardHeader>
             <CardContent>
-              <TrendLineChart data={chartData} />
+              {/* Table would go here */}
+              <p>Detailed consumption data would be displayed here in tabular format.</p>
             </CardContent>
           </Card>
-        </>
-      ) : (
-        // Detail view for a specific KPI
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <div>
-              <div className="flex items-center space-x-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={handleBackClick} 
-                  className="mr-2"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  <span className="sr-only">Back</span>
-                </Button>
-                <CardTitle>{getChartTitle()}</CardTitle>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {dateUtils.formatDisplay(getDateRange().startDate.toISOString())} - {dateUtils.formatDisplay(getDateRange().endDate.toISOString())}
-              </p>
-            </div>
-            
-            <ExportPanel 
-              data={chartData} 
-              siteName={getCurrentSiteName()}
-              dateRange={getDateRange()}
-            />
-          </CardHeader>
-          <CardContent className="pt-6">
-            <TrendLineChart 
-              data={chartData} 
-              focusMetric={
-                currentDetailView === 'co2' ? 'co2' : 
-                currentDetailView === 'cost' ? 'cost_eur' : 'kwh'
-              } 
-            />
-          </CardContent>
-        </Card>
-      )}
+        </TabsContent>
+      </Tabs>
+      
+      <ExportPanel 
+        isOpen={showExport} 
+        onClose={() => setShowExport(false)} 
+        data={dashboardData || []} 
+        dateRange={{ start: startDate, end: endDate }}
+      />
     </div>
   );
 };
+
+// Helper component for the custom date range
+const Label: React.FC<{children: React.ReactNode}> = ({ children }) => (
+  <div className="text-sm font-medium mb-1 flex items-center">
+    <Calendar className="w-4 h-4 mr-1" />
+    {children}
+  </div>
+);
 
 export default Dashboard;

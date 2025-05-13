@@ -18,9 +18,9 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { AnomalyType, AnomalyData } from '@/types';
 import { dateUtils } from '@/utils/validation';
 import { toast } from 'sonner';
+import { AnomalyData } from '@/types/anomaly-data';
 
 interface BulkCorrectionModalProps {
   isOpen: boolean;

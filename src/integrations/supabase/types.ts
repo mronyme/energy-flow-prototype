@@ -41,6 +41,42 @@ export type Database = {
           },
         ]
       }
+      audit_log: {
+        Row: {
+          action: string
+          description: string | null
+          id: string
+          new_value: string | null
+          old_value: string | null
+          record_id: string | null
+          table_name: string
+          ts: string
+          user_email: string
+        }
+        Insert: {
+          action: string
+          description?: string | null
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          record_id?: string | null
+          table_name: string
+          ts?: string
+          user_email: string
+        }
+        Update: {
+          action?: string
+          description?: string | null
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          record_id?: string | null
+          table_name?: string
+          ts?: string
+          user_email?: string
+        }
+        Relationships: []
+      }
       import_log: {
         Row: {
           file_name: string

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowDownIcon, ArrowUpIcon } from 'lucide-react';
+import { ArrowDownIcon, ArrowUpIcon, BarChart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface KpiCardProps {
@@ -9,7 +9,7 @@ interface KpiCardProps {
   value: string | number;
   unit: string;
   change: number;
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
   onClick?: () => void;
   isActive?: boolean;
 }
@@ -37,7 +37,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
       <CardContent className="p-5">
         <div className="flex justify-between items-start mb-2">
           <h3 className="text-base font-medium text-dark">{title}</h3>
-          <div className="text-gray-600">{icon}</div>
+          <div className="text-gray-600">{icon || <BarChart size={18} />}</div>
         </div>
         
         <div className="flex flex-col gap-1">

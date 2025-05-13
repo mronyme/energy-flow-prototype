@@ -5,13 +5,13 @@ import DataGridEditableAdapter from '@/components/admin/DataGridEditableAdapter'
 import EmissionFactorForm from '@/components/admin/EmissionFactorForm';
 import AuditLogViewer from '@/components/admin/AuditLogViewer';
 
-// Sample columns for the emission factors grid
+// Fixed columns format for the emission factors grid
 const columns = [
-  { name: 'country', header: 'Country', width: 100 },
-  { name: 'co2_factor', header: 'CO₂ Factor', width: 120, type: 'number' },
-  { name: 'unit', header: 'Unit', width: 120 },
-  { name: 'source', header: 'Source', width: 200 },
-  { name: 'notes', header: 'Notes', width: 250 },
+  { field: 'country', headerName: 'Country', type: 'text' },
+  { field: 'co2_factor', headerName: 'CO₂ Factor', type: 'number' },
+  { field: 'unit', headerName: 'Unit', type: 'text' },
+  { field: 'source', headerName: 'Source', type: 'text' },
+  { field: 'notes', headerName: 'Notes', type: 'text' },
 ];
 
 interface EmissionFactor {

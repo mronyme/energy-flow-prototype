@@ -13,6 +13,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { meterService, readingService, siteService } from '@/services/api';
 import RealTimeValidation from './RealTimeValidation';
 import { useAnnouncer } from '@/components/common/A11yAnnouncer';
+import { Meter, Reading } from '@/types';
 
 const formSchema = z.object({
   meter_id: z.string().min(1, { message: 'Meter is required' }),
@@ -26,15 +27,14 @@ interface ManualEntryFormProps {
   onSave: () => void;
 }
 
-interface Meter {
-  id: string;
-  name: string;
-  type: string;
+// Extend the Meter type to include name
+interface MeterWithName extends Meter {
+  name?: string;
 }
 
 const ManualEntryForm: React.FC<ManualEntryFormProps> = ({ onSave }) => {
   const [sites, setSites] = useState<{id: string, name: string}[]>([]);
-  const [meters, setMeters] = useState<Meter[]>([]);
+  const [meters, setMeters] = useState<MeterWithName[]>([]);
   const [selectedSite, setSelectedSite] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
   const [historicalValues, setHistoricalValues] = useState<number[]>([]);
@@ -78,10 +78,14 @@ const ManualEntryForm: React.FC<ManualEntryFormProps> = ({ onSave }) => {
       
       try {
         const metersData = await meterService.getMetersBySite(selectedSite);
-        setMeters(metersData);
+        const metersWithNames = metersData.map(meter => ({
+          ...meter,
+          name: `Meter ${meter.id.substring(0, 8)} (${meter.type})`
+        }));
+        setMeters(metersWithNames);
         
-        if (metersData.length > 0) {
-          setValue('meter_id', metersData[0].id);
+        if (metersWithNames.length > 0) {
+          setValue('meter_id', metersWithNames[0].id);
         } else {
           setValue('meter_id', '');
         }
@@ -109,14 +113,19 @@ const ManualEntryForm: React.FC<ManualEntryFormProps> = ({ onSave }) => {
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - 30);
         
-        const readings = await readingService.getReadingsByMeter(
-          watchedMeterId,
-          startDate.toISOString().split('T')[0],
-          endDate.toISOString().split('T')[0]
+        const startDateStr = startDate.toISOString().split('T')[0];
+        const endDateStr = endDate.toISOString().split('T')[0];
+        
+        // Use getReadings and filter by meter_id
+        const allReadings = await readingService.getReadings();
+        const meterReadings = allReadings.filter(
+          r => r.meter_id === watchedMeterId && 
+          r.ts >= startDateStr && 
+          r.ts <= endDateStr
         );
         
         // Extract just the values for validation
-        const values = readings.map(r => r.value).filter(v => v !== null) as number[];
+        const values = meterReadings.map(r => r.value).filter(v => v !== null) as number[];
         setHistoricalValues(values);
       } catch (error) {
         console.error('Error loading historical data:', error);

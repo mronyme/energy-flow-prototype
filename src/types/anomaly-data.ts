@@ -1,6 +1,4 @@
 
-import { AnomalyType } from './index';
-
 export interface AnomalyData {
   id: string;
   readingId: string;
@@ -11,7 +9,7 @@ export interface AnomalyData {
   meterType: string;
   siteId: string;
   siteName: string;
-  type: AnomalyType;
+  type: 'SPIKE' | 'MISSING' | 'FLAT';
   delta: number | null;
   comment: string | null;
 }
