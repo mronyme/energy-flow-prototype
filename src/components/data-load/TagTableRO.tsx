@@ -1,4 +1,3 @@
-
 import React from 'react';
 import TestTagButton from './TestTagButton';
 import { PiTag } from '@/types/pi-tag';
@@ -12,7 +11,7 @@ interface TagTableROProps {
 
 const TagTableRO: React.FC<TagTableROProps> = ({ tags, loading, onTagTest }) => {
   // Helper function to determine status display
-  const renderStatus = (status: boolean | string) => {
+  const renderStatus = (status: 'OK' | 'KO' | 'active' | 'inactive') => {
     if (status === null || status === undefined) {
       return (
         <span className="inline-block w-4 h-4 rounded-full bg-gray-300" 
@@ -20,13 +19,15 @@ const TagTableRO: React.FC<TagTableROProps> = ({ tags, loading, onTagTest }) => 
       );
     }
     
-    if (typeof status === 'boolean') {
-      return status ? (
+    if (status === 'OK' || status === 'active') {
+      return (
         <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-800" 
               aria-label="Status: OK">
           <span aria-hidden="true">OK</span>
         </span>
-      ) : (
+      );
+    } else if (status === 'KO' || status === 'inactive') {
+      return (
         <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-100 text-red-800" 
               aria-label="Status: Failed">
           <span aria-hidden="true">KO</span>
@@ -34,7 +35,7 @@ const TagTableRO: React.FC<TagTableROProps> = ({ tags, loading, onTagTest }) => 
       );
     }
     
-    // If status is a string
+    // Fallback (should never reach here since we now have a strict type)
     return (
       <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-gray-800">
         {status}
@@ -43,9 +44,7 @@ const TagTableRO: React.FC<TagTableROProps> = ({ tags, loading, onTagTest }) => 
   };
   
   // Helper function to determine TestTagButton status
-  const getButtonStatus = (status: boolean | string): string | null => {
-    if (status === null || status === undefined) return null;
-    if (typeof status === 'boolean') return status ? 'OK' : 'KO';
+  const getButtonStatus = (status: 'OK' | 'KO' | 'active' | 'inactive'): 'OK' | 'KO' | 'active' | 'inactive' => {
     return status;
   };
 

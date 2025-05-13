@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -84,7 +83,8 @@ const PiPreview: React.FC = () => {
     name: csvRow.tag_name,
     description: csvRow.description || '',
     unit: csvRow.unit || '',
-    status: csvRow.status === 'active'
+    // Convert status string to one of the allowed values
+    status: csvRow.status === 'active' ? 'active' : 'inactive'
   });
   
   const handleTestTag = async (tagName: string) => {
@@ -97,7 +97,7 @@ const PiPreview: React.FC = () => {
           t.name === tagName 
             ? { 
                 ...t, 
-                status: result.success,
+                status: result.success ? 'OK' : 'KO',
                 value: result.value,
                 timestamp: result.timestamp
               } 
