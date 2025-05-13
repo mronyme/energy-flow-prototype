@@ -1,10 +1,11 @@
 
 import React from 'react';
 import { AlertTriangle, Info } from 'lucide-react';
+import { AnomalyType } from '../../types';
 
 interface AlertCardProps {
   title: string;
-  type: 'SPIKE' | 'MISSING' | 'FLAT';
+  type: AnomalyType;
   date: string;
   value: number | null;
   delta?: number | null;
@@ -51,7 +52,7 @@ const AlertCard: React.FC<AlertCardProps> = ({
 
   return (
     <div 
-      className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-all cursor-pointer"
+      className="bg-white rounded-lg shadow-sm ring-1 ring-dark/10 p-4 hover:shadow-md transition-all duration-100 ease-out cursor-pointer"
       onClick={onClick}
     >
       <div className="flex justify-between items-start mb-3">

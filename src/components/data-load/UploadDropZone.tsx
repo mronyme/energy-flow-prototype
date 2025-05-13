@@ -4,12 +4,14 @@ import { Upload } from 'lucide-react';
 
 interface UploadDropZoneProps {
   onFileSelect: (file: File) => void;
+  onFileProcessed: (parsedData: any[], file: File) => void;
   accept?: string;
   maxSize?: number; // in MB
 }
 
 const UploadDropZone: React.FC<UploadDropZoneProps> = ({
   onFileSelect,
+  onFileProcessed,
   accept = '.csv',
   maxSize = 5 // Default 5MB
 }) => {
@@ -62,6 +64,18 @@ const UploadDropZone: React.FC<UploadDropZoneProps> = ({
       
       if (validateFile(file)) {
         onFileSelect(file);
+        
+        // Read and parse CSV
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          if (event.target?.result) {
+            const csvData = event.target.result as string;
+            const parsedData = parseCSV(csvData);
+            onFileProcessed(parsedData, file);
+          }
+        };
+        
+        reader.readAsText(file);
       }
     }
   };
@@ -72,8 +86,42 @@ const UploadDropZone: React.FC<UploadDropZoneProps> = ({
       
       if (validateFile(file)) {
         onFileSelect(file);
+        
+        // Read and parse CSV
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          if (event.target?.result) {
+            const csvData = event.target.result as string;
+            const parsedData = parseCSV(csvData);
+            onFileProcessed(parsedData, file);
+          }
+        };
+        
+        reader.readAsText(file);
       }
     }
+  };
+  
+  const parseCSV = (csvData: string): any[] => {
+    // Simple CSV parsing logic
+    const lines = csvData.split('\n');
+    const headers = lines[0].split(',').map(header => header.trim());
+    
+    const result = [];
+    for (let i = 1; i < lines.length; i++) {
+      if (lines[i].trim() === '') continue;
+      
+      const obj: Record<string, string> = {};
+      const currentLine = lines[i].split(',');
+      
+      for (let j = 0; j < headers.length; j++) {
+        obj[headers[j]] = currentLine[j]?.trim() || '';
+      }
+      
+      result.push(obj);
+    }
+    
+    return result;
   };
   
   const handleClick = () => {
@@ -86,7 +134,7 @@ const UploadDropZone: React.FC<UploadDropZoneProps> = ({
     <div
       className={`
         border-2 border-dashed rounded-lg p-8
-        transition-all duration-200 ease-in-out
+        transition-all duration-200 ease-out
         flex flex-col items-center justify-center
         cursor-pointer
         ${isDragging 

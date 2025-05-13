@@ -54,56 +54,23 @@ export const meterService = {
   
   getMetersBySite: async (siteId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('meter')
-        .select('id, site_id, type')
-        .eq('site_id', siteId);
-        
-      if (error) throw error;
-      
-      // Transform data to include a name field
-      return (data || []).map(meter => ({
-        ...meter,
-        name: `${meter.type}-${meter.id.substring(0, 8)}`
-      }));
+      // Mock implementation for the prototype
+      // In a real implementation, this would call the API
+      await delay(500);
+      return mockMeters.filter(meter => meter.site_id === siteId);
     } catch (error) {
       console.error('Error fetching meters:', error);
       throw error;
     }
   },
   
-  saveReading: async ({ meter_id, value, ts }: { meter_id: string, value: number, ts: string }) => {
+  saveReading: async (data: { meter_id: string; value: number; ts: string }) => {
     try {
-      // Check if reading already exists
-      const { data: existingReadings, error: fetchError } = await supabase
-        .from('reading')
-        .select('id')
-        .eq('meter_id', meter_id)
-        .eq('ts', ts)
-        .maybeSingle();
-        
-      if (fetchError) throw fetchError;
-      
-      if (existingReadings) {
-        // Update existing reading
-        const { error } = await supabase
-          .from('reading')
-          .update({ value })
-          .eq('id', existingReadings.id);
-          
-        if (error) throw error;
-        return { id: existingReadings.id, updated: true };
-      } else {
-        // Insert new reading
-        const { data, error } = await supabase
-          .from('reading')
-          .insert({ meter_id, value, ts })
-          .select('id')
-          .single();
-          
-        if (error) throw error;
-        return { id: data.id, updated: false };
-      }
+      // Mock implementation for the prototype
+      await delay(800);
+      // This would be replaced with a real API call in production
+      console.log('Saving reading:', data);
+      return { success: true };
     } catch (error) {
       console.error('Error saving reading:', error);
       throw error;
@@ -334,123 +301,112 @@ export const importLogService = {
 export const anomalyService = {
   getAll: async (): Promise<Anomaly[]> => {
     try {
-      const { data, error } = await supabase
-        .from('anomaly')
-        .select('*');
-      
-      if (error) throw error;
-      return data as Anomaly[];
+      // Mock implementation
+      await delay(800);
+      return mockAnomalies;
     } catch (error) {
       console.error('Error fetching anomalies:', error);
       return [];
     }
   },
   
-  getByReadingId: async (readingId: string): Promise<Anomaly | null> => {
+  getSites: async () => {
     try {
-      const { data, error } = await supabase
-        .from('anomaly')
-        .select('*')
-        .eq('reading_id', readingId)
-        .single();
-      
-      if (error) throw error;
-      return data as Anomaly;
+      // Mock implementation for the prototype
+      await delay(500);
+      return mockSites;
     } catch (error) {
-      console.error('Error fetching anomaly by reading ID:', error);
-      return null;
+      console.error('Error fetching sites:', error);
+      throw error;
     }
   },
   
-  update: async (anomaly: Partial<Anomaly>): Promise<Anomaly | null> => {
+  getAnomalies: async ({ siteId, startDate, endDate }: { siteId?: string; startDate: string; endDate: string }) => {
     try {
-      const { data, error } = await supabase
-        .from('anomaly')
-        .update({ 
-          comment: anomaly.comment,
-          delta: anomaly.delta
-        })
-        .eq('id', anomaly.id)
-        .select();
+      // Mock implementation
+      await delay(800);
       
-      if (error) throw error;
-      return data && data.length > 0 ? data[0] as Anomaly : null;
+      let filteredAnomalies = [...mockAnomalies];
+      
+      // Filter by site if specified
+      if (siteId && siteId !== 'all') {
+        filteredAnomalies = filteredAnomalies.filter(
+          anomaly => anomaly.site === siteId
+        );
+      }
+      
+      // In a real app, we would filter by date range here
+      
+      return filteredAnomalies;
     } catch (error) {
-      console.error('Error updating anomaly:', error);
-      return null;
+      console.error('Error fetching filtered anomalies:', error);
+      throw error;
     }
   },
   
-  updateComment: async (id: string, comment: string): Promise<Anomaly | null> => {
+  getByReadingId: async (readingId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('anomaly')
-        .update({ comment })
-        .eq('id', id)
-        .select();
-      
-      if (error) throw error;
-      return data && data.length > 0 ? data[0] as Anomaly : null;
-    } catch (error) {
-      console.error('Error updating anomaly comment:', error);
-      return null;
-    }
-  },
-  
-  getAnomalyDetails: async (): Promise<any[]> => {
-    try {
-      // This is a more complex query that joins anomaly with reading, meter, and site
-      const { data, error } = await supabase
-        .from('anomaly')
-        .select(`
-          id,
-          reading_id,
-          type,
-          delta,
-          comment,
-          reading:reading_id (
-            id,
-            meter_id,
-            ts,
-            value
-          ),
-          meter:reading(meter:meter_id (
-            id,
-            type,
-            site:site_id (
-              id,
-              name
-            )
-          ))
-        `);
-      
-      if (error) throw error;
-      
-      // Transform data to match expected format
-      const transformedData = data.map(anomaly => {
-        const reading = anomaly.reading;
-        const meter = anomaly.meter?.meter;
-        const site = meter?.site;
-        
-        return {
-          id: anomaly.id,
-          readingId: reading?.id || '',
-          meterId: meter?.id || '',
-          siteId: site?.id || '',
-          siteName: site?.name || '',
-          meterType: meter?.type || '',
-          timestamp: reading?.ts || '',
-          value: reading?.value || 0,
-          type: anomaly.type || '',
-          delta: anomaly.delta,
-          comment: anomaly.comment
-        };
-      });
-      
-      return transformedData;
+      // Mock implementation
+      await delay(500);
+      const anomaly = mockAnomalies.find(a => a.readingId === readingId);
+      if (!anomaly) throw new Error('Anomaly not found');
+      return anomaly;
     } catch (error) {
       console.error('Error fetching anomaly details:', error);
-      return [];
+      throw error;
+    }
+  },
+  
+  update: async (anomaly: Partial<Anomaly>) => {
+    try {
+      // Mock implementation
+      await delay(800);
+      // This would update the anomaly in a real app
+      console.log('Updating anomaly:', anomaly);
+      return { ...mockAnomalies[0], ...anomaly };
+    } catch (error) {
+      console.error('Error updating anomaly:', error);
+      throw error;
+    }
+  },
+  
+  updateComment: async (id: string, comment: string) => {
+    try {
+      // Mock implementation
+      await delay(800);
+      console.log('Updating anomaly comment:', { id, comment });
+      // Return the mock anomaly with updated comment
+      return { ...mockAnomalies.find(a => a.id === id) || mockAnomalies[0], comment };
+    } catch (error) {
+      console.error('Error updating anomaly comment:', error);
+      throw error;
+    }
+  },
+  
+  correctAnomaly: async ({ readingId, value, comment }: { readingId: string; value: number; comment: string }) => {
+    try {
+      // Mock implementation
+      await delay(1000);
+      console.log('Correcting anomaly:', { readingId, value, comment });
+    } catch (error) {
+      console.error('Error correcting anomaly:', error);
+      throw error;
+    }
+  },
+  
+  getAnomalyDetails: async () => {
+    try {
+      // Mock implementation
+      await delay(500);
+      return {
+        missing: 12,
+        spike: 8,
+        flat: 5,
+        total: 25
+      };
+    } catch (error) {
+      console.error('Error fetching anomaly counts:', error);
+      throw error;
     }
   }
 };
@@ -493,25 +449,50 @@ export const factorService = {
 
 // PI Service 
 export const piService = {
-  getTags: async (): Promise<PiTag[]> => {
-    // Return mock data since we can't connect to a real PI system
-    // This simulates loading from a CSV file
-    return [
-      { id: '1', name: 'PI:TAG001', description: 'Power Meter', unit: 'kW', status: 'active' },
-      { id: '2', name: 'PI:TAG002', description: 'Gas Flow Rate', unit: 'm³/h', status: 'active' },
-      { id: '3', name: 'PI:TAG003', description: 'Water Flow Rate', unit: 'm³/h', status: 'active' },
-      // More tags would be loaded from the actual CSV in a real app
-    ] as PiTag[];
+  getTags: async () => {
+    try {
+      // Mock implementation
+      await delay(800);
+      return mockPiTags;
+    } catch (error) {
+      console.error('Error fetching PI tags:', error);
+      throw error;
+    }
   },
   
-  testTag: async (tagName: string): Promise<boolean> => {
-    // Simulate a tag connection test with a 80% success rate
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const isSuccessful = Math.random() > 0.2;
-        resolve(isSuccessful);
-      }, 800);
-    });
+  getSites: async () => {
+    try {
+      // Mock implementation for the prototype
+      await delay(500);
+      return mockSites;
+    } catch (error) {
+      console.error('Error fetching sites:', error);
+      throw error;
+    }
+  },
+  
+  getTagsBySite: async (siteId: string) => {
+    try {
+      // Mock implementation
+      await delay(800);
+      // Filter tags by site (for demo purposes)
+      return mockPiTags.filter((_, index) => index % 3 === parseInt(siteId) % 3);
+    } catch (error) {
+      console.error('Error fetching PI tags by site:', error);
+      throw error;
+    }
+  },
+  
+  testTag: async (tagName: string) => {
+    try {
+      // Mock implementation - simulates a tag test
+      await delay(1000);
+      // 80% success rate for demo
+      return Math.random() > 0.2;
+    } catch (error) {
+      console.error('Error testing PI tag:', error);
+      throw error;
+    }
   }
 };
 
@@ -557,15 +538,11 @@ export const importService = {
 export const journalService = {
   getImportLogs: async ({ startDate, endDate }: { startDate: string, endDate: string }) => {
     try {
-      const { data, error } = await supabase
-        .from('import_log')
-        .select('*')
-        .gte('ts', `${startDate}T00:00:00Z`)
-        .lte('ts', `${endDate}T23:59:59Z`)
-        .order('ts', { ascending: false });
-        
-      if (error) throw error;
-      return data || [];
+      // Mock implementation
+      await delay(800);
+      
+      // In a real app, we would filter by date range
+      return mockImportLogs;
     } catch (error) {
       console.error('Error fetching import logs:', error);
       throw error;
@@ -574,47 +551,24 @@ export const journalService = {
   
   exportCsv: async ({ startDate, endDate }: { startDate: string, endDate: string }) => {
     try {
-      // In a real app, this would generate and download a CSV file
-      // For the prototype, we'll simulate a file download
+      // Mock implementation
+      await delay(1000);
       
-      // Get the log data
-      const { data, error } = await supabase
-        .from('import_log')
-        .select('*')
-        .gte('ts', `${startDate}T00:00:00Z`)
-        .lte('ts', `${endDate}T23:59:59Z`)
-        .order('ts', { ascending: false });
-        
-      if (error) throw error;
+      // In a real app, this would generate a CSV file and trigger a download
+      // For the prototype, we'll simulate a download
+      const csvContent = 'id,timestamp,user_email,rows_ok,rows_err,file_name\n' +
+        mockImportLogs.map(log => 
+          `${log.id},${log.ts},${log.user_email},${log.rows_ok},${log.rows_err},${log.file_name}`
+        ).join('\n');
       
-      // Convert data to CSV format
-      const headers = ['ID', 'Timestamp', 'User', 'Rows OK', 'Rows Error', 'File Name'];
-      const rows = (data || []).map(log => [
-        log.id,
-        new Date(log.ts).toLocaleString(),
-        log.user_email,
-        log.rows_ok,
-        log.rows_err,
-        log.file_name
-      ]);
-      
-      const csvContent = [
-        headers.join(','),
-        ...rows.map(row => row.join(','))
-      ].join('\n');
-      
-      // Create a Blob and download
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.setAttribute('href', url);
-      link.setAttribute('download', `import-logs-${startDate}-to-${endDate}.csv`);
-      link.style.visibility = 'hidden';
+      link.setAttribute('download', 'import_logs.csv');
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
-      return { success: true };
     } catch (error) {
       console.error('Error exporting CSV:', error);
       throw error;
@@ -627,35 +581,32 @@ export const adminService = {
   // User management
   getUsers: async () => {
     try {
-      // In a real app, this would query the users table
-      // For the prototype, we'll return mock data
-      return [
-        { id: '1', email: 'admin@engie.com', role: 'Admin' },
-        { id: '2', email: 'manager@engie.com', role: 'Manager' },
-        { id: '3', email: 'datamanager@engie.com', role: 'DataManager' },
-        { id: '4', email: 'operator@engie.com', role: 'Operator' }
-      ];
+      // Mock implementation
+      await delay(800);
+      return mockUsers;
     } catch (error) {
       console.error('Error fetching users:', error);
       throw error;
     }
   },
   
-  createUser: async ({ email, password, role }: { email: string, password: string, role: string }) => {
+  createUser: async ({ email, password, role }: { email: string, password: string, role: Role }) => {
     try {
-      // In a real app, this would create a new user with Supabase Auth
-      // For the prototype, we'll simulate a successful user creation
+      // Mock implementation
+      await delay(1500);
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Generate a random ID for the new user
+      const newUser = {
+        id: `user_${Math.random().toString(36).substr(2, 9)}`,
+        email,
+        role,
+      };
       
-      return { 
-        success: true, 
-        user: { 
-          id: `new-${Date.now()}`, 
-          email, 
-          role 
-        } 
+      console.log('Creating user:', newUser);
+      
+      return {
+        success: true,
+        user: newUser
       };
     } catch (error) {
       console.error('Error creating user:', error);
@@ -695,3 +646,147 @@ export const adminService = {
     }
   }
 };
+
+// Mock data
+const mockSites = [
+  { id: 'site1', name: 'Paris HQ' },
+  { id: 'site2', name: 'Lyon Factory' },
+  { id: 'site3', name: 'Marseille Warehouse' }
+];
+
+const mockMeters = [
+  { id: 'meter1', name: 'Main Power', site_id: 'site1', type: 'ELEC' },
+  { id: 'meter2', name: 'Heating', site_id: 'site1', type: 'GAS' },
+  { id: 'meter3', name: 'Water Supply', site_id: 'site1', type: 'WATER' },
+  { id: 'meter4', name: 'Production Line', site_id: 'site2', type: 'ELEC' },
+  { id: 'meter5', name: 'Heating System', site_id: 'site2', type: 'GAS' },
+  { id: 'meter6', name: 'Cooling System', site_id: 'site2', type: 'WATER' },
+  { id: 'meter7', name: 'Lighting', site_id: 'site3', type: 'ELEC' },
+  { id: 'meter8', name: 'Heating', site_id: 'site3', type: 'GAS' },
+  { id: 'meter9', name: 'Sanitation', site_id: 'site3', type: 'WATER' }
+];
+
+const mockPiTags = [
+  { id: 'tag1', name: 'TEMP_101', description: 'Temperature Sensor 1', unit: '°C', status: null },
+  { id: 'tag2', name: 'PRESS_201', description: 'Pressure Sensor 1', unit: 'bar', status: null },
+  { id: 'tag3', name: 'FLOW_301', description: 'Flow Meter 1', unit: 'm³/h', status: null },
+  { id: 'tag4', name: 'LEVEL_401', description: 'Level Sensor 1', unit: '%', status: null },
+  { id: 'tag5', name: 'MOTOR_501', description: 'Motor Speed', unit: 'rpm', status: null },
+  { id: 'tag6', name: 'VALVE_601', description: 'Valve Position', unit: '%', status: null }
+];
+
+const mockAnomalies = [
+  { 
+    id: 'anom1', 
+    readingId: 'read1', 
+    meterId: 'meter1', 
+    meterName: 'Main Power',
+    siteName: 'Paris HQ',
+    date: '2023-05-10',
+    value: 1420.5,
+    type: 'SPIKE',
+    delta: 45.2,
+    site: 'site1',
+    meter: 'meter1'
+  },
+  { 
+    id: 'anom2', 
+    readingId: 'read2', 
+    meterId: 'meter4', 
+    meterName: 'Production Line',
+    siteName: 'Lyon Factory',
+    date: '2023-05-11',
+    value: null,
+    type: 'MISSING',
+    delta: null,
+    site: 'site2',
+    meter: 'meter4'
+  },
+  { 
+    id: 'anom3', 
+    readingId: 'read3', 
+    meterId: 'meter2', 
+    meterName: 'Heating',
+    siteName: 'Paris HQ',
+    date: '2023-05-09',
+    value: 350.0,
+    type: 'FLAT',
+    delta: 0,
+    site: 'site1',
+    meter: 'meter2'
+  },
+  { 
+    id: 'anom4', 
+    readingId: 'read4', 
+    meterId: 'meter7', 
+    meterName: 'Lighting',
+    siteName: 'Marseille Warehouse',
+    date: '2023-05-12',
+    value: 890.75,
+    type: 'SPIKE',
+    delta: 62.8,
+    site: 'site3',
+    meter: 'meter7'
+  }
+];
+
+const mockImportLogs = [
+  {
+    id: 'log1',
+    ts: '2023-05-15T09:30:00Z',
+    user_email: 'operator@engie.com',
+    rows_ok: 120,
+    rows_err: 5,
+    file_name: 'may_readings.csv'
+  },
+  {
+    id: 'log2',
+    ts: '2023-05-10T14:45:00Z',
+    user_email: 'manager@engie.com',
+    rows_ok: 95,
+    rows_err: 0,
+    file_name: 'april_summary.csv'
+  },
+  {
+    id: 'log3',
+    ts: '2023-05-05T11:20:00Z',
+    user_email: 'operator@engie.com',
+    rows_ok: 210,
+    rows_err: 15,
+    file_name: 'quarterly_data.csv'
+  },
+  {
+    id: 'log4',
+    ts: '2023-04-28T16:10:00Z',
+    user_email: 'data_manager@engie.com',
+    rows_ok: 45,
+    rows_err: 2,
+    file_name: 'special_meters.csv'
+  }
+];
+
+const mockUsers = [
+  {
+    id: 'user1',
+    email: 'operator@engie.com',
+    role: 'Operator' as Role
+  },
+  {
+    id: 'user2',
+    email: 'data_manager@engie.com',
+    role: 'DataManager' as Role
+  },
+  {
+    id: 'user3',
+    email: 'manager@engie.com',
+    role: 'Manager' as Role
+  },
+  {
+    id: 'user4',
+    email: 'admin@engie.com',
+    role: 'Admin' as Role
+  }
+];
+
+// Helper for mock delays
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));

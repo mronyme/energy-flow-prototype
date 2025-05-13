@@ -7,14 +7,8 @@ import UserList from '@/components/admin/UserList';
 import UserForm from '@/components/admin/UserForm';
 import { adminService } from '@/services/api';
 import { toast } from 'sonner';
-import { Role } from '@/types';
+import { Role, User } from '@/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-
-interface User {
-  id: string;
-  email: string;
-  role: Role;
-}
 
 const Users = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -50,15 +44,18 @@ const Users = () => {
     setDialogOpen(true);
   };
   
-  const handleCreateUser = async (data: { email: string; password: string; role: Role }) => {
+  const handleCreateUser = async (email: string, role: Role) => {
     try {
       setCreating(true);
       
+      // For the prototype, we'll use a placeholder password
+      const password = 'Password123!'; // In a real app, this would be handled differently
+      
       // Call service to create user
       const result = await adminService.createUser({
-        email: data.email,
-        password: data.password,
-        role: data.role
+        email,
+        password,
+        role
       });
       
       if (result.success) {

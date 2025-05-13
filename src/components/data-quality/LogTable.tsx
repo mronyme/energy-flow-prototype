@@ -3,8 +3,8 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
-import { ImportLog } from '../../types';
-import { dateUtils } from '../../utils/validation';
+import { ImportLog } from '@/types';
+import { format } from 'date-fns';
 
 interface LogTableProps {
   data: ImportLog[];
@@ -12,11 +12,25 @@ interface LogTableProps {
 }
 
 const LogTable: React.FC<LogTableProps> = ({ data, onExport }) => {
+  const formatDateTime = (dateStr: string) => {
+    try {
+      const date = new Date(dateStr);
+      return format(date, 'yyyy-MM-dd HH:mm');
+    } catch (e) {
+      return dateStr;
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-medium text-dark">Import Journal</h2>
-        <Button variant="outline" size="sm" onClick={onExport}>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={onExport}
+          className="transition-all duration-100 ease-out"
+        >
           <Download size={16} className="mr-2" />
           Export CSV
         </Button>
@@ -43,7 +57,7 @@ const LogTable: React.FC<LogTableProps> = ({ data, onExport }) => {
               
               return (
                 <TableRow key={log.id}>
-                  <TableCell>{dateUtils.formatDateTime(log.ts)}</TableCell>
+                  <TableCell>{formatDateTime(log.ts)}</TableCell>
                   <TableCell>{log.user_email}</TableCell>
                   <TableCell className="font-mono text-xs">{log.file_name}</TableCell>
                   <TableCell className="text-right font-medium text-green-600">

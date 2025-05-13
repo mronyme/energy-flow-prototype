@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { CalendarIcon, Filter } from 'lucide-react';
+import { CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format, subDays } from 'date-fns';
@@ -12,19 +12,7 @@ import AlertCard from '@/components/data-quality/AlertCard';
 import CorrectionModal from '@/components/data-quality/CorrectionModal';
 import { anomalyService } from '@/services/api';
 import { toast } from 'sonner';
-
-interface Anomaly {
-  id: string;
-  readingId: string;
-  meterId: string;
-  meterName: string;
-  siteName: string;
-  date: string;
-  value: number | null;
-  type: 'MISSING' | 'SPIKE' | 'FLAT';
-  delta?: number;
-  comment?: string;
-}
+import { Anomaly, AnomalyFilter } from '@/types/pi-tag';
 
 const Anomalies = () => {
   const [sites, setSites] = useState<{ id: string; name: string }[]>([]);
@@ -55,12 +43,16 @@ const Anomalies = () => {
       const formattedStartDate = format(startDate, 'yyyy-MM-dd');
       const formattedEndDate = format(endDate, 'yyyy-MM-dd');
       
-      const anomaliesData = await anomalyService.getAnomalies({
-        siteId: selectedSite === 'all' ? undefined : selectedSite,
+      const filters: AnomalyFilter = {
         startDate: formattedStartDate,
         endDate: formattedEndDate
-      });
+      };
       
+      if (selectedSite !== 'all') {
+        filters.siteId = selectedSite;
+      }
+      
+      const anomaliesData = await anomalyService.getAnomalies(filters);
       setAnomalies(anomaliesData);
     } catch (error) {
       console.error('Error fetching anomalies:', error);
@@ -203,11 +195,12 @@ const Anomalies = () => {
             <AlertCard
               key={anomaly.id}
               title={anomaly.meterName}
-              subtitle={anomaly.siteName}
-              date={anomaly.date}
               type={anomaly.type}
+              date={anomaly.date}
               value={anomaly.value}
               delta={anomaly.delta}
+              site={anomaly.siteName}
+              meter={anomaly.meterName}
               onClick={() => handleAnomalyClick(anomaly)}
             />
           ))
@@ -225,7 +218,17 @@ const Anomalies = () => {
             setModalOpen(false);
             setSelectedAnomaly(null);
           }}
-          anomaly={selectedAnomaly}
+          anomaly={{
+            id: selectedAnomaly.id,
+            readingId: selectedAnomaly.readingId,
+            value: selectedAnomaly.value || 0,
+            timestamp: selectedAnomaly.date,
+            type: selectedAnomaly.type,
+            delta: selectedAnomaly.delta || 0,
+            comment: selectedAnomaly.comment || '',
+            siteName: selectedAnomaly.siteName,
+            meterType: selectedAnomaly.type
+          }}
           onSave={handleSaveCorrection}
         />
       )}

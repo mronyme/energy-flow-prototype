@@ -28,7 +28,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
   return (
     <div 
       className={cn(
-        "kpi-card cursor-pointer hover:shadow-md transition-all duration-100 ease-out",
+        "bg-white rounded-lg p-5 shadow-sm ring-1 ring-dark/10 cursor-pointer hover:shadow-md transition-all duration-100 ease-out",
         isActive && "ring-2 ring-primary"
       )}
       onClick={onClick}

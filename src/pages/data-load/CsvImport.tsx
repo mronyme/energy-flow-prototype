@@ -26,6 +26,9 @@ const CsvImport = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
+  
+  // Headers for the CSV preview
+  const csvHeaders = ['site', 'meter', 'date', 'value', 'unit'];
 
   // Set step to 1 if not specified
   useEffect(() => {
@@ -34,7 +37,11 @@ const CsvImport = () => {
     }
   }, [searchParams, setSearchParams]);
 
-  const handleFileUpload = (parsedData: any[], file: File) => {
+  const handleFileSelect = (file: File) => {
+    setFileName(file.name);
+  };
+
+  const handleFileProcessed = (parsedData: any[], file: File) => {
     // Transform data to expected format
     const transformedData = parsedData.map((row) => ({
       site: row.site || '',
@@ -130,7 +137,10 @@ const CsvImport = () => {
         </CardHeader>
         <CardContent>
           {currentStep === 1 && (
-            <UploadDropZone onFileProcessed={handleFileUpload} />
+            <UploadDropZone 
+              onFileSelect={handleFileSelect} 
+              onFileProcessed={handleFileProcessed} 
+            />
           )}
           
           {currentStep === 2 && (
@@ -141,13 +151,23 @@ const CsvImport = () => {
                 <p>Rows: {csvData.length}</p>
               </div>
               
-              <PreviewTable data={csvData.slice(0, 5)} />
+              <PreviewTable 
+                data={csvData.slice(0, 5)} 
+                headers={csvHeaders} 
+              />
               
               <div className="flex justify-end gap-2 mt-4">
-                <Button variant="outline" onClick={handleBackClick}>
+                <Button 
+                  variant="outline" 
+                  onClick={handleBackClick}
+                  className="transition-all duration-100 ease-out"
+                >
                   Back
                 </Button>
-                <Button onClick={handleNextClick}>
+                <Button 
+                  onClick={handleNextClick}
+                  className="transition-all duration-100 ease-out"
+                >
                   Next
                 </Button>
               </div>
@@ -156,15 +176,24 @@ const CsvImport = () => {
           
           {currentStep === 3 && (
             <div className="space-y-4">
-              <PreviewTable data={csvData.slice(0, 10)} />
+              <PreviewTable 
+                data={csvData.slice(0, 10)} 
+                headers={csvHeaders} 
+              />
               
               <div className="flex justify-end gap-2 mt-4">
-                <Button variant="outline" onClick={handleBackClick} disabled={loading}>
+                <Button 
+                  variant="outline" 
+                  onClick={handleBackClick} 
+                  disabled={loading}
+                  className="transition-all duration-100 ease-out"
+                >
                   Back
                 </Button>
                 <Button 
                   onClick={handleConfirmImport} 
                   disabled={loading || csvData.length === 0}
+                  className="transition-all duration-100 ease-out"
                 >
                   {loading ? (
                     <>

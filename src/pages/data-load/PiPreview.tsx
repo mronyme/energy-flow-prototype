@@ -3,19 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
 import TagTableRO from '@/components/data-load/TagTableRO';
 import TestTagButton from '@/components/data-load/TestTagButton';
 import { piService } from '@/services/api';
-
-interface PiTag {
-  id: string;
-  name: string;
-  path: string;
-  server: string;
-  status: 'OK' | 'KO' | null;
-}
+import { PiTag } from '@/types/pi-tag';
 
 const PiPreview = () => {
   const [sites, setSites] = useState<{ id: string; name: string }[]>([]);
@@ -72,12 +64,12 @@ const PiPreview = () => {
       if (!tag) return;
       
       // Call PI service to test the tag
-      const result = await piService.testTag(tag.path);
+      const result = await piService.testTag(tag.name);
       
       // Update tag status (IF-04: Green badge "OK" or red "KO")
       setPiTags(prev => 
         prev.map(t => 
-          t.id === tagId ? { ...t, status: result.success ? 'OK' : 'KO' } : t
+          t.id === tagId ? { ...t, status: result ? 'OK' : 'KO' } : t
         )
       );
       
@@ -95,7 +87,7 @@ const PiPreview = () => {
   const filteredTags = searchQuery
     ? piTags.filter(tag => 
         tag.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        tag.path.toLowerCase().includes(searchQuery.toLowerCase())
+        tag.description.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : piTags;
 
@@ -137,7 +129,7 @@ const PiPreview = () => {
                 <Input 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by name or path"
+                  placeholder="Search by name or description"
                   className="pl-10"
                 />
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
@@ -154,7 +146,7 @@ const PiPreview = () => {
               data={filteredTags}
               actionColumn={(tag) => (
                 <TestTagButton 
-                  status={tag.status}
+                  status={tag.status || null}
                   onClick={() => handleTestTag(tag.id)}
                 />
               )}

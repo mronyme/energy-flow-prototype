@@ -6,18 +6,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import EditableTable from '@/components/data-load/EditableTable';
 import { meterService } from '@/services/api';
 import { toast } from 'sonner';
-import { CalendarIcon, Save } from 'lucide-react';
+import { CalendarIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
+import { MeterType } from '@/types';
 
 interface Meter {
   id: string;
   name: string;
   site_id: string;
-  type: 'ELEC' | 'GAS' | 'WATER';
+  type: MeterType;
   value: number | null;
   unit: string;
 }
@@ -60,7 +61,7 @@ const ManualEntry = () => {
           ...meter,
           value: null,
           unit: meter.type === 'ELEC' ? 'kWh' : meter.type === 'GAS' ? 'm³' : 'L'
-        }));
+        })) as Meter[];
         
         setMeters(transformedMeters);
       } catch (error) {

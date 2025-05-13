@@ -3,10 +3,15 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 
+interface ValidationError {
+  row: number;
+  errors: string[];
+}
+
 interface PreviewTableProps {
   data: Array<Record<string, any>>;
-  headers: Array<string>;
-  validationErrors?: Array<{ row: number; errors: string[] }>;
+  headers: string[];
+  validationErrors?: ValidationError[];
 }
 
 const PreviewTable: React.FC<PreviewTableProps> = ({

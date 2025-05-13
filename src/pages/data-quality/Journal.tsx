@@ -10,20 +10,12 @@ import { cn } from '@/lib/utils';
 import LogTable from '@/components/data-quality/LogTable';
 import { journalService } from '@/services/api';
 import { toast } from 'sonner';
-
-interface ImportLog {
-  id: string;
-  ts: string;
-  user_email: string;
-  rows_ok: number;
-  rows_err: number;
-  file_name: string;
-}
+import { JournalFilter } from '@/types/pi-tag';
 
 const Journal = () => {
   const [startDate, setStartDate] = useState<Date>(subDays(new Date(), 30));
   const [endDate, setEndDate] = useState<Date>(new Date());
-  const [logs, setLogs] = useState<ImportLog[]>([]);
+  const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   
@@ -33,10 +25,12 @@ const Journal = () => {
       const formattedStartDate = format(startDate, 'yyyy-MM-dd');
       const formattedEndDate = format(endDate, 'yyyy-MM-dd');
       
-      const logsData = await journalService.getImportLogs({
+      const filters: JournalFilter = {
         startDate: formattedStartDate,
         endDate: formattedEndDate
-      });
+      };
+      
+      const logsData = await journalService.getImportLogs(filters);
       
       setLogs(logsData);
     } catch (error) {
@@ -58,10 +52,12 @@ const Journal = () => {
       const formattedStartDate = format(startDate, 'yyyy-MM-dd');
       const formattedEndDate = format(endDate, 'yyyy-MM-dd');
       
-      await journalService.exportCsv({
+      const filters: JournalFilter = {
         startDate: formattedStartDate,
         endDate: formattedEndDate
-      });
+      };
+      
+      await journalService.exportCsv(filters);
       
       // Toast is not needed as the file download is the feedback
     } catch (error) {
@@ -171,7 +167,7 @@ const Journal = () => {
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
             </div>
           ) : logs.length > 0 ? (
-            <LogTable data={logs} />
+            <LogTable data={logs} onExport={handleExportCsv} />
           ) : (
             <div className="text-center py-8 text-gray-500">
               No import logs found for the selected period

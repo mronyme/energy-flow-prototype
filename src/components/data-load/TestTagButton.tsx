@@ -1,23 +1,21 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { piService } from '../../services/api';
 
 interface TestTagButtonProps {
-  tagName: string;
+  onClick: () => Promise<void>;
+  status: 'OK' | 'KO' | null;
 }
 
-const TestTagButton: React.FC<TestTagButtonProps> = ({ tagName }) => {
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+const TestTagButton: React.FC<TestTagButtonProps> = ({ onClick, status }) => {
+  const [isLoading, setIsLoading] = useState(false);
   
   const handleTest = async () => {
-    setStatus('loading');
-    
+    setIsLoading(true);
     try {
-      const result = await piService.testTag(tagName);
-      setStatus(result ? 'success' : 'error');
-    } catch (error) {
-      setStatus('error');
+      await onClick();
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -27,17 +25,22 @@ const TestTagButton: React.FC<TestTagButtonProps> = ({ tagName }) => {
         variant="outline"
         size="sm"
         onClick={handleTest}
-        disabled={status === 'loading'}
+        disabled={isLoading}
+        className="transition-all duration-100 ease-out"
       >
-        {status === 'loading' ? 'Testing...' : 'Test Tag'}
+        {isLoading ? 'Testing...' : 'Test Tag'}
       </Button>
       
-      {status === 'success' && (
-        <span className="alert-badge-success">OK</span>
+      {status === 'OK' && (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+          OK
+        </span>
       )}
       
-      {status === 'error' && (
-        <span className="alert-badge-error">KO</span>
+      {status === 'KO' && (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+          KO
+        </span>
       )}
     </div>
   );
