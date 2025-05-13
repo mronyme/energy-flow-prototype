@@ -5,8 +5,17 @@ import { InfoIcon, AlertTriangleIcon, BanIcon, PercentIcon } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { dateUtils, validationRules } from '@/utils/validation';
+import { dateUtils } from '@/utils/validation';
 
+// Create a new version of AlertCard for the summary view
+interface AlertCardSummaryProps {
+  title: string;
+  count: number;
+  type: "warning" | "error" | "info";
+  icon: React.ElementType;
+}
+
+// Original AlertCard
 interface AlertCardProps {
   title: string;
   type: 'MISSING' | 'SPIKE' | 'FLAT' | 'THRESHOLD';
@@ -18,7 +27,7 @@ interface AlertCardProps {
   onClick?: () => void;
 }
 
-const AlertCard: React.FC<AlertCardProps> = ({
+export const AlertCard: React.FC<AlertCardProps> = ({
   title,
   type,
   date,
@@ -124,6 +133,63 @@ const AlertCard: React.FC<AlertCardProps> = ({
               </div>
             )}
           </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Create a summary version of the AlertCard for the Anomalies page
+export const AlertCardSummary: React.FC<AlertCardSummaryProps> = ({ title, count, type, icon: Icon }) => {
+  const getColorScheme = () => {
+    switch (type) {
+      case 'warning':
+        return {
+          bgColor: 'bg-amber-50',
+          textColor: 'text-amber-800',
+          borderColor: 'border-amber-200',
+          iconColor: 'text-amber-600'
+        };
+      case 'error':
+        return {
+          bgColor: 'bg-red-50',
+          textColor: 'text-red-800',
+          borderColor: 'border-red-200',
+          iconColor: 'text-red-600'
+        };
+      case 'info':
+        return {
+          bgColor: 'bg-blue-50',
+          textColor: 'text-blue-800',
+          borderColor: 'border-blue-200',
+          iconColor: 'text-blue-600'
+        };
+      default:
+        return {
+          bgColor: 'bg-gray-50',
+          textColor: 'text-gray-800',
+          borderColor: 'border-gray-200',
+          iconColor: 'text-gray-600'
+        };
+    }
+  };
+
+  const { bgColor, textColor, borderColor, iconColor } = getColorScheme();
+
+  return (
+    <Card className={`shadow-sm ring-1 ring-dark/10 ${bgColor}`}>
+      <CardContent className="p-4">
+        <div className="flex justify-between items-center">
+          <div>
+            <h3 className={`text-lg font-semibold ${textColor}`}>{title}</h3>
+          </div>
+          <div className={`${iconColor}`}>
+            <Icon size={24} />
+          </div>
+        </div>
+        
+        <div className="mt-3">
+          <span className={`text-3xl font-bold ${textColor}`}>{count}</span>
         </div>
       </CardContent>
     </Card>

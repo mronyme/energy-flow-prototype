@@ -7,15 +7,21 @@ import { cn } from '@/lib/utils';
 interface TestTagButtonProps {
   onClick: () => Promise<void>;
   status: 'OK' | 'KO' | 'active' | 'inactive' | null;
+  tagName?: string; // Added tagName prop
+  onTestComplete?: (result: boolean) => void; // Added onTestComplete prop
 }
 
-const TestTagButton: React.FC<TestTagButtonProps> = ({ onClick, status }) => {
+const TestTagButton: React.FC<TestTagButtonProps> = ({ onClick, status, tagName, onTestComplete }) => {
   const [isLoading, setIsLoading] = useState(false);
   
   const handleTest = async () => {
     setIsLoading(true);
     try {
       await onClick();
+      // If onTestComplete is provided, call it with true/false based on status
+      if (onTestComplete) {
+        onTestComplete(status === 'OK' || status === 'active');
+      }
     } finally {
       setIsLoading(false);
     }

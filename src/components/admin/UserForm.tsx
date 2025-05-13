@@ -1,8 +1,7 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Role } from '@/types';
 import { z } from 'zod';
@@ -11,7 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 interface UserFormProps {
-  onSubmit: (formData: { email: string; password: string; role: Role }) => Promise<void>; // Updated to match actual usage
+  onSubmit: (formData: { email: string; password: string; role: Role }) => Promise<void>; 
   isSubmitting?: boolean;
 }
 

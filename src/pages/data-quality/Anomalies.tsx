@@ -1,17 +1,18 @@
 
 import React, { useState, useEffect } from 'react';
-import AlertCard from '@/components/data-quality/AlertCard';
+import { AlertCardSummary } from '@/components/data-quality/AlertCard';
 import CorrectionModal from '@/components/data-quality/CorrectionModal';
 import AnomalyBadge from '@/components/data-quality/AnomalyBadge';
 import { anomalyService } from '@/services/api';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAnnouncer } from '@/components/common/A11yAnnouncer';
 import DatePicker from '@/components/ui/date-picker';
 import { format, subDays } from 'date-fns';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Ban, Info } from 'lucide-react';
+import { AnomalyType } from '@/types';
 
 interface Anomaly {
   id: string;
@@ -21,7 +22,7 @@ interface Anomaly {
   siteName: string;
   date: string;
   value: number | null;
-  type: 'MISSING' | 'SPIKE' | 'FLAT';
+  type: AnomalyType;
   delta: number | null;
   site: string;
   meter: string;
@@ -59,7 +60,10 @@ const Anomalies: React.FC = () => {
         setSites(sitesData);
       } catch (error) {
         console.error('Error fetching sites:', error);
-        toast.error('Failed to load sites');
+        toast.error({
+          title: 'Error',
+          description: 'Failed to load sites'
+        });
       }
     };
     
@@ -84,7 +88,10 @@ const Anomalies: React.FC = () => {
       
     } catch (error) {
       console.error('Error fetching anomalies:', error);
-      toast.error('Failed to load anomalies');
+      toast.error({
+        title: 'Error',
+        description: 'Failed to load anomalies'
+      });
       setLoading(false);
     }
   };
@@ -109,7 +116,10 @@ const Anomalies: React.FC = () => {
       });
       
       // Success message
-      toast.success("Correction saved");
+      toast.success({
+        title: 'Success',
+        description: 'Correction saved'
+      });
       announce("Anomaly correction saved successfully");
       
       // Close modal and refresh data
@@ -118,7 +128,10 @@ const Anomalies: React.FC = () => {
       
     } catch (error) {
       console.error('Error correcting anomaly:', error);
-      toast.error('Failed to save correction');
+      toast.error({
+        title: 'Error',
+        description: 'Failed to save correction'
+      });
     }
   };
   
@@ -199,23 +212,23 @@ const Anomalies: React.FC = () => {
       
       {/* Anomaly summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <AlertCard
+        <AlertCardSummary
           title="Missing Readings"
           count={anomalies.filter(a => a.type === 'MISSING').length}
           type="warning"
-          icon={AlertTriangle}
+          icon={Ban}
         />
-        <AlertCard
+        <AlertCardSummary
           title="Spikes"
           count={anomalies.filter(a => a.type === 'SPIKE').length}
           type="error"
           icon={AlertTriangle}
         />
-        <AlertCard
+        <AlertCardSummary
           title="Flat Values"
           count={anomalies.filter(a => a.type === 'FLAT').length}
           type="info"
-          icon={AlertTriangle}
+          icon={Info}
         />
       </div>
       

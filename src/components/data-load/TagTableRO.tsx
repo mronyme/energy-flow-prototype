@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import TestTagButton from './TestTagButton';
 
 interface PiTag {
@@ -74,7 +74,12 @@ const TagTableRO: React.FC<TagTableROProps> = ({ tags, onTagTest }) => {
                 </td>
                 <td className="px-4 py-3 text-center">
                   <TestTagButton 
-                    tagName={tag.name} 
+                    status={tag.status === null ? null : tag.status ? 'OK' : 'KO'}
+                    onClick={async () => {
+                      // This will be handled by the onTestComplete
+                      return Promise.resolve();
+                    }}
+                    tagName={tag.name}
                     onTestComplete={(result) => onTagTest(tag.name, result)} 
                   />
                 </td>

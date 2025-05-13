@@ -4,6 +4,10 @@ import ManualEntryForm from '@/components/data-load/ManualEntryForm';
 import EditableTable from '@/components/data-load/EditableTable';
 import { useIsMobile } from '@/hooks/use-mobile';
 
+interface EditableTableProps {
+  refreshTrigger?: number;
+}
+
 const ManualEntry: React.FC = () => {
   const isMobile = useIsMobile();
   const [refreshTrigger, setRefreshTrigger] = React.useState(0);

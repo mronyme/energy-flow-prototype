@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import UserList from '@/components/admin/UserList';
 import UserForm from '@/components/admin/UserForm';
 import { adminService } from '@/services/api';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAnnouncer } from '@/components/common/A11yAnnouncer';
@@ -39,10 +39,8 @@ const Users: React.FC = () => {
     fetchUsers();
   }, []);
 
-  // Function to handle user selection - not used but needed for type compatibility
+  // Function to handle user selection
   const handleSelectUser = (user: User) => {
-    // This function is required by the UserList component type
-    // but not actually used in this implementation
     console.log("User selected:", user);
   };
 
@@ -60,7 +58,10 @@ const Users: React.FC = () => {
       
       if (result.success) {
         // Success message
-        toast.success("User created");
+        toast.success({
+          title: "User created",
+          description: `User ${formData.email} created successfully`
+        });
         announce("User created successfully", false);
         
         // Close dialog and refresh list
@@ -71,7 +72,10 @@ const Users: React.FC = () => {
       setLoading(false);
     } catch (error) {
       console.error('Error creating user:', error);
-      toast.error('Failed to create user');
+      toast.error({
+        title: 'Error',
+        description: 'Failed to create user'
+      });
       setLoading(false);
     }
   };
@@ -107,7 +111,7 @@ const Users: React.FC = () => {
       ) : (
         <UserList 
           users={users} 
-          onSelect={handleSelectUser} // Add the onSelect prop
+          onSelect={handleSelectUser}
         />
       )}
       
