@@ -1,5 +1,5 @@
 
-import { Site, Anomaly, Role, Meter, Reading, ImportLog, KpiDaily } from '@/types';
+import { Site, Anomaly, Role, Meter, Reading, ImportLog, KpiDaily, MeterType, AnomalyType } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 
 // Reading service
@@ -42,44 +42,68 @@ export const readingService = {
   // Save a new reading
   saveReading: async (reading: Partial<Reading>): Promise<Reading | null> => {
     try {
-      // Check if reading already exists for this meter and timestamp
-      const { data: existingData, error: existingError } = await supabase
-        .from('reading')
-        .select('id')
-        .eq('meter_id', reading.meter_id)
-        .eq('ts', reading.ts)
-        .single();
-        
-      if (existingError && existingError.code !== 'PGRST116') {
-        throw existingError;
+      // Ensure required fields are present when inserting
+      if (!reading.id && (!reading.meter_id || !reading.ts)) {
+        throw new Error("Meter ID and timestamp are required when creating a new reading");
       }
       
-      let result;
-      
-      if (existingData) {
-        // Update existing reading
+      // Check if reading already exists for this meter and timestamp
+      if (reading.meter_id && reading.ts) {
+        const { data: existingData, error: existingError } = await supabase
+          .from('reading')
+          .select('id')
+          .eq('meter_id', reading.meter_id)
+          .eq('ts', reading.ts)
+          .single();
+          
+        if (existingError && existingError.code !== 'PGRST116') {
+          throw existingError;
+        }
+        
+        let result;
+        
+        if (existingData) {
+          // Update existing reading
+          const { data, error } = await supabase
+            .from('reading')
+            .update({ value: reading.value })
+            .eq('id', existingData.id)
+            .select()
+            .single();
+            
+          if (error) throw error;
+          result = data;
+        } else if (reading.value !== undefined) {
+          // Insert new reading (only if we have all required fields)
+          const { data, error } = await supabase
+            .from('reading')
+            .insert({
+              meter_id: reading.meter_id,
+              ts: reading.ts,
+              value: reading.value
+            })
+            .select()
+            .single();
+            
+          if (error) throw error;
+          result = data;
+        }
+        
+        return result || null;
+      } else if (reading.id && reading.value !== undefined) {
+        // Update by ID
         const { data, error } = await supabase
           .from('reading')
           .update({ value: reading.value })
-          .eq('id', existingData.id)
+          .eq('id', reading.id)
           .select()
           .single();
           
         if (error) throw error;
-        result = data;
-      } else {
-        // Insert new reading
-        const { data, error } = await supabase
-          .from('reading')
-          .insert(reading)
-          .select()
-          .single();
-          
-        if (error) throw error;
-        result = data;
+        return data;
       }
       
-      return result || null;
+      return null;
     } catch (error) {
       console.error('Error saving reading:', error);
       return null;
@@ -87,7 +111,7 @@ export const readingService = {
   },
   
   // Bulk save readings
-  bulkSaveReadings: async (readings: Partial<Reading>[]): Promise<{ success: boolean; inserted: number; errors: number }> => {
+  bulkSaveReadings: async (readings: { meter_id: string; ts: string; value: number }[]): Promise<{ success: boolean; inserted: number; errors: number }> => {
     try {
       const { data, error } = await supabase
         .from('reading')
@@ -121,7 +145,14 @@ export const meterService = {
         .select('*, site:site_id(name)');
         
       if (error) throw error;
-      return data || [];
+      
+      // Transform the data to match the Meter interface
+      return (data || []).map(meter => ({
+        id: meter.id,
+        type: meter.type as MeterType,
+        site_id: meter.site_id,
+        site_name: meter.site?.name || 'Unknown'
+      }));
     } catch (error) {
       console.error('Error fetching meters:', error);
       return [];
@@ -137,7 +168,14 @@ export const meterService = {
         .eq('site_id', siteId);
         
       if (error) throw error;
-      return data || [];
+      
+      // Transform the data to match the Meter interface
+      return (data || []).map(meter => ({
+        id: meter.id,
+        type: meter.type as MeterType,
+        site_id: meter.site_id,
+        site_name: 'Unknown' // We don't have site name in this query
+      }));
     } catch (error) {
       console.error('Error fetching site meters:', error);
       return [];
@@ -154,7 +192,15 @@ export const meterService = {
         .single();
         
       if (error) throw error;
-      return data;
+      
+      // Transform the data to match the Meter interface
+      return data ? {
+        id: data.id,
+        type: data.type as MeterType,
+        site_id: data.site_id,
+        site_name: data.site?.name || 'Unknown',
+        site_country: data.site?.country
+      } : null;
     } catch (error) {
       console.error('Error fetching meter by ID:', error);
       return null;
@@ -315,12 +361,18 @@ export const anomalyService = {
             )
           )
         `)
-        .order('reading.ts', { ascending: false })
+        .order('reading(ts)', { ascending: false })
         .limit(limit);
         
       if (error) throw error;
       
-      return data || [];
+      return (data || []).map(item => ({
+        id: item.id,
+        reading_id: item.reading_id,
+        type: item.type as AnomalyType,
+        delta: item.delta,
+        comment: item.comment
+      }));
     } catch (error) {
       console.error('Error fetching anomalies:', error);
       return [];
@@ -328,7 +380,7 @@ export const anomalyService = {
   },
   
   // Get anomalies by type
-  getAnomaliesByType: async (type: string): Promise<Anomaly[]> => {
+  getAnomaliesByType: async (type: AnomalyType): Promise<Anomaly[]> => {
     try {
       const { data, error } = await supabase
         .from('anomaly')
@@ -349,11 +401,17 @@ export const anomalyService = {
           )
         `)
         .eq('type', type)
-        .order('reading.ts', { ascending: false });
+        .order('reading(ts)', { ascending: false });
         
       if (error) throw error;
       
-      return data || [];
+      return (data || []).map(item => ({
+        id: item.id,
+        reading_id: item.reading_id,
+        type: item.type as AnomalyType,
+        delta: item.delta,
+        comment: item.comment
+      }));
     } catch (error) {
       console.error('Error fetching anomalies by type:', error);
       return [];

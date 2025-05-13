@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { adminService } from '@/services/api';
 import { Card } from '@/components/ui/card';
-import { DataGridEditable } from '@/components/admin/DataGridEditable';
-import { SkipLink } from '@/components/common/SkipLink';
+import DataGridEditable from '@/components/admin/DataGridEditable';
+import SkipLink from '@/components/common/SkipLink';
 import { toast } from 'sonner';
 
 interface EmissionFactor {

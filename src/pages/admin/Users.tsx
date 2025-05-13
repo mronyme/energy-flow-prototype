@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { UserList } from '@/components/admin/UserList';
-import { UserForm } from '@/components/admin/UserForm';
 import { Card } from '@/components/ui/card';
+import UserList from '@/components/admin/UserList';
+import UserForm from '@/components/admin/UserForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { adminService } from '@/services/api';
 import { User, Role } from '@/types';
 import { toast } from 'sonner';
-import { SkipLink } from '@/components/common/SkipLink';
+import SkipLink from '@/components/common/SkipLink';
 
 const Users = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -38,7 +38,7 @@ const Users = () => {
       
       if (result) {
         toast.success('User created successfully');
-        setUsers(prev => [...prev, result]);
+        setUsers(prev => [...prev, result as User]);
         setActiveTab('list');
       }
     } catch (error) {

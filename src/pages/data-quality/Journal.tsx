@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { LogTable } from '@/components/data-quality/LogTable';
+import LogTable from '@/components/data-quality/LogTable';
 import { DatePicker } from '@/components/ui/date-picker';
 import { journalService } from '@/services/api';
 import { ImportLog } from '@/types';
@@ -107,22 +107,18 @@ const Journal: React.FC = () => {
       <Card className="p-6 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="space-y-2">
-            <Label htmlFor="start-date">Start Date</Label>
+            <Label>Start Date</Label>
             <DatePicker
-              id="start-date"
               selected={startDate}
               onSelect={setStartDate}
-              label="Start date"
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="end-date">End Date</Label>
+            <Label>End Date</Label>
             <DatePicker
-              id="end-date"
               selected={endDate}
               onSelect={setEndDate}
-              label="End date"
             />
           </div>
           

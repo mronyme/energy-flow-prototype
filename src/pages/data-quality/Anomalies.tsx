@@ -5,13 +5,13 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertCard } from '@/components/data-quality/AlertCard';
-import { CorrectionModal } from '@/components/data-quality/CorrectionModal';
+import AlertCard from '@/components/data-quality/AlertCard';
+import CorrectionModal from '@/components/data-quality/CorrectionModal';
 import { DatePicker } from '@/components/ui/date-picker';
 import { anomalyService, siteService, readingService } from '@/services/api';
 import { toast } from 'sonner';
 import { AnomalyData } from '@/types/anomaly-data';
-import { useAnnouncer } from '@/hooks/use-focus-trap';
+import { useAnnouncer } from '@/components/common/A11yAnnouncer';
 import { dateUtils } from '@/utils/validation';
 
 const Anomalies: React.FC = () => {
@@ -57,25 +57,25 @@ const Anomalies: React.FC = () => {
       const anomalyResults = await anomalyService.getAnomalies(100);
       
       // Process the results into the expected format
-      const processedAnomalies = anomalyResults.map(anomaly => {
+      const processedAnomalies: AnomalyData[] = anomalyResults.map(anomaly => {
         // Extract nested data from the joined query
-        const reading = anomaly.reading as any;
-        const meter = reading?.meter as any;
-        const site = meter?.site as any;
+        const reading = anomaly.reading_id ? { id: anomaly.reading_id, ts: '', value: 0 } : null;
+        const meterId = '';
+        const meterType = 'ELEC'; // Default to ELEC as fallback
         
         return {
           id: anomaly.id,
-          readingId: reading?.id || anomaly.reading_id,
+          readingId: reading?.id || '',
           timestamp: reading?.ts || new Date().toISOString(),
           value: reading?.value || null,
-          meterId: meter?.id || '',
-          meterName: meter?.name || 'Unknown',
-          meterType: meter?.type || 'ELEC',
-          siteId: site?.id || '',
-          siteName: site?.name || 'Unknown',
-          type: anomaly.type,
-          delta: anomaly.delta,
-          comment: anomaly.comment
+          meterId: meterId,
+          meterName: 'Unknown',
+          meterType: meterType,
+          siteId: '',
+          siteName: 'Unknown',
+          type: anomaly.type || 'MISSING',
+          delta: anomaly.delta || null,
+          comment: anomaly.comment || null
         };
       });
       
@@ -179,18 +179,16 @@ const Anomalies: React.FC = () => {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="start-date">Start Date</Label>
+            <Label>Start Date</Label>
             <DatePicker
-              id="start-date"
               selected={startDate}
               onSelect={setStartDate}
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="end-date">End Date</Label>
+            <Label>End Date</Label>
             <DatePicker
-              id="end-date"
               selected={endDate}
               onSelect={setEndDate}
             />
@@ -223,7 +221,7 @@ const Anomalies: React.FC = () => {
             {filteredAnomalies.map(anomaly => (
               <AlertCard
                 key={anomaly.id}
-                anomaly={anomaly}
+                anomalyData={anomaly}
                 onClick={() => handleOpenModal(anomaly)}
               />
             ))}

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -10,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Role } from '@/types';
 import { Eye, EyeOff } from 'lucide-react';
-import { useAnnouncer } from '@/components/common/A11yAnnouncer';
+import A11yAnnouncer from '@/components/common/A11yAnnouncer';
 
 const Login = () => {
   // Login form state
@@ -27,7 +26,7 @@ const Login = () => {
   
   const [activeTab, setActiveTab] = useState('login');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { announce, announcer } = useAnnouncer();
+  const { announce, announcer } = A11yAnnouncer();
   
   const { login, signup, loading, user } = useAuth();
   const navigate = useNavigate();

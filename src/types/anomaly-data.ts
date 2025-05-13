@@ -1,5 +1,5 @@
 
-import { AnomalyType } from '@/types';
+import { AnomalyType } from './index';
 
 export interface AnomalyData {
   id: string;
@@ -9,8 +9,8 @@ export interface AnomalyData {
   meterId: string;
   meterName: string;
   meterType: string;
+  siteId: string;
   siteName: string;
-  siteId: string; 
   type: AnomalyType;
   delta: number | null;
   comment: string | null;

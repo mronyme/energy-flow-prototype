@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { TestTagButton } from '@/components/data-load/TestTagButton';
-import { TagTableRO } from '@/components/data-load/TagTableRO';
+import TestTagButton from '@/components/data-load/TestTagButton';
+import TagTableRO from '@/components/data-load/TagTableRO';
 import { toast } from 'sonner';
 import { piService, siteService } from '@/services/api';
 import { PiTag } from '@/types/pi-tag';
