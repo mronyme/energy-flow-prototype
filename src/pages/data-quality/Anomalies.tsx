@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { AlertCard } from '@/components/data-quality/AlertCard';
-import { CorrectionModal } from '@/components/data-quality/CorrectionModal';
-import { AnomalyBadge } from '@/components/data-quality/AnomalyBadge';
+import AlertCard from '@/components/data-quality/AlertCard';
+import CorrectionModal from '@/components/data-quality/CorrectionModal';
+import AnomalyBadge from '@/components/data-quality/AnomalyBadge';
 import { anomalyService } from '@/services/api';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';

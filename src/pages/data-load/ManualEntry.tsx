@@ -1,7 +1,7 @@
 
 import React from 'react';
 import ManualEntryForm from '@/components/data-load/ManualEntryForm';
-import { EditableTable } from '@/components/data-load/EditableTable';
+import EditableTable from '@/components/data-load/EditableTable';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 const ManualEntry: React.FC = () => {

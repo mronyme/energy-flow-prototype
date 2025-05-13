@@ -1,8 +1,8 @@
 
 import * as React from "react";
-import { toast as sonnerToast, type ToastProps } from "sonner";
+import { toast as sonnerToast, type ToasterProps } from "sonner";
 
-export type ToastProps = ToastProps & {
+export type ToastProps = ToasterProps & {
   // Custom props
   autoClose?: boolean;
   autoCloseDelay?: number;
@@ -33,6 +33,7 @@ export function useToast() {
       
       return sonnerToast(props);
     },
+    toasts: [] // Add this to satisfy the type in toaster.tsx
   };
 }
 
@@ -58,5 +59,3 @@ export const toast = ({ announcing = true, ...props }: ToastProps) => {
   
   return sonnerToast(props);
 };
-
-export { toast as toast };

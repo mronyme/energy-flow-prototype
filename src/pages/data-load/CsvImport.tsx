@@ -108,7 +108,7 @@ const CsvImport: React.FC = () => {
           {steps.map((step, index) => (
             <WizardStep
               key={index}
-              step={index + 1}
+              number={index + 1} // Use number instead of step
               label={step.label}
               description={step.description}
               isActive={currentStep === index + 1}
@@ -179,9 +179,14 @@ const CsvImport: React.FC = () => {
               Review the data before completing the import.
             </p>
             
-            {/* Preview table */}
+            {/* Preview table - now with fixed headers */}
             <div className="mb-6">
-              <PreviewTable data={csvData.slice(0, 10)} />
+              {csvData.length > 0 && (
+                <PreviewTable 
+                  data={csvData.slice(0, 10)} 
+                  headers={Object.keys(csvData[0] || {})} 
+                />
+              )}
               {csvData.length > 10 && (
                 <p className="mt-2 text-sm text-gray-500">
                   Showing 10 of {csvData.length} rows

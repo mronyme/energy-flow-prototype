@@ -3,8 +3,9 @@ import React, { useState, useRef } from 'react';
 import { Upload } from 'lucide-react';
 
 interface UploadDropZoneProps {
-  onFileSelect: (file: File) => void;
-  onFileProcessed: (parsedData: any[], file: File) => void;
+  onFileSelect?: (file: File) => void;
+  onFileProcessed?: (parsedData: any[], file: File) => void;
+  onFileLoaded?: (data: any[], name: string) => void; // Add this prop to match usage in CsvImport
   accept?: string;
   maxSize?: number; // in MB
 }
@@ -12,6 +13,7 @@ interface UploadDropZoneProps {
 const UploadDropZone: React.FC<UploadDropZoneProps> = ({
   onFileSelect,
   onFileProcessed,
+  onFileLoaded,
   accept = '.csv',
   maxSize = 5 // Default 5MB
 }) => {
@@ -63,7 +65,7 @@ const UploadDropZone: React.FC<UploadDropZoneProps> = ({
       const file = e.dataTransfer.files[0];
       
       if (validateFile(file)) {
-        onFileSelect(file);
+        if (onFileSelect) onFileSelect(file);
         
         // Read and parse CSV
         const reader = new FileReader();
@@ -71,7 +73,9 @@ const UploadDropZone: React.FC<UploadDropZoneProps> = ({
           if (event.target?.result) {
             const csvData = event.target.result as string;
             const parsedData = parseCSV(csvData);
-            onFileProcessed(parsedData, file);
+            
+            if (onFileProcessed) onFileProcessed(parsedData, file);
+            if (onFileLoaded) onFileLoaded(parsedData, file.name);
           }
         };
         
@@ -85,7 +89,7 @@ const UploadDropZone: React.FC<UploadDropZoneProps> = ({
       const file = e.target.files[0];
       
       if (validateFile(file)) {
-        onFileSelect(file);
+        if (onFileSelect) onFileSelect(file);
         
         // Read and parse CSV
         const reader = new FileReader();
@@ -93,7 +97,9 @@ const UploadDropZone: React.FC<UploadDropZoneProps> = ({
           if (event.target?.result) {
             const csvData = event.target.result as string;
             const parsedData = parseCSV(csvData);
-            onFileProcessed(parsedData, file);
+            
+            if (onFileProcessed) onFileProcessed(parsedData, file);
+            if (onFileLoaded) onFileLoaded(parsedData, file.name);
           }
         };
         

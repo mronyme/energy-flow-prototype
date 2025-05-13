@@ -11,10 +11,10 @@ interface User {
 
 interface UserListProps {
   users: User[];
-  onSelect: (user: User) => void;
+  onSelect?: (user: User) => void; // Make onSelect optional
 }
 
-const UserList: React.FC<UserListProps> = ({ users, onSelect }) => {
+const UserList: React.FC<UserListProps> = ({ users, onSelect = () => {} }) => { // Provide default value
   return (
     <div className="bg-white rounded-lg shadow-sm ring-1 ring-dark/10 overflow-hidden">
       <Table>

@@ -11,12 +11,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 interface UserFormProps {
-  onSubmit: (email: string, role: Role) => Promise<void>;
+  onSubmit: (formData: { email: string; password: string; role: Role }) => Promise<void>; // Updated to match actual usage
   isSubmitting?: boolean;
 }
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
   role: z.enum(['Operator', 'DataManager', 'Manager', 'Admin'] as const)
 });
 
@@ -25,13 +26,14 @@ const UserForm: React.FC<UserFormProps> = ({ onSubmit, isSubmitting = false }) =
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: '',
+      password: '',
       role: 'Operator'
     },
   });
 
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      await onSubmit(values.email, values.role);
+      await onSubmit(values);
       form.reset();
     } catch (error) {
       console.error('Form submission error:', error);
@@ -50,6 +52,24 @@ const UserForm: React.FC<UserFormProps> = ({ onSubmit, isSubmitting = false }) =
               <FormControl>
                 <Input 
                   placeholder="user@engie.com"
+                  {...field} 
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password</FormLabel>
+              <FormControl>
+                <Input 
+                  type="password"
+                  placeholder="••••••••"
                   {...field} 
                 />
               </FormControl>

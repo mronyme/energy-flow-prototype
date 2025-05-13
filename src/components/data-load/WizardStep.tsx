@@ -1,52 +1,60 @@
 
 import React from 'react';
+import { CheckIcon } from 'lucide-react';
 
-interface WizardStepProps {
-  number: number;
-  title: string;
-  active: boolean;
-  completed: boolean;
+export interface WizardStepProps {
+  number?: number; // Changed from 'step' to 'number' to avoid conflicts
+  label: string;
+  description: string;
+  isActive: boolean;
+  isCompleted: boolean;
 }
 
-const WizardStep: React.FC<WizardStepProps> = ({
-  number,
-  title,
-  active,
-  completed
+const WizardStep: React.FC<WizardStepProps> = ({ 
+  number, // Use number instead of step
+  label, 
+  description, 
+  isActive, 
+  isCompleted 
 }) => {
   return (
     <div 
-      className={`flex flex-col items-center ${active ? 'text-primary' : completed ? 'text-green-600' : 'text-gray-400'}`}
+      className={`
+        flex items-start space-x-3 p-3 rounded-md
+        transition-all duration-100 ease-out
+        ${isActive ? 'bg-blue-50 ring-1 ring-blue-200' : ''}
+      `}
     >
       <div 
         className={`
-          flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium 
-          ${active 
-            ? 'bg-primary text-white' 
-            : completed 
-              ? 'bg-green-100 text-green-600 border border-green-200' 
-              : 'bg-gray-100 text-gray-500 border border-gray-200'
+          flex items-center justify-center w-8 h-8 rounded-full shrink-0
+          ${isCompleted 
+            ? 'bg-green-500 text-white' 
+            : isActive 
+              ? 'bg-primary text-white' 
+              : 'bg-gray-200 text-gray-500'
           }
         `}
+        aria-hidden="true"
       >
-        {completed ? (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-4 w-4"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fillRule="evenodd"
-              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-              clipRule="evenodd"
-            />
-          </svg>
+        {isCompleted ? (
+          <CheckIcon className="w-5 h-5" />
         ) : (
-          number
+          <span>{number || 1}</span>
         )}
       </div>
-      <div className="mt-2 text-sm font-medium">{title}</div>
+      
+      <div>
+        <h4 className={`
+          font-medium text-sm
+          ${isActive ? 'text-primary' : 'text-gray-900'}
+        `}>
+          {label}
+        </h4>
+        <p className="text-xs text-gray-500 mt-0.5">
+          {description}
+        </p>
+      </div>
     </div>
   );
 };

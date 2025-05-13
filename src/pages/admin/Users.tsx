@@ -7,11 +7,12 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAnnouncer } from '@/components/common/A11yAnnouncer';
+import { Role } from '@/types';
 
 type User = {
   id: string;
   email: string;
-  role: 'Operator' | 'DataManager' | 'Manager' | 'Admin';
+  role: Role;
 };
 
 const Users: React.FC = () => {
@@ -38,11 +39,18 @@ const Users: React.FC = () => {
     fetchUsers();
   }, []);
 
+  // Function to handle user selection - not used but needed for type compatibility
+  const handleSelectUser = (user: User) => {
+    // This function is required by the UserList component type
+    // but not actually used in this implementation
+    console.log("User selected:", user);
+  };
+
   // Handle user creation
   const handleCreateUser = async (formData: {
     email: string;
     password: string;
-    role: 'Operator' | 'DataManager' | 'Manager' | 'Admin';
+    role: Role;
   }) => {
     try {
       setLoading(true);
@@ -97,7 +105,10 @@ const Users: React.FC = () => {
           <span className="sr-only">Loading users...</span>
         </div>
       ) : (
-        <UserList users={users} />
+        <UserList 
+          users={users} 
+          onSelect={handleSelectUser} // Add the onSelect prop
+        />
       )}
       
       {/* Create User Dialog */}

@@ -10,13 +10,13 @@ interface ValidationError {
 
 interface PreviewTableProps {
   data: Array<Record<string, any>>;
-  headers: string[];
+  headers?: string[]; // Make headers optional to match usage in CsvImport
   validationErrors?: ValidationError[];
 }
 
 const PreviewTable: React.FC<PreviewTableProps> = ({
   data,
-  headers,
+  headers = Object.keys(data[0] || {}), // Default to keys from first row if not provided
   validationErrors = []
 }) => {
   const getRowErrorMessages = (rowIndex: number): string[] => {

@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { TestTagButton } from './TestTagButton';
+import TestTagButton from './TestTagButton';
 
 interface PiTag {
   id: string;
