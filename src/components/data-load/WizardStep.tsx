@@ -1,60 +1,65 @@
 
+// If needed, create this component with fixed props
 import React from 'react';
-import { CheckIcon } from 'lucide-react';
+
+interface StepItem {
+  id: string;
+  label: string;
+  isActive: boolean;
+  isComplete: boolean;
+}
 
 export interface WizardStepProps {
-  number?: number; // Changed from 'step' to 'number' to avoid conflicts
-  label: string;
-  description: string;
-  isActive: boolean;
-  isCompleted: boolean;
+  steps: StepItem[];
+  currentStep?: number;
+  totalSteps?: number;
+  stepTitle?: string; 
 }
 
 const WizardStep: React.FC<WizardStepProps> = ({ 
-  number, // Use number instead of step
-  label, 
-  description, 
-  isActive, 
-  isCompleted 
+  steps,
+  currentStep,
+  totalSteps,
+  stepTitle 
 }) => {
+  // Implementation that can handle both old and new prop structures
   return (
-    <div 
-      className={`
-        flex items-start space-x-3 p-3 rounded-md
-        transition-all duration-100 ease-out
-        ${isActive ? 'bg-blue-50 ring-1 ring-blue-200' : ''}
-      `}
-    >
-      <div 
-        className={`
-          flex items-center justify-center w-8 h-8 rounded-full shrink-0
-          ${isCompleted 
-            ? 'bg-green-500 text-white' 
-            : isActive 
-              ? 'bg-primary text-white' 
-              : 'bg-gray-200 text-gray-500'
-          }
-        `}
-        aria-hidden="true"
-      >
-        {isCompleted ? (
-          <CheckIcon className="w-5 h-5" />
-        ) : (
-          <span>{number || 1}</span>
-        )}
+    <div className="mb-8">
+      <div className="flex items-center space-x-2 mb-4">
+        {steps.map((step) => (
+          <div key={step.id} className="flex items-center">
+            <div
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
+                ${
+                  step.isComplete
+                    ? 'bg-green-100 text-green-800'
+                    : step.isActive
+                    ? 'bg-blue-100 text-blue-800'
+                    : 'bg-gray-100 text-gray-400'
+                }
+              `}
+            >
+              {step.isComplete ? '✓' : step.id}
+            </div>
+            <span
+              className={`ml-2 text-sm ${
+                step.isActive ? 'font-medium' : 'text-gray-500'
+              }`}
+            >
+              {step.label}
+            </span>
+            {step.id !== steps[steps.length - 1].id && (
+              <div className="w-10 h-1 bg-gray-200 mx-2"></div>
+            )}
+          </div>
+        ))}
       </div>
-      
-      <div>
-        <h4 className={`
-          font-medium text-sm
-          ${isActive ? 'text-primary' : 'text-gray-900'}
-        `}>
-          {label}
-        </h4>
-        <p className="text-xs text-gray-500 mt-0.5">
-          {description}
+      {stepTitle && <h2 className="text-lg font-medium mb-2">{stepTitle}</h2>}
+      {currentStep !== undefined && totalSteps !== undefined && (
+        <p className="text-sm text-gray-500">
+          Step {currentStep} of {totalSteps}
         </p>
-      </div>
+      )}
     </div>
   );
 };

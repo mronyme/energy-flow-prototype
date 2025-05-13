@@ -1,4 +1,3 @@
-
 export type Role = 'Operator' | 'DataManager' | 'Manager' | 'Admin';
 
 export type MeterType = 'ELEC' | 'GAS' | 'WATER';
@@ -62,4 +61,44 @@ export interface PiTag {
   description: string;
   unit: string;
   status: 'active' | 'inactive' | 'OK' | 'KO' | null;
+}
+
+// Add interfaces for the components that have missing prop types
+export interface SkipLinkProps {
+  href: string;
+  label: string;
+}
+
+export interface WizardStepProps {
+  currentStep: number;
+  totalSteps: number;
+  stepTitle: string;
+}
+
+export interface FileUploadProps {
+  onFileSelected: (parsedData: any[], file: File) => void;
+  accept?: string;
+  maxSize?: number;
+}
+
+export interface LogTableProps {
+  entries: ImportLog[];
+  isLoading: boolean;
+}
+
+export interface UserListProps {
+  users: { id: string; email: string; role: Role; }[];
+  onDeleteUser?: (id: string) => void;
+  isLoading?: boolean;
+}
+
+export interface UserFormProps {
+  onSubmit: (formData: { email: string; password: string; role: Role; }) => Promise<void>;
+}
+
+export interface DataGridEditableProps {
+  data: any[];
+  columns: { field: string; headerName: string; type: 'text' | 'number' }[];
+  onRowUpdate: (id: string, field: string, value: any) => Promise<void>;
+  isLoading?: boolean;
 }

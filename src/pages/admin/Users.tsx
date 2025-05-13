@@ -1,13 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import UserFormAdapter from '@/components/admin/UserFormAdapter';
 import UserList from '@/components/admin/UserList';
-import UserForm from '@/components/admin/UserForm';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { adminService } from '@/services/api';
-import { User, Role } from '@/types';
 import { toast } from 'sonner';
-import SkipLink from '@/components/common/SkipLink';
+import { Role, User } from '@/types';
+import { adminService } from '@/services/api';
+import { useAnnouncer } from '@/components/common/A11yAnnouncer';
+import SkipLinkAdapter from '@/components/common/SkipLinkAdapter';
 
 const Users = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -51,7 +50,7 @@ const Users = () => {
   
   return (
     <div className="container mx-auto py-8">
-      <SkipLink target="#users-heading" label="Skip to user management" />
+      <SkipLinkAdapter target="#users-heading" label="Skip to user management" />
       
       <h1 id="users-heading" className="text-2xl font-bold mb-6">User Management</h1>
       
@@ -67,7 +66,7 @@ const Users = () => {
           </TabsContent>
           
           <TabsContent value="create">
-            <UserForm onSubmit={handleCreateUser} isSubmitting={loading} />
+            <UserFormAdapter onSubmit={handleCreateUser} isSubmitting={loading} />
           </TabsContent>
         </Tabs>
       </Card>

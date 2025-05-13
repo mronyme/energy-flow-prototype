@@ -1,9 +1,10 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import DataGridEditableAdapter from '@/components/admin/DataGridEditableAdapter';  
+import SkipLinkAdapter from '@/components/common/SkipLinkAdapter';
 import { adminService } from '@/services/api';
-import { Card } from '@/components/ui/card';
-import DataGridEditable from '@/components/admin/DataGridEditable';
-import SkipLink from '@/components/common/SkipLink';
+import { useAnnouncer } from '@/components/common/A11yAnnouncer';
 import { toast } from 'sonner';
 
 interface EmissionFactor {
@@ -62,7 +63,7 @@ const EmissionFactors = () => {
 
   return (
     <div className="container mx-auto py-8">
-      <SkipLink target="#factors-grid" label="Skip to emission factors" />
+      <SkipLinkAdapter target="#factors-grid" label="Skip to emission factors" />
       
       <h1 className="text-2xl font-bold mb-6">Emission Factors</h1>
       
@@ -74,7 +75,7 @@ const EmissionFactors = () => {
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
           </div>
         ) : (
-          <DataGridEditable
+          <DataGridEditableAdapter
             id="factors-grid"
             data={factors}
             columns={[

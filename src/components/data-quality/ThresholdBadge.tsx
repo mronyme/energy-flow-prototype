@@ -4,8 +4,9 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ThresholdBadgeProps {
-  value: number;
-  historicalMean: number;
+  value?: number;
+  historicalMean?: number;
+  delta?: number; // Added delta property for direct use from AlertCard
   showTooltip?: boolean;
   className?: string;
 }
@@ -13,13 +14,17 @@ interface ThresholdBadgeProps {
 const ThresholdBadge: React.FC<ThresholdBadgeProps> = ({ 
   value, 
   historicalMean, 
+  delta,
   showTooltip = true,
   className = ''
 }) => {
-  // Calculate percentage difference
-  const percentageDiff = historicalMean > 0 
-    ? ((value - historicalMean) / historicalMean) * 100
-    : 0;
+  // Calculate percentage difference if value and historicalMean are provided
+  // Or use the provided delta directly
+  const percentageDiff = delta !== undefined ? delta : (
+    (value !== undefined && historicalMean !== undefined && historicalMean > 0)
+      ? ((value - historicalMean) / historicalMean) * 100
+      : 0
+  );
   
   // Check if outside threshold (±15%)
   const isOutsideThreshold = Math.abs(percentageDiff) > 15;

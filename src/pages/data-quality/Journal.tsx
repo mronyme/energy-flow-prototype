@@ -1,149 +1,80 @@
-
 import React, { useState, useEffect } from 'react';
+import { Separator } from '@/components/ui/separator';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import LogTable from '@/components/data-quality/LogTable';
-import { DatePicker } from '@/components/ui/date-picker';
+import LogTableAdapter from '@/components/data-quality/LogTableAdapter';
 import { journalService } from '@/services/api';
-import { ImportLog } from '@/types';
-import { toast } from 'sonner';
-import { dateUtils } from '@/utils/validation';
-import { Download } from 'lucide-react';
+import { useAnnouncer } from '@/components/common/A11yAnnouncer';
+import { format, subDays } from 'date-fns';
 
-const Journal: React.FC = () => {
-  const [logs, setLogs] = useState<ImportLog[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [startDate, setStartDate] = useState<Date>(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)); // Last 30 days
-  const [endDate, setEndDate] = useState<Date>(new Date());
-  const [exporting, setExporting] = useState(false);
+const Journal = () => {
+  const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 7));
+  const [endDate, setEndDate] = useState<Date | undefined>(new Date());
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const { announce } = useAnnouncer();
   
   useEffect(() => {
-    loadLogs();
-  }, []);
+    fetchLogs();
+  }, [startDate, endDate]);
   
-  const loadLogs = async () => {
+  const fetchLogs = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const data = await journalService.getJournalEntries(100);
-      setLogs(data);
+      if (startDate && endDate) {
+        const formattedStartDate = format(startDate, 'yyyy-MM-dd');
+        const formattedEndDate = format(endDate, 'yyyy-MM-dd');
+        const data = await journalService.getJournalEntriesByDateRange(formattedStartDate, formattedEndDate);
+        setLogs(data);
+      } else {
+        const data = await journalService.getJournalEntries();
+        setLogs(data);
+      }
     } catch (error) {
-      console.error('Error loading import logs:', error);
-      toast.error('Failed to load import logs');
+      console.error('Error fetching journal entries:', error);
+      announce('Error fetching journal entries.', true);
     } finally {
       setLoading(false);
-    }
-  };
-  
-  const handleFilter = async () => {
-    try {
-      setLoading(true);
-      
-      // Format dates for the API
-      const formattedStartDate = dateUtils.format(startDate);
-      const formattedEndDate = dateUtils.format(endDate);
-      
-      const data = await journalService.getJournalEntriesByDateRange(formattedStartDate, formattedEndDate);
-      setLogs(data);
-    } catch (error) {
-      console.error('Error filtering logs:', error);
-      toast.error('Failed to filter logs');
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  const handleExport = async () => {
-    try {
-      setExporting(true);
-      
-      // Since we don't have an actual export function, let's simulate it
-      // In a real implementation, this would call journalService.exportCsv
-      
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Create a CSV from the data
-      const headers = ['Date', 'User', 'Filename', 'Rows OK', 'Rows Error'];
-      const rows = logs.map(log => [
-        new Date(log.ts).toLocaleString(),
-        log.user_email,
-        log.file_name,
-        log.rows_ok.toString(),
-        log.rows_err.toString()
-      ]);
-      
-      const csvContent = [
-        headers.join(','),
-        ...rows.map(row => row.join(','))
-      ].join('\n');
-      
-      // Create and download the file
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `import-journal-${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      toast.success('Journal exported to CSV');
-    } catch (error) {
-      console.error('Error exporting journal:', error);
-      toast.error('Failed to export journal');
-    } finally {
-      setExporting(false);
     }
   };
   
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-6">Import Journal</h1>
+    <div className="container mx-auto py-10">
+      <h1 className="text-3xl font-semibold mb-4">Data Import Journal</h1>
+      <Separator className="mb-6" />
       
-      <Card className="p-6 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="space-y-2">
-            <Label>Start Date</Label>
-            <DatePicker
-              selected={startDate}
-              onSelect={setStartDate}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label>End Date</Label>
-            <DatePicker
-              selected={endDate}
-              onSelect={setEndDate}
-            />
-          </div>
-          
-          <div className="flex items-end space-x-2">
-            <Button onClick={handleFilter} disabled={loading || exporting} className="mb-2">
-              {loading ? 'Loading...' : 'Apply Filter'}
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              onClick={handleExport} 
-              disabled={loading || exporting || logs.length === 0}
-              className="mb-2"
-            >
-              {exporting ? 'Exporting...' : (
-                <>
-                  <Download size={16} className="mr-1" /> Export CSV
-                </>
-              )}
-            </Button>
+      <Card className="mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+          <div>
+            <h2 className="text-xl font-medium mb-2">Filter by Date</h2>
+            <div className="flex items-center space-x-2">
+              <DatePicker
+                id="start-date"
+                mode="single"
+                selected={startDate}
+                onSelect={setStartDate}
+                placeholder="Start date"
+              />
+              <DatePicker
+                id="end-date"
+                mode="single"
+                selected={endDate}
+                onSelect={setEndDate}
+                placeholder="End date"
+              />
+              <Button onClick={fetchLogs} disabled={loading}>
+                {loading ? 'Loading...' : 'Apply Filter'}
+              </Button>
+            </div>
           </div>
         </div>
       </Card>
       
-      <LogTable logs={logs} loading={loading} />
+      <h2 className="text-xl font-medium mb-2">Recent Activity</h2>
+      <Card>
+        <LogTableAdapter logs={logs} loading={loading} />
+      </Card>
     </div>
   );
 };

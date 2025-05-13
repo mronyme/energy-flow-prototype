@@ -73,15 +73,18 @@ export const readingService = {
             
           if (error) throw error;
           result = data;
-        } else if (reading.value !== undefined) {
+        } else if (reading.value !== undefined && reading.ts && reading.meter_id) {
           // Insert new reading (only if we have all required fields)
+          // Type casting to avoid TS errors
+          const newReading = {
+            meter_id: reading.meter_id,
+            ts: reading.ts,
+            value: reading.value
+          };
+          
           const { data, error } = await supabase
             .from('reading')
-            .insert({
-              meter_id: reading.meter_id,
-              ts: reading.ts,
-              value: reading.value
-            })
+            .insert(newReading)
             .select()
             .single();
             
