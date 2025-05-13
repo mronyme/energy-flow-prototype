@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Check } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface GridRow {
   id: string;
@@ -18,7 +19,7 @@ interface DataGridEditableProps {
 
 const DataGridEditable: React.FC<DataGridEditableProps> = ({ data, onSave }) => {
   const [editState, setEditState] = useState<{
-    [key: string]: { value: string; editing: boolean; saving: boolean; error: string | null }
+    [key: string]: { value: string; editing: boolean; saving: boolean; error: string | null; justSaved: boolean }
   }>({});
   
   const startEditing = (row: GridRow) => {
@@ -28,7 +29,8 @@ const DataGridEditable: React.FC<DataGridEditableProps> = ({ data, onSave }) => 
         value: row.value.toString(), 
         editing: true, 
         saving: false,
-        error: null
+        error: null,
+        justSaved: false
       }
     }));
   };
@@ -39,7 +41,8 @@ const DataGridEditable: React.FC<DataGridEditableProps> = ({ data, onSave }) => 
       [id]: { 
         ...prev[id], 
         value,
-        error: validateInput(value)
+        error: validateInput(value),
+        justSaved: false
       }
     }));
   };
@@ -91,12 +94,25 @@ const DataGridEditable: React.FC<DataGridEditableProps> = ({ data, onSave }) => 
     try {
       await onSave(id, newValue);
       
-      // Remove from edit state after successful save
-      setEditState(prev => {
-        const newState = { ...prev };
-        delete newState[id];
-        return newState;
-      });
+      // Show "Saved" badge temporarily
+      setEditState(prev => ({
+        ...prev,
+        [id]: { 
+          ...prev[id], 
+          editing: false,
+          saving: false,
+          justSaved: true 
+        }
+      }));
+      
+      // Remove the "Saved" badge after 2 seconds
+      setTimeout(() => {
+        setEditState(prev => {
+          const newState = { ...prev };
+          delete newState[id];
+          return newState;
+        });
+      }, 2000);
       
     } catch (error) {
       setEditState(prev => ({
@@ -104,7 +120,8 @@ const DataGridEditable: React.FC<DataGridEditableProps> = ({ data, onSave }) => 
         [id]: { 
           ...prev[id], 
           saving: false, 
-          error: 'Failed to save' 
+          error: 'Failed to save',
+          justSaved: false
         }
       }));
     }
@@ -125,6 +142,7 @@ const DataGridEditable: React.FC<DataGridEditableProps> = ({ data, onSave }) => 
             const isEditing = editState[row.id]?.editing;
             const isSaving = editState[row.id]?.saving;
             const error = editState[row.id]?.error;
+            const justSaved = editState[row.id]?.justSaved;
             
             return (
               <TableRow key={row.id}>
@@ -156,6 +174,11 @@ const DataGridEditable: React.FC<DataGridEditableProps> = ({ data, onSave }) => 
                           {error}
                         </p>
                       )}
+                    </div>
+                  ) : justSaved ? (
+                    <div className="flex items-center gap-2">
+                      <div className="p-2">{row.value}</div>
+                      <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Saved</Badge>
                     </div>
                   ) : (
                     <div 

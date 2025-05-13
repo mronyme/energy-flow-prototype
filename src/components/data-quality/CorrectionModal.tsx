@@ -74,6 +74,7 @@ const CorrectionModal: React.FC<CorrectionModalProps> = ({
     setError(null);
     
     try {
+      // This will update both the reading and anomaly comment
       await onSave(anomaly.readingId, parsedValue, comment, anomaly.id);
       onClose();
     } catch (err) {
@@ -147,6 +148,9 @@ const CorrectionModal: React.FC<CorrectionModalProps> = ({
                 placeholder="Explain why this value was corrected"
                 rows={3}
               />
+              <p className="text-xs text-gray-500">
+                Comments are important for audit trail and providing context for other users.
+              </p>
             </div>
           </div>
           
@@ -158,10 +162,19 @@ const CorrectionModal: React.FC<CorrectionModalProps> = ({
         </div>
         
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
+          <Button 
+            variant="outline" 
+            onClick={onClose} 
+            disabled={isSubmitting}
+            className="transition-all duration-100 ease-out"
+          >
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={isSubmitting}>
+          <Button 
+            onClick={handleSave} 
+            disabled={isSubmitting}
+            className="transition-all duration-100 ease-out"
+          >
             {isSubmitting ? 'Saving...' : 'Save Correction'}
           </Button>
         </DialogFooter>

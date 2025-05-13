@@ -1,17 +1,21 @@
 
 import React from 'react';
-import { AlertTriangle, Info } from 'lucide-react';
-import { AnomalyType } from '../../types';
+import { Card, CardContent } from '@/components/ui/card';
+import { InfoIcon, AlertTriangleIcon, BanIcon, PercentIcon } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { dateUtils, validationRules } from '@/utils/validation';
 
 interface AlertCardProps {
   title: string;
-  type: AnomalyType;
+  type: 'MISSING' | 'SPIKE' | 'FLAT' | 'THRESHOLD';
   date: string;
   value: number | null;
   delta?: number | null;
   site: string;
   meter: string;
-  onClick: () => void;
+  onClick?: () => void;
 }
 
 const AlertCard: React.FC<AlertCardProps> = ({
@@ -24,74 +28,105 @@ const AlertCard: React.FC<AlertCardProps> = ({
   meter,
   onClick
 }) => {
-  const getTypeColor = () => {
+  // Determine icon and color based on type
+  const getIconDetails = () => {
     switch (type) {
-      case 'SPIKE':
-        return 'bg-red-100 text-red-800';
       case 'MISSING':
-        return 'bg-amber-100 text-amber-800';
+        return {
+          icon: <BanIcon className="h-5 w-5 text-red-600" />,
+          color: 'text-red-600',
+          bgColor: 'bg-red-50',
+          badgeClass: 'bg-red-100 text-red-800'
+        };
+      case 'SPIKE':
+        return {
+          icon: <AlertTriangleIcon className="h-5 w-5 text-amber-600" />,
+          color: 'text-amber-600',
+          bgColor: 'bg-amber-50',
+          badgeClass: 'bg-amber-100 text-amber-800'
+        };
       case 'FLAT':
-        return 'bg-blue-100 text-blue-800';
+        return {
+          icon: <InfoIcon className="h-5 w-5 text-blue-600" />,
+          color: 'text-blue-600',
+          bgColor: 'bg-blue-50',
+          badgeClass: 'bg-blue-100 text-blue-800'
+        };
+      case 'THRESHOLD':
+        return {
+          icon: <PercentIcon className="h-5 w-5 text-purple-600" />,
+          color: 'text-purple-600',
+          bgColor: 'bg-purple-50',
+          badgeClass: 'bg-purple-100 text-purple-800'
+        };
       default:
-        return 'bg-gray-100 text-gray-800';
+        return {
+          icon: <InfoIcon className="h-5 w-5 text-blue-600" />,
+          color: 'text-blue-600',
+          bgColor: 'bg-blue-50',
+          badgeClass: 'bg-blue-100 text-blue-800'
+        };
     }
   };
   
-  const getTypeIcon = () => {
-    switch (type) {
-      case 'SPIKE':
-        return <AlertTriangle className="h-5 w-5 text-red-500" />;
-      case 'MISSING':
-        return <AlertTriangle className="h-5 w-5 text-amber-500" />;
-      case 'FLAT':
-        return <Info className="h-5 w-5 text-blue-500" />;
-      default:
-        return null;
-    }
-  };
-
+  const { icon, color, bgColor, badgeClass } = getIconDetails();
+  const formattedDate = dateUtils.formatDisplay(date);
+  
   return (
-    <div 
-      className="bg-white rounded-lg shadow-sm ring-1 ring-dark/10 p-4 hover:shadow-md transition-all duration-100 ease-out cursor-pointer"
+    <Card 
+      className={cn(
+        "shadow-sm ring-1 ring-dark/10 transition-all duration-100 ease-out",
+        onClick && "cursor-pointer hover:shadow-md",
+        bgColor
+      )}
       onClick={onClick}
     >
-      <div className="flex justify-between items-start mb-3">
-        <h3 className="font-medium text-dark">{title}</h3>
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTypeColor()}`}>
-          {getTypeIcon()}
-          <span className="ml-1">{type}</span>
-        </span>
-      </div>
-      
-      <div className="space-y-2 text-sm">
-        <div className="flex justify-between">
-          <span className="text-gray-500">Date:</span>
-          <span className="font-medium">{date}</span>
-        </div>
-        
-        <div className="flex justify-between">
-          <span className="text-gray-500">Value:</span>
-          <span className="font-medium">{value !== null ? value : 'N/A'}</span>
-        </div>
-        
-        {delta !== null && delta !== undefined && (
-          <div className="flex justify-between">
-            <span className="text-gray-500">Deviation:</span>
-            <span className="font-medium text-red-600">+{delta.toFixed(1)}%</span>
+      <CardContent className="p-4">
+        <div className="flex justify-between items-start mb-3">
+          <div>
+            <h3 className="font-semibold text-dark">{title}</h3>
+            <p className="text-sm text-gray-600">
+              <span>{site}</span> | <span>{meter}</span>
+            </p>
           </div>
-        )}
-        
-        <div className="flex justify-between">
-          <span className="text-gray-500">Site:</span>
-          <span className="font-medium">{site}</span>
+          {icon}
         </div>
         
-        <div className="flex justify-between">
-          <span className="text-gray-500">Meter:</span>
-          <span className="font-medium">{meter}</span>
+        <div className="flex justify-between items-center">
+          <div>
+            <div className="text-sm text-gray-600 mb-1">
+              {formattedDate}
+            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge className={badgeClass}>
+                    {type === 'THRESHOLD' ? 'THRESHOLD' : type}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {type === 'MISSING' && 'No value recorded'}
+                  {type === 'SPIKE' && `Value spike ${delta ? `+${delta.toFixed(1)}%` : ''}`}
+                  {type === 'FLAT' && 'Unchanged for 48+ hours'}
+                  {type === 'THRESHOLD' && 'Out-of-threshold value'}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          
+          <div className="text-right">
+            <div className={cn("font-bold", color)}>
+              {value !== null ? value : '—'}
+            </div>
+            {delta !== null && delta !== undefined && (
+              <div className="text-xs">
+                {delta > 0 ? '+' : ''}{delta.toFixed(1)}%
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
