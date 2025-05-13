@@ -118,7 +118,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         navigate('/');
       }
     } catch (error: any) {
-      toast.error(error.message || 'Invalid credentials');
+      // More specific error messages for better accessibility
+      if (error.message.includes('Invalid login credentials')) {
+        toast.error('Invalid email or password. Please try again.');
+      } else if (error.message.includes('Email not confirmed')) {
+        toast.error('Please confirm your email before logging in.');
+      } else {
+        toast.error(error.message || 'Login failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

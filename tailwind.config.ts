@@ -56,9 +56,9 @@ export default {
 				dark: '#17255F',
 			},
 			borderRadius: {
-				lg: 'var(--radius)',
-				md: 'calc(var(--radius) - 2px)',
-				sm: 'calc(var(--radius) - 4px)'
+				lg: 'var(--radius, 8px)',
+				md: 'calc(var(--radius, 8px) - 2px)',
+				sm: 'calc(var(--radius, 8px) - 4px)'
 			},
 			boxShadow: {
 				'sm': '0 1px 2px rgba(0,0,0,.05)',
@@ -82,11 +82,40 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'fade-in': {
+					from: { 
+						opacity: '0',
+						transform: 'translateY(4px)'
+					},
+					to: { 
+						opacity: '1',
+						transform: 'translateY(0)'
+					}
+				},
+				'fade-out': {
+					from: { 
+						opacity: '1',
+						transform: 'translateY(0)'
+					},
+					to: { 
+						opacity: '0',
+						transform: 'translateY(4px)'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade-in 0.1s ease-out',
+				'fade-out': 'fade-out 0.1s ease-out'
+			},
+			transitionDuration: {
+				'DEFAULT': '100ms',
+			},
+			transitionTimingFunction: {
+				'DEFAULT': 'cubic-bezier(0.4, 0, 0.2, 1)',
+				'out': 'ease-out',
 			}
 		}
 	},

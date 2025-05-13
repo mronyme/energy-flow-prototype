@@ -48,13 +48,16 @@ const Layout: React.FC<LayoutProps> = ({ requiredRoles = [] }) => {
           <div 
             className="fixed inset-0 bg-black bg-opacity-50 z-10 md:hidden"
             onClick={toggleSidebar}
+            aria-hidden="true"
           ></div>
         )}
         
         <Sidebar isOpen={sidebarOpen} toggle={toggleSidebar} />
         
-        <main className="flex-1 p-4 md:p-6 max-w-full overflow-x-auto">
-          <Outlet />
+        <main className="flex-1 p-4 md:p-6 max-w-full overflow-x-auto transition-all duration-100 ease-out">
+          <div className="max-w-7xl mx-auto">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

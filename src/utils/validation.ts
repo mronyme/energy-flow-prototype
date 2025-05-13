@@ -100,6 +100,38 @@ export const validationRules = {
   // Format percentage for display
   formatPercentage: (percentage: number): string => {
     return `${percentage > 0 ? '+' : ''}${percentage.toFixed(1)}%`;
+  },
+
+  // Get anomaly type based on validation rules
+  getAnomalyType: (value: number | null, historicalMean: number, readings: number[], timestamps: string[]): 'SPIKE' | 'MISSING' | 'FLAT' | null => {
+    if (value === null || value === undefined) {
+      return 'MISSING';
+    }
+
+    if (historicalMean > 0 && value >= historicalMean * 1.4) {
+      return 'SPIKE';
+    }
+
+    if (readings.length >= 2 && timestamps.length >= 2) {
+      if (validationRules.isFlat(readings, timestamps)) {
+        return 'FLAT';
+      }
+    }
+
+    return null;
+  },
+
+  // Check if a value has a problem that requires flagging
+  hasIssue: (value: number | null, historicalMean: number, readings: number[], timestamps: string[]): boolean => {
+    if (value === null || value === undefined) return true;
+    if (historicalMean > 0) {
+      if (value >= historicalMean * 1.4) return true;
+      if (value < historicalMean * 0.85 || value > historicalMean * 1.15) return true;
+    }
+    if (readings.length >= 2 && timestamps.length >= 2) {
+      if (validationRules.isFlat(readings, timestamps)) return true;
+    }
+    return false;
   }
 };
 
@@ -111,6 +143,18 @@ export const toastMessages = {
   
   correctionSaved: () => {
     return `Correction saved`;
+  },
+  
+  readingSaved: () => {
+    return `Reading saved`;
+  },
+  
+  factorUpdated: () => {
+    return `Factor updated`;
+  },
+  
+  userCreated: () => {
+    return `User created`;
   }
 };
 
