@@ -1,99 +1,88 @@
 
-import React, { useEffect, useState } from 'react';
-import { Separator } from '@/components/ui/separator';
-import { Button } from '@/components/ui/button';
-import DataGridEditableAdapter from '@/components/admin/DataGridEditableAdapter';  
-import SkipLinkAdapter from '@/components/common/SkipLinkAdapter';
-import { adminService } from '@/services/api';
-import { useAnnouncer } from '@/components/common/A11yAnnouncer';
-import { toast } from 'sonner';
-import { Card } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import DataGridEditableAdapter from '@/components/admin/DataGridEditableAdapter';
+import EmissionFactorForm from '@/components/admin/EmissionFactorForm';
+import AuditLogViewer from '@/components/admin/AuditLogViewer';
+
+// Sample columns for the emission factors grid
+const columns = [
+  { name: 'country', header: 'Country', width: 100 },
+  { name: 'co2_factor', header: 'CO₂ Factor', width: 120, type: 'number' },
+  { name: 'unit', header: 'Unit', width: 120 },
+  { name: 'source', header: 'Source', width: 200 },
+  { name: 'notes', header: 'Notes', width: 250 },
+];
 
 interface EmissionFactor {
   id: string;
-  name: string;
-  value: number;
+  country: string;
+  co2_factor: number;
   unit: string;
-  updatedAt: string;
+  source: string;
+  notes?: string;
 }
 
-const EmissionFactors = () => {
-  const [factors, setFactors] = useState<EmissionFactor[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const { announce } = useAnnouncer();
+const EmissionFactors: React.FC = () => {
+  const [activeTab, setActiveTab] = useState('factors');
+  const [editMode, setEditMode] = useState<boolean>(false);
+  const [selectedFactor, setSelectedFactor] = useState<EmissionFactor | null>(null);
 
-  useEffect(() => {
-    const loadFactors = async () => {
-      try {
-        const data = await adminService.getFactors();
-        setFactors(data);
-      } catch (error) {
-        console.error('Error loading emission factors:', error);
-        toast.error('Failed to load emission factors');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const handleEdit = (factor: EmissionFactor) => {
+    setSelectedFactor(factor);
+    setEditMode(true);
+  };
 
-    loadFactors();
-  }, []);
+  const handleAdd = () => {
+    setSelectedFactor(null);
+    setEditMode(true);
+  };
 
-  const handleSave = async (id: string, field: string, value: any) => {
-    if (field !== 'value' || typeof value !== 'number') {
-      toast.error('Only value field can be edited');
-      return;
-    }
+  const handleCancel = () => {
+    setEditMode(false);
+    setSelectedFactor(null);
+  };
 
-    try {
-      setSaving(true);
-      await adminService.updateFactor(id, value);
-      toast.success('Factor updated');
-
-      // Update local state
-      setFactors(prev => 
-        prev.map(factor => 
-          factor.id === id ? { ...factor, value, updatedAt: new Date().toISOString().split('T')[0] } : factor
-        )
-      );
-      
-      // Show a blue badge next to the updated row (this would be implemented in DataGridEditable component)
-      announce('Factor updated successfully');
-    } catch (error) {
-      console.error('Error updating emission factor:', error);
-      toast.error('Failed to update emission factor');
-    } finally {
-      setSaving(false);
-    }
+  const handleSave = async (factor: EmissionFactor) => {
+    // This would normally make an API call to save the factor
+    console.log('Saving factor:', factor);
+    
+    // Return to grid view
+    setEditMode(false);
+    setSelectedFactor(null);
   };
 
   return (
-    <div className="container mx-auto py-8">
-      <SkipLinkAdapter href="#factors-grid" label="Skip to emission factors" />
+    <div className="container mx-auto py-10">
+      <h1 className="text-3xl font-bold mb-6">Emission Factors</h1>
       
-      <h1 className="text-2xl font-bold mb-6">Emission Factors</h1>
-      
-      <Card className="p-6">
-        <h2 className="text-lg font-semibold mb-4">CO₂ Emission Factors by Energy Source</h2>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="factors">Factors</TabsTrigger>
+          <TabsTrigger value="audit">Audit Log</TabsTrigger>
+        </TabsList>
         
-        {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-          </div>
-        ) : (
-          <DataGridEditableAdapter
-            data={factors}
-            columns={[
-              { field: 'name', headerName: 'Energy Source', type: 'text' },
-              { field: 'value', headerName: 'Value', type: 'number' },
-              { field: 'unit', headerName: 'Unit', type: 'text' },
-              { field: 'updatedAt', headerName: 'Last Updated', type: 'text' }
-            ]}
-            onRowUpdate={handleSave}
-            isLoading={saving}
-          />
-        )}
-      </Card>
+        <TabsContent value="factors" className="pt-4">
+          {editMode ? (
+            <EmissionFactorForm
+              factor={selectedFactor || undefined}
+              onSave={handleSave}
+              onCancel={handleCancel}
+            />
+          ) : (
+            <DataGridEditableAdapter
+              entity="emission_factor"
+              columns={columns}
+              onAdd={handleAdd}
+              onEdit={handleEdit}
+            />
+          )}
+        </TabsContent>
+        
+        <TabsContent value="audit" className="pt-4">
+          <AuditLogViewer tableName="emission_factor" />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

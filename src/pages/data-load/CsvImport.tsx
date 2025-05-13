@@ -5,12 +5,15 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import FileUploadAdapter from '@/components/data-load/FileUploadAdapter';
 import WizardStep from '@/components/data-load/WizardStep';
+import ValidationResultSummary from '@/components/data-load/ValidationResultSummary';
 import { useAnnouncer } from '@/components/common/A11yAnnouncer';
 import { readingService, importLogService } from '@/services/api';
 import { useAuth } from '@/hooks/useAuth'; 
 import * as csvUtils from '@/utils/csvUtils';
+import { validateCsvStructure, validateCsvData, validateNumeric, validateDate, ValidationError } from '@/utils/csvValidation';
 import { Reading, ImportLog } from '@/types';
 import { useNavigate } from 'react-router-dom';
+import { Download } from 'lucide-react';
 
 const CsvImport: React.FC = () => {
   const [step, setStep] = useState(1);
@@ -18,6 +21,7 @@ const CsvImport: React.FC = () => {
   const [readings, setReadings] = useState<Reading[]>([]);
   const [importResult, setImportResult] = useState<{ success: boolean, inserted?: number, errors?: number } | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const { announce } = useAnnouncer();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -31,8 +35,35 @@ const CsvImport: React.FC = () => {
 
   const handleFileSelected = useCallback(async (data: any[], selectedFile: File) => {
     try {
-      // Transform the data into readings
-      const transformedReadings = data.map(row => ({
+      // First, validate CSV structure (required columns)
+      const requiredColumns = ['meter_id', 'timestamp', 'value'];
+      const headers = Object.keys(data[0] || {});
+      
+      const structureValidation = validateCsvStructure(headers, requiredColumns);
+      
+      if (!structureValidation.isValid) {
+        toast.error(`CSV missing required columns: ${structureValidation.missingColumns.join(', ')}`);
+        announce(`CSV is missing required columns: ${structureValidation.missingColumns.join(', ')}`, true);
+        return;
+      }
+      
+      // Validate data rows
+      const validationRules = {
+        value: (val: string) => validateNumeric(val, 0),
+        timestamp: (val: string) => validateDate(val)
+      };
+      
+      const { validRows, invalidRows, errors } = validateCsvData(
+        data, 
+        requiredColumns,
+        validationRules
+      );
+      
+      // Store errors for display
+      setValidationErrors(errors);
+      
+      // Transform valid rows into readings
+      const transformedReadings = validRows.map(row => ({
         id: undefined, // Make this optional for creation
         meter_id: row.meter_id,
         ts: row.timestamp || row.ts,
@@ -42,10 +73,21 @@ const CsvImport: React.FC = () => {
       setReadings(transformedReadings);
       setFile(selectedFile);
       setStep(2);
-      announce(`File parsed successfully. ${transformedReadings.length} readings found.`);
+      
+      // Announce results for accessibility
+      const errorMessage = invalidRows.length > 0 
+        ? `, with ${invalidRows.length} invalid rows excluded.` 
+        : '';
+        
+      announce(`File parsed successfully. ${transformedReadings.length} valid readings found${errorMessage}`);
+      
+      if (invalidRows.length > 0) {
+        toast.warning(`${invalidRows.length} rows have validation errors and will be skipped.`);
+      }
     } catch (error) {
       console.error('Error processing file:', error);
       announce('Error processing file. Please check the format and try again.', true);
+      toast.error('Error processing file. Please check the format and try again.');
     }
   }, [announce]);
   
@@ -101,6 +143,19 @@ const CsvImport: React.FC = () => {
     navigate('/data-quality/journal');
   };
   
+  const downloadErrorReport = () => {
+    if (validationErrors.length === 0) return;
+    
+    const csvData = validationErrors.map(error => ({
+      Row: error.row,
+      Field: error.field,
+      Error: error.message
+    }));
+    
+    csvUtils.downloadCSV(csvData, 'validation-errors.csv');
+    toast.success('Error report downloaded');
+  };
+  
   return (
     <div className="container mx-auto py-10">
       <h1 className="text-3xl font-semibold mb-2">CSV Import</h1>
@@ -120,6 +175,14 @@ const CsvImport: React.FC = () => {
             <p className="text-gray-600">
               Select a CSV file containing meter readings. The file should have columns for meter_id, timestamp, and value.
             </p>
+            <div className="bg-blue-50 border border-blue-200 rounded p-4 text-blue-700 text-sm mb-4">
+              <p><strong>Required columns:</strong> meter_id, timestamp, value</p>
+              <p><strong>Format requirements:</strong></p>
+              <ul className="list-disc ml-5 mt-1">
+                <li>value: Must be a positive number</li>
+                <li>timestamp: Must be a valid date (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)</li>
+              </ul>
+            </div>
             <FileUploadAdapter
               onFileSelected={handleFileSelected}
               accept=".csv"
@@ -134,6 +197,13 @@ const CsvImport: React.FC = () => {
             <p className="text-gray-600">
               Review the data before importing. Make sure the meter IDs and values are correct.
             </p>
+            
+            <ValidationResultSummary
+              validCount={readings.length}
+              invalidCount={validationErrors.length}
+              errors={validationErrors}
+              onDownloadErrors={downloadErrorReport}
+            />
             
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
@@ -164,7 +234,10 @@ const CsvImport: React.FC = () => {
             
             <div className="flex justify-between">
               <Button variant="outline" onClick={handleBack}>Back</Button>
-              <Button onClick={handleImport} disabled={processing}>
+              <Button 
+                onClick={handleImport} 
+                disabled={processing || readings.length === 0}
+              >
                 {processing ? 'Processing...' : 'Import Data'}
               </Button>
             </div>

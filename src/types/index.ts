@@ -64,7 +64,8 @@ export interface PiTag {
   name: string;
   description: string;
   site_id?: string;
-  status: boolean | string; // Allow both boolean and string for status
+  // Use a union type with specific string literals for status
+  status: 'OK' | 'KO' | 'active' | 'inactive';
   value?: number;
   unit?: string;
   timestamp?: string;
@@ -128,4 +129,16 @@ export interface AlertCardProps {
   anomaly?: any;
   onClick?: () => void;
   key?: string;
+}
+
+export interface AuditLog {
+  id: string;
+  ts: string;
+  user_email: string;
+  action: string;
+  table_name: string;
+  record_id?: string;
+  old_value?: string;
+  new_value?: string;
+  description?: string;
 }
