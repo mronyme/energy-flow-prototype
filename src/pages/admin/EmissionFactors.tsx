@@ -7,11 +7,11 @@ import AuditLogViewer from '@/components/admin/AuditLogViewer';
 
 // Fixed columns format for the emission factors grid
 const columns = [
-  { field: 'country', headerName: 'Country', type: 'text' },
-  { field: 'co2_factor', headerName: 'CO₂ Factor', type: 'number' },
-  { field: 'unit', headerName: 'Unit', type: 'text' },
-  { field: 'source', headerName: 'Source', type: 'text' },
-  { field: 'notes', headerName: 'Notes', type: 'text' },
+  { field: 'country', headerName: 'Country', type: 'text' as 'text' },
+  { field: 'co2_factor', headerName: 'CO₂ Factor', type: 'number' as 'number' },
+  { field: 'unit', headerName: 'Unit', type: 'text' as 'text' },
+  { field: 'source', headerName: 'Source', type: 'text' as 'text' },
+  { field: 'notes', headerName: 'Notes', type: 'text' as 'text' },
 ];
 
 interface EmissionFactor {

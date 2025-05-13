@@ -19,7 +19,17 @@ const Dashboard: React.FC = () => {
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [showExport, setShowExport] = useState(false);
   
-  const { data: dashboardData, isLoading, error } = useDashboardData(selectedSite, startDate, endDate);
+  // Use custom hook to fetch dashboard data with the right parameters
+  const { 
+    chartData: dashboardData, 
+    loading: isLoading, 
+    totalKwh,
+    totalCo2,
+    totalCost,
+    kwhChange,
+    co2Change,
+    costChange
+  } = useDashboardData(selectedPeriod as any, selectedSite);
   
   const handleSiteChange = (value: string) => {
     setSelectedSite(value);
@@ -59,17 +69,6 @@ const Dashboard: React.FC = () => {
   const toggleExportPanel = () => {
     setShowExport(!showExport);
   };
-  
-  // Calculate summary metrics
-  const totalKwh = dashboardData?.reduce((sum, day) => sum + day.kwh, 0) || 0;
-  const totalCo2 = dashboardData?.reduce((sum, day) => sum + day.co2, 0) || 0;
-  const totalCost = dashboardData?.reduce((sum, day) => sum + day.cost_eur, 0) || 0;
-  
-  // Calculate change vs previous period (simplified for demo)
-  // In a real app, we would fetch comparison data
-  const kwhChange = 5.2;
-  const co2Change = -3.8;
-  const costChange = 7.1;
   
   // Define dataKeys for the chart
   const dataKeys = [
@@ -218,7 +217,7 @@ const Dashboard: React.FC = () => {
         isOpen={showExport} 
         onClose={() => setShowExport(false)} 
         data={dashboardData || []} 
-        dateRange={{ start: startDate, end: endDate }}
+        dateRange={{ startDate, endDate }}
       />
     </div>
   );

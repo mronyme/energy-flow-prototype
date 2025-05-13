@@ -25,12 +25,16 @@ interface ExportPanelProps {
     startDate: Date;
     endDate: Date;
   };
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 const ExportPanel: React.FC<ExportPanelProps> = ({ 
   data,
   siteName = 'All Sites',
-  dateRange
+  dateRange,
+  isOpen,
+  onClose
 }) => {
   const [isExporting, setIsExporting] = useState(false);
   
@@ -59,21 +63,24 @@ const ExportPanel: React.FC<ExportPanelProps> = ({
       toast.error('Failed to export data');
     } finally {
       setIsExporting(false);
+      if (onClose) onClose();
     }
   };
 
   const handleExportPDF = () => {
     // In a real implementation, this would generate a PDF report
     toast.info('PDF export feature coming soon');
+    if (onClose) onClose();
   };
   
   const handleExportExcel = () => {
     // In a real implementation, this would export to Excel
     toast.info('Excel export feature coming soon');
+    if (onClose) onClose();
   };
 
   return (
-    <Popover>
+    <Popover open={isOpen}>
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm">
           <Download className="h-4 w-4 mr-2" />
