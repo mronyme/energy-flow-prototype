@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -45,24 +44,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // If profile exists, return user with role
       if (profileData) {
+        console.log('Profile found with role:', profileData.role);
+        // Handle different casing in role values (ensure it matches our Role type)
+        const normalizedRole = normalizeRole(profileData.role as string);
+        
         return {
           id: userId,
           email: userEmail || '',
-          role: profileData.role as Role
+          role: normalizedRole
         };
       }
       
       // Profile doesn't exist, get role from user metadata or use default
       const { data: userData } = await supabase.auth.getUser();
       const metadata = userData?.user?.user_metadata || {};
-      const role = (metadata.role as Role) || 'Operator';
+      const metadataRole = metadata.role ? normalizeRole(metadata.role as string) : 'Operator';
+      
+      console.log('Creating profile with role from metadata:', metadataRole);
       
       // Create profile
       const { error: insertError } = await supabase
         .from('profiles')
         .insert({
           id: userId,
-          role: role
+          role: metadataRole
         });
       
       if (insertError) {
@@ -74,12 +79,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return {
         id: userId,
         email: userEmail || '',
-        role
+        role: metadataRole
       };
     } catch (error) {
       console.error('Error in fetchAndSetUserProfile:', error);
       return null;
     }
+  };
+
+  // Helper function to normalize role values to our expected Role types
+  const normalizeRole = (role: string): Role => {
+    // Convert to lowercase for consistent comparison
+    const lowercaseRole = role.toLowerCase();
+    
+    // Map role strings to our Role type values
+    if (lowercaseRole === 'admin') return 'Admin';
+    if (lowercaseRole === 'datamanager' || lowercaseRole === 'data manager' || lowercaseRole === 'data_manager') return 'DataManager';
+    if (lowercaseRole === 'manager') return 'Manager';
+    
+    // Default to Operator if no match
+    return 'Operator';
   };
 
   // Handle auth state changes and session initialization

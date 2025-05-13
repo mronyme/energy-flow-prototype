@@ -69,14 +69,17 @@ export const generateMockKpiData = (): KpiDaily[] => {
 export const mockKpiService = {
   getAllSitesKpi: (startDate: string, endDate: string) => {
     // In a real implementation, we would filter by date range
-    // For mock purposes, we'll just return all data
+    // For mock purposes, we'll just log and return all data
     console.log(`Fetching mock KPI data from ${startDate} to ${endDate}`);
-    return Promise.resolve(generateMockKpiData());
+    const data = generateMockKpiData();
+    console.log(`Generated ${data.length} mock KPI records`);
+    return Promise.resolve(data);
   }
 };
 
 export const mockSiteService = {
   getSites: () => {
+    console.log('Fetching mock sites data:', mockSites);
     return Promise.resolve(mockSites);
   }
 };

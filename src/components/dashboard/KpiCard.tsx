@@ -23,6 +23,9 @@ const KpiCard: React.FC<KpiCardProps> = ({
   onClick,
   isActive = false
 }) => {
+  // Format change to have at most 1 decimal place
+  const formattedChange = Math.abs(parseFloat(change.toFixed(1)));
+  // For display purposes, positive change is bad for consumption metrics
   const isPositive = change >= 0;
   
   return (
@@ -58,7 +61,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
                 isPositive ? "text-red-600" : "text-green-600"
               )}
             >
-              {Math.abs(change)}%
+              {formattedChange}%
             </span>
             <span className="text-xs text-gray-500 ml-1">vs. previous period</span>
           </div>

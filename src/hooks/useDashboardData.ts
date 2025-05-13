@@ -47,6 +47,13 @@ export const useDashboardData = (periodType: 'week' | 'month' = 'week', selected
         
         setKpiData(kpiResult);
         console.log('KPI Data loaded:', kpiResult.length, 'records');
+        
+        // Log site IDs to help debug site filtering
+        if (kpiResult.length > 0) {
+          const uniqueSiteIds = [...new Set(kpiResult.map(item => item.site_id))];
+          console.log('Available site IDs in KPI data:', uniqueSiteIds);
+          console.log('Selected site ID:', selectedSiteId);
+        }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
@@ -60,7 +67,10 @@ export const useDashboardData = (periodType: 'week' | 'month' = 'week', selected
   // Filter KPI data based on selected site
   const filteredKpiData = selectedSiteId === 'all'
     ? kpiData
-    : kpiData.filter(kpi => kpi.site_id === selectedSiteId);
+    : kpiData.filter(kpi => String(kpi.site_id) === String(selectedSiteId));
+  
+  // Log the filtered data count to help with debugging
+  console.log(`Filtered KPI data for site ${selectedSiteId}: ${filteredKpiData.length} records`);
   
   // Calculate totals
   const calculateTotals = () => {
@@ -105,11 +115,11 @@ export const useDashboardData = (periodType: 'week' | 'month' = 'week', selected
       cost: secondPeriod.reduce((sum, kpi) => sum + kpi.cost_eur, 0) / secondPeriod.length,
     };
     
-    // Calculate percentage change
+    // Calculate percentage change and round to 1 decimal place
     return {
-      kwhChange: firstAvg.kwh === 0 ? 0 : ((secondAvg.kwh - firstAvg.kwh) / firstAvg.kwh) * 100,
-      co2Change: firstAvg.co2 === 0 ? 0 : ((secondAvg.co2 - firstAvg.co2) / firstAvg.co2) * 100,
-      costChange: firstAvg.cost === 0 ? 0 : ((secondAvg.cost - firstAvg.cost) / firstAvg.cost) * 100,
+      kwhChange: firstAvg.kwh === 0 ? 0 : parseFloat((((secondAvg.kwh - firstAvg.kwh) / firstAvg.kwh) * 100).toFixed(1)),
+      co2Change: firstAvg.co2 === 0 ? 0 : parseFloat((((secondAvg.co2 - firstAvg.co2) / firstAvg.co2) * 100).toFixed(1)),
+      costChange: firstAvg.cost === 0 ? 0 : parseFloat((((secondAvg.cost - firstAvg.cost) / firstAvg.cost) * 100).toFixed(1)),
     };
   };
   

@@ -6,7 +6,7 @@ import TrendLineChart from '@/components/dashboard/TrendLineChart';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { BarChartIcon, LineChartIcon, PieChartIcon, Download, Calendar } from 'lucide-react';
+import { BarChartIcon, LineChartIcon, PieChartIcon, Download, Calendar, AlertTriangle } from 'lucide-react';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import ExportPanel from '@/components/dashboard/ExportPanel';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -28,10 +28,12 @@ const Dashboard: React.FC = () => {
     totalCost,
     kwhChange,
     co2Change,
-    costChange
+    costChange,
+    sites
   } = useDashboardData(selectedPeriod as any, selectedSite);
   
   const handleSiteChange = (value: string) => {
+    console.log(`Changing selected site to: ${value}`);
     setSelectedSite(value);
   };
   
@@ -76,6 +78,9 @@ const Dashboard: React.FC = () => {
     { key: 'co2', color: '#10b981', name: 'CO₂ Emissions' },
     { key: 'cost_eur', color: '#f59e0b', name: 'Cost (EUR)' }
   ];
+
+  // Check if we have data
+  const hasData = dashboardData && dashboardData.length > 0;
   
   return (
     <div className="container mx-auto py-8">
@@ -95,9 +100,9 @@ const Dashboard: React.FC = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Sites</SelectItem>
-              <SelectItem value="site1">Paris HQ</SelectItem>
-              <SelectItem value="site2">Frankfurt DC</SelectItem>
-              <SelectItem value="site3">Madrid Office</SelectItem>
+              {sites && sites.map(site => (
+                <SelectItem key={site.id} value={site.id}>{site.name}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
           
@@ -189,14 +194,30 @@ const Dashboard: React.FC = () => {
         </div>
         
         <TabsContent value="chart" className="space-y-6">
-          {/* Main chart */}
-          <TrendLineChart 
-            data={dashboardData || []} 
-            dataKeys={dataKeys}
-            focusMetric={selectedKpi}
-          />
-          
-          {/* Additional charts could go here */}
+          {isLoading ? (
+            <div className="flex justify-center items-center h-80">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+            </div>
+          ) : !hasData ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center p-8">
+                <AlertTriangle size={48} className="text-amber-500 mb-4" />
+                <h3 className="text-xl font-medium mb-2">No Data Available</h3>
+                <p className="text-center text-gray-600">
+                  {selectedSite !== 'all' 
+                    ? `No data available for the selected site and time period.` 
+                    : `No data available for the selected time period.`}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            /* Main chart */
+            <TrendLineChart 
+              data={dashboardData} 
+              dataKeys={dataKeys}
+              focusMetric={selectedKpi}
+            />
+          )}
         </TabsContent>
         
         <TabsContent value="details">
