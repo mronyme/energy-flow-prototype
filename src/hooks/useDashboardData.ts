@@ -1,8 +1,12 @@
 
 import { useState, useEffect } from 'react';
 import { kpiService, siteService } from '../services/api';
+import { mockKpiService, mockSiteService } from '../services/mockData';
 import { KpiDaily, Site } from '../types';
 import { dateUtils } from '../utils/validation';
+
+// Flag to determine whether to use mock data
+const USE_MOCK_DATA = true;
 
 export const useDashboardData = (periodType: 'week' | 'month' = 'week', selectedSiteId: string = 'all') => {
   const [sites, setSites] = useState<Site[]>([]);
@@ -12,8 +16,11 @@ export const useDashboardData = (periodType: 'week' | 'month' = 'week', selected
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Load sites
-        const sitesData = await siteService.getSites();
+        // Load sites - use mock or real data
+        const sitesData = USE_MOCK_DATA 
+          ? await mockSiteService.getSites() 
+          : await siteService.getSites();
+        
         setSites(sitesData);
         
         // Load KPI data
@@ -27,12 +34,19 @@ export const useDashboardData = (periodType: 'week' | 'month' = 'week', selected
           startDate.setDate(startDate.getDate() - 30);
         }
         
-        const kpiResult = await kpiService.getAllSitesKpi(
-          dateUtils.format(startDate),
-          dateUtils.format(endDate)
-        );
+        // Use mock or real KPI service
+        const kpiResult = USE_MOCK_DATA
+          ? await mockKpiService.getAllSitesKpi(
+              dateUtils.format(startDate),
+              dateUtils.format(endDate)
+            )
+          : await kpiService.getAllSitesKpi(
+              dateUtils.format(startDate),
+              dateUtils.format(endDate)
+            );
         
         setKpiData(kpiResult);
+        console.log('KPI Data loaded:', kpiResult.length, 'records');
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {

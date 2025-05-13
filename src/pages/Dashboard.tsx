@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { KpiDaily } from '../types';
 import KpiCard from '../components/dashboard/KpiCard';
 import TrendLineChart from '../components/dashboard/TrendLineChart';
 import { Bolt, BarChart3, Wallet } from 'lucide-react';
@@ -29,8 +28,12 @@ const Dashboard = () => {
     costChange
   } = useDashboardData(periodType, selectedSite);
   
+  console.log('Dashboard renders with chart data:', chartData.length, 'items');
+  console.log('Current detail view:', detailView);
+  
   // Handle KPI card click for drill-down
   const handleKpiCardClick = (type: 'kwh' | 'co2' | 'cost') => {
+    console.log('KPI card clicked:', type);
     // IF-07: Set detail view parameter for drill-down chart
     if (detailView === type) {
       // If clicking the same card, clear the detail view
