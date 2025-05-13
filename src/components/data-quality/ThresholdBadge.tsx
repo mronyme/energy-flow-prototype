@@ -7,19 +7,21 @@ interface ThresholdBadgeProps {
   value: number;
   historicalMean: number;
   showTooltip?: boolean;
+  className?: string;
 }
 
 const ThresholdBadge: React.FC<ThresholdBadgeProps> = ({ 
   value, 
   historicalMean, 
-  showTooltip = true 
+  showTooltip = true,
+  className = ''
 }) => {
   // Calculate percentage difference
   const percentageDiff = historicalMean > 0 
     ? ((value - historicalMean) / historicalMean) * 100
     : 0;
   
-  // Updated rule: Check if outside threshold (±15%)
+  // Check if outside threshold (±15%)
   const isOutsideThreshold = Math.abs(percentageDiff) > 15;
   
   if (!isOutsideThreshold) {
@@ -31,7 +33,8 @@ const ThresholdBadge: React.FC<ThresholdBadgeProps> = ({
   const badge = (
     <Badge 
       variant="outline" 
-      className={`font-medium bg-red-100 text-red-800 hover:bg-red-200 transition-all duration-100 ease-out`}
+      className={`font-medium bg-red-100 text-red-800 hover:bg-red-200 transition-all duration-100 ease-out ${className}`}
+      aria-label={`Out-of-threshold value: ${formattedPercentage}`}
     >
       {formattedPercentage}
     </Badge>

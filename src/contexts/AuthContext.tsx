@@ -16,6 +16,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  signup: (email: string, password: string, role: Role) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -25,47 +26,65 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Check if user is already logged in
+  // Check if user is already logged in and set up auth state listener
   useEffect(() => {
-    const checkUser = async () => {
-      try {
-        const { data: { user: authUser } } = await supabase.auth.getUser();
-        
-        if (authUser) {
-          // Get user role from profiles table
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', authUser.id)
-            .single();
-          
-          const role = profileData?.role as Role || 'Operator';
-          
-          setUser({
-            id: authUser.id,
-            email: authUser.email || '',
-            role
-          });
-        }
-      } catch (error) {
-        console.error('Error checking authentication status', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkUser();
-    
-    // Subscribe to auth changes
-    const { data: authListener } = supabase.auth.onAuthStateChange(
+    // First set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
+          try {
+            // Get user role from profiles table
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', session.user.id)
+              .single();
+            
+            if (profileError) {
+              console.error('Error fetching user profile:', profileError);
+              return;
+            }
+            
+            const role = profileData?.role as Role || 'Operator';
+            
+            setUser({
+              id: session.user.id,
+              email: session.user.email || '',
+              role
+            });
+            
+            // Redirect to dashboard if on login page
+            if (window.location.pathname === '/login') {
+              navigate('/');
+            }
+          } catch (err) {
+            console.error('Error processing auth state change:', err);
+          }
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+          navigate('/login');
+        }
+      }
+    );
+
+    // Then check for existing session
+    const checkCurrentSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
           // Get user role from profiles table
-          const { data: profileData } = await supabase
+          const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('role')
             .eq('id', session.user.id)
             .single();
+          
+          if (profileError) {
+            console.error('Error fetching user profile:', profileError);
+            setLoading(false);
+            return;
+          }
           
           const role = profileData?.role as Role || 'Operator';
           
@@ -74,15 +93,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             email: session.user.email || '',
             role
           });
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-          navigate('/login');
+          
+          // Redirect to dashboard if on login page
+          if (window.location.pathname === '/login') {
+            navigate('/');
+          }
         }
+      } catch (error) {
+        console.error('Error checking authentication status', error);
+      } finally {
+        setLoading(false);
       }
-    );
+    };
 
+    checkCurrentSession();
+    
     return () => {
-      authListener.subscription.unsubscribe();
+      subscription.unsubscribe();
     };
   }, [navigate]);
 
@@ -100,11 +127,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (data?.user) {
         // Get user role from profiles table
-        const { data: profileData } = await supabase
+        const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('role')
           .eq('id', data.user.id)
           .single();
+        
+        if (profileError) {
+          throw profileError;
+        }
         
         const role = profileData?.role as Role || 'Operator';
         
@@ -131,6 +162,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const signup = async (email: string, password: string, role: Role = 'Operator') => {
+    setLoading(true);
+    try {
+      // Create the user in Supabase Auth
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            role // This will be stored in user metadata
+          }
+        }
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data?.user) {
+        // The profile will be created automatically via database trigger
+        toast.success('Account created successfully! You can now log in.');
+      }
+    } catch (error: any) {
+      if (error.message.includes('unique constraint')) {
+        toast.error('This email is already registered. Please use another email or log in.');
+      } else {
+        toast.error(error.message || 'Failed to create account. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const logout = async () => {
     setLoading(true);
     try {
@@ -146,7 +210,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, signup }}>
       {children}
     </AuthContext.Provider>
   );

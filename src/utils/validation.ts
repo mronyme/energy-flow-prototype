@@ -54,6 +54,13 @@ export const dateUtils = {
       hour: '2-digit',
       minute: '2-digit'
     });
+  },
+  
+  // Calculate hours between two ISO date strings
+  hoursBetween: (start: string, end: string): number => {
+    const startDate = new Date(start).getTime();
+    const endDate = new Date(end).getTime();
+    return (endDate - startDate) / (1000 * 60 * 60);
   }
 };
 
@@ -61,7 +68,7 @@ export const dateUtils = {
 export const validationRules = {
   // Check if a value is an anomalous spike (>= +40% from historical mean)
   isSpike: (value: number, historicalMean: number): boolean => {
-    return value >= historicalMean * 1.4;
+    return value >= historicalMean * 1.4; // >= +40%
   },
   
   // Check if a value is missing
@@ -88,7 +95,7 @@ export const validationRules = {
   
   // Check if a value is out of threshold (> ±15% from historical mean)
   isOutOfThreshold: (value: number, historicalMean: number): boolean => {
-    return value < historicalMean * 0.85 || value > historicalMean * 1.15;
+    return value < historicalMean * 0.85 || value > historicalMean * 1.15; // ±15%
   },
   
   // Get the percentage difference from historical mean
@@ -124,13 +131,21 @@ export const validationRules = {
   // Check if a value has a problem that requires flagging
   hasIssue: (value: number | null, historicalMean: number, readings: number[], timestamps: string[]): boolean => {
     if (value === null || value === undefined) return true;
+    
+    // Anomaly checks
     if (historicalMean > 0) {
+      // Check for SPIKE anomaly (≥ +40%)
       if (value >= historicalMean * 1.4) return true;
+      
+      // Check for threshold violation (±15%)
       if (value < historicalMean * 0.85 || value > historicalMean * 1.15) return true;
     }
+    
+    // Check for FLAT anomaly (same value for > 48h)
     if (readings.length >= 2 && timestamps.length >= 2) {
       if (validationRules.isFlat(readings, timestamps)) return true;
     }
+    
     return false;
   }
 };
@@ -170,7 +185,7 @@ export const validateCsvRow = (
 };
 
 // Function to check if a value exceeds thresholds and should be flagged
-export const checkThresholds = (value: number, historicalValues: number[]): {
+export const checkThresholds = (value: number | null, historicalValues: number[]): {
   isAnomaly: boolean;
   type: 'SPIKE' | 'FLAT' | 'MISSING' | null;
   delta: number | null;
@@ -192,7 +207,7 @@ export const checkThresholds = (value: number, historicalValues: number[]): {
   // Calculate historical mean (excluding the current value)
   const historicalMean = historicalValues.reduce((sum, val) => sum + val, 0) / historicalValues.length;
   
-  // Check for spike (>= +40%)
+  // Check for spike (≥ +40%)
   if (value >= historicalMean * 1.4) {
     const delta = ((value - historicalMean) / historicalMean) * 100;
     return {
@@ -215,4 +230,27 @@ export const checkThresholds = (value: number, historicalValues: number[]): {
   }
   
   return { isAnomaly: false, type: null, delta: null, message: null };
+};
+
+// Helper function to check for FLAT anomalies over multiple readings 
+export const checkForFlatReadings = (readings: Array<{value: number | null, timestamp: string}>): boolean => {
+  if (readings.length < 3) return false;
+  
+  // Filter out null/undefined values
+  const validReadings = readings.filter(r => r.value !== null && r.value !== undefined);
+  if (validReadings.length < 3) return false;
+  
+  // Check if all readings have the same value
+  const firstValue = validReadings[0].value;
+  const allSameValue = validReadings.every(r => r.value === firstValue);
+  
+  if (!allSameValue) return false;
+  
+  // Check if time span is at least 48 hours
+  const timestamps = validReadings.map(r => r.timestamp);
+  const firstTimestamp = new Date(timestamps[0]).getTime();
+  const lastTimestamp = new Date(timestamps[timestamps.length - 1]).getTime();
+  const hoursDiff = (lastTimestamp - firstTimestamp) / (1000 * 60 * 60);
+  
+  return hoursDiff >= 48;
 };
