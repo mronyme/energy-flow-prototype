@@ -31,7 +31,11 @@ const TagTableRO: React.FC<TagTableROProps> = ({ data, actionColumn }) => {
               <TableCell>{tag.unit}</TableCell>
               <TableCell>
                 {tag.status && (
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${tag.status === 'OK' ? 'bg-green-100 text-green-800' : tag.status === 'KO' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}`}>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    tag.status === 'OK' ? 'bg-green-100 text-green-800' : 
+                    tag.status === 'KO' ? 'bg-red-100 text-red-800' : 
+                    'bg-gray-100 text-gray-800'
+                  }`}>
                     {tag.status}
                   </span>
                 )}

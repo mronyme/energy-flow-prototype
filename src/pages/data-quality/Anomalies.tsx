@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -12,6 +11,7 @@ import AlertCard from '@/components/data-quality/AlertCard';
 import CorrectionModal from '@/components/data-quality/CorrectionModal';
 import { anomalyService } from '@/services/api';
 import { toast } from 'sonner';
+import { AnomalyType } from '@/types';
 import { Anomaly, AnomalyFilter } from '@/types/pi-tag';
 
 const Anomalies = () => {

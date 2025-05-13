@@ -61,5 +61,5 @@ export interface PiTag {
   name: string;
   description: string;
   unit: string;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'OK' | 'KO' | null;
 }

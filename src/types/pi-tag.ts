@@ -1,5 +1,5 @@
 
-import { MeterType } from './index';
+import { MeterType, ImportLog } from './index';
 
 export interface PiTag {
   id: string;

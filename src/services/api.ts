@@ -684,10 +684,11 @@ const mockAnomalies = [
     siteName: 'Paris HQ',
     date: '2023-05-10',
     value: 1420.5,
-    type: 'SPIKE',
+    type: 'SPIKE' as 'MISSING' | 'SPIKE' | 'FLAT',
     delta: 45.2,
     site: 'site1',
-    meter: 'meter1'
+    meter: 'meter1',
+    comment: ''
   },
   { 
     id: 'anom2', 
@@ -697,10 +698,11 @@ const mockAnomalies = [
     siteName: 'Lyon Factory',
     date: '2023-05-11',
     value: null,
-    type: 'MISSING',
+    type: 'MISSING' as 'MISSING' | 'SPIKE' | 'FLAT',
     delta: null,
     site: 'site2',
-    meter: 'meter4'
+    meter: 'meter4',
+    comment: ''
   },
   { 
     id: 'anom3', 
@@ -710,10 +712,11 @@ const mockAnomalies = [
     siteName: 'Paris HQ',
     date: '2023-05-09',
     value: 350.0,
-    type: 'FLAT',
+    type: 'FLAT' as 'MISSING' | 'SPIKE' | 'FLAT',
     delta: 0,
     site: 'site1',
-    meter: 'meter2'
+    meter: 'meter2',
+    comment: ''
   },
   { 
     id: 'anom4', 
@@ -723,10 +726,11 @@ const mockAnomalies = [
     siteName: 'Marseille Warehouse',
     date: '2023-05-12',
     value: 890.75,
-    type: 'SPIKE',
+    type: 'SPIKE' as 'MISSING' | 'SPIKE' | 'FLAT',
     delta: 62.8,
     site: 'site3',
-    meter: 'meter7'
+    meter: 'meter7',
+    comment: ''
   }
 ];
 

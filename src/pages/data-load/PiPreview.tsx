@@ -7,7 +7,7 @@ import { Search } from 'lucide-react';
 import TagTableRO from '@/components/data-load/TagTableRO';
 import TestTagButton from '@/components/data-load/TestTagButton';
 import { piService } from '@/services/api';
-import { PiTag } from '@/types/pi-tag';
+import { PiTag } from '@/types';
 
 const PiPreview = () => {
   const [sites, setSites] = useState<{ id: string; name: string }[]>([]);
@@ -41,12 +41,7 @@ const PiPreview = () => {
         const tagsData = await piService.getTagsBySite(selectedSite);
         
         // Transform to match our component needs
-        const transformedTags = tagsData.map(tag => ({
-          ...tag,
-          status: null
-        }));
-        
-        setPiTags(transformedTags);
+        setPiTags(tagsData);
       } catch (error) {
         console.error('Error fetching PI tags:', error);
       } finally {
