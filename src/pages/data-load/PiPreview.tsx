@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import TestTagButton from '@/components/data-load/TestTagButton';
+import { Skeleton } from '@/components/ui/skeleton';
 import TagTableRO from '@/components/data-load/TagTableRO';
 import { toast } from 'sonner';
 import { piService, siteService } from '@/services/api';
@@ -16,16 +16,19 @@ const PiPreview: React.FC = () => {
   const [selectedSite, setSelectedSite] = useState<string>('');
   const [tags, setTags] = useState<PiTag[]>([]);
   const [loading, setLoading] = useState(false);
+  const [sitesLoading, setSitesLoading] = useState(true);
   
   useEffect(() => {
     const loadSites = async () => {
+      setSitesLoading(true);
       try {
-        // Use siteService.getSites instead of piService.getSites
         const sitesData = await siteService.getSites();
         setSites(sitesData);
       } catch (error) {
         console.error('Error loading sites:', error);
-        toast.error('Failed to load sites');
+        toast.error('Failed to load sites. Please try again.');
+      } finally {
+        setSitesLoading(false);
       }
     };
     
@@ -33,31 +36,33 @@ const PiPreview: React.FC = () => {
   }, []);
   
   useEffect(() => {
-    if (!selectedSite) {
+    if (selectedSite === '' && !sitesLoading) {
       // If no site is selected, show a sample of all tags
       loadSampleTags();
       return;
     }
     
-    const loadTagsForSite = async () => {
-      setLoading(true);
-      try {
-        // Since we don't have these methods in the API, let's filter the sample data
-        const filteredTags = samplePiData
-          .filter(tag => tag.site_id === selectedSite)
-          .map(transformToPiTag);
-        
-        setTags(filteredTags);
-      } catch (error) {
-        console.error('Error loading tags for site:', error);
-        toast.error('Failed to load PI tags');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    loadTagsForSite();
-  }, [selectedSite]);
+    if (selectedSite) {
+      loadTagsForSite(selectedSite);
+    }
+  }, [selectedSite, sitesLoading]);
+  
+  const loadTagsForSite = async (siteId: string) => {
+    setLoading(true);
+    try {
+      // Since we don't have these methods in the API, let's filter the sample data
+      const filteredTags = samplePiData
+        .filter(tag => tag.site_id === siteId)
+        .map(transformToPiTag);
+      
+      setTags(filteredTags);
+    } catch (error) {
+      console.error('Error loading tags for site:', error);
+      toast.error('Failed to load PI tags for the selected site');
+    } finally {
+      setLoading(false);
+    }
+  };
   
   const loadSampleTags = () => {
     setLoading(true);
@@ -77,31 +82,38 @@ const PiPreview: React.FC = () => {
     id: csvRow.id || String(Math.random()),
     name: csvRow.tag_name,
     description: csvRow.description || '',
+    site_id: csvRow.site_id,
     unit: csvRow.unit || '',
-    status: false // Initialize as a boolean false
+    // Initialize status as boolean false, it will be updated when tested
+    status: false
   });
   
-  const handleTestTag = async (tag: string) => {
+  const handleTestTag = async (tagName: string) => {
     try {
-      const result = await piService.testTag(tag);
+      const result = await piService.testTag(tagName);
       
-      // Update the tag's status - convert string status to boolean
+      // Update the tag's status based on test result
       setTags(prevTags => 
         prevTags.map(t => 
-          t.name === tag 
-            ? { ...t, status: result.success } 
+          t.name === tagName 
+            ? { 
+                ...t, 
+                status: result.success,
+                value: result.value,
+                timestamp: result.timestamp
+              } 
             : t
         )
       );
       
       if (result.success) {
-        toast.success(`Tag '${tag}' is available: ${result.value} ${result.timestamp}`);
+        toast.success(`Tag '${tagName}' is available: ${result.value} ${result.unit || ''} ${result.timestamp || ''}`);
       } else {
-        toast.error(`Tag '${tag}' is not available`);
+        toast.error(`Tag '${tagName}' is not available`);
       }
     } catch (error) {
       console.error('Error testing tag:', error);
-      toast.error('Failed to test tag');
+      toast.error('Failed to test tag connection');
     }
   };
   
@@ -113,17 +125,22 @@ const PiPreview: React.FC = () => {
         <div className="space-y-4">
           <div>
             <Label htmlFor="site-select">Filter by Site</Label>
-            <select
-              id="site-select"
-              value={selectedSite}
-              onChange={(e) => setSelectedSite(e.target.value)}
-              className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="">All Sites</option>
-              {sites.map((site) => (
-                <option key={site.id} value={site.id}>{site.name}</option>
-              ))}
-            </select>
+            {sitesLoading ? (
+              <Skeleton className="h-10 w-full mt-1" />
+            ) : (
+              <select
+                id="site-select"
+                value={selectedSite}
+                onChange={(e) => setSelectedSite(e.target.value)}
+                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                disabled={loading}
+              >
+                <option value="">All Sites</option>
+                {sites.map((site) => (
+                  <option key={site.id} value={site.id}>{site.name}</option>
+                ))}
+              </select>
+            )}
           </div>
           
           <div className="text-sm text-gray-500">

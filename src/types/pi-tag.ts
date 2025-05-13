@@ -4,7 +4,7 @@ export interface PiTag {
   name: string;
   description: string;
   site_id?: string;
-  status: boolean | string; // Allow both boolean and string for status
+  status: boolean | string; // Can be boolean (false/true) or string ('KO'/'OK')
   value?: number;
   unit?: string;
   timestamp?: string;
