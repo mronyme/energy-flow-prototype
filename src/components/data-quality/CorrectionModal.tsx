@@ -4,8 +4,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { dateUtils } from '../../utils/validation';
+import { dateUtils, toastMessages } from '../../utils/validation';
 import { AnomalyType } from '@/types';
+import AnomalyBadge from './AnomalyBadge';
 
 interface CorrectionModalProps {
   isOpen: boolean;
@@ -74,7 +75,7 @@ const CorrectionModal: React.FC<CorrectionModalProps> = ({
     setError(null);
     
     try {
-      // This will update both the reading and anomaly comment
+      // IF-06: This updates both the reading and anomaly comment
       await onSave(anomaly.readingId, parsedValue, comment, anomaly.id);
       onClose();
     } catch (err) {
@@ -110,7 +111,9 @@ const CorrectionModal: React.FC<CorrectionModalProps> = ({
             </div>
             <div>
               <p className="text-gray-500">Anomaly Type:</p>
-              <p className="font-medium">{anomaly.type}</p>
+              <p className="font-medium">
+                <AnomalyBadge type={anomaly.type} delta={anomaly.delta} />
+              </p>
             </div>
           </div>
           
@@ -134,6 +137,8 @@ const CorrectionModal: React.FC<CorrectionModalProps> = ({
                 type="number"
                 min="0"
                 step="0.001"
+                aria-invalid={!!error}
+                aria-describedby={error ? "value-error" : undefined}
               />
             </div>
             
@@ -147,6 +152,8 @@ const CorrectionModal: React.FC<CorrectionModalProps> = ({
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="Explain why this value was corrected"
                 rows={3}
+                aria-invalid={!!error}
+                aria-describedby={error ? "comment-error" : undefined}
               />
               <p className="text-xs text-gray-500">
                 Comments are important for audit trail and providing context for other users.
@@ -155,7 +162,11 @@ const CorrectionModal: React.FC<CorrectionModalProps> = ({
           </div>
           
           {error && (
-            <div className="text-sm text-red-500 p-2 bg-red-50 rounded">
+            <div 
+              className="text-sm text-red-500 p-2 bg-red-50 rounded"
+              id={error.includes('value') ? "value-error" : "comment-error"}
+              aria-live="assertive"
+            >
               {error}
             </div>
           )}

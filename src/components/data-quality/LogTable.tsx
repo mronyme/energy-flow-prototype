@@ -30,8 +30,9 @@ const LogTable: React.FC<LogTableProps> = ({ data, onExport }) => {
           size="sm" 
           onClick={onExport}
           className="transition-all duration-100 ease-out"
+          aria-label="Export import logs as CSV"
         >
-          <Download size={16} className="mr-2" />
+          <Download size={16} className="mr-2" aria-hidden="true" />
           Export CSV
         </Button>
       </div>

@@ -77,15 +77,16 @@ const Journal = () => {
           onClick={handleExportCsv} 
           disabled={exporting || logs.length === 0}
           className="transition-all duration-100 ease-out"
+          aria-label={exporting ? "Exporting logs..." : "Export logs to CSV file"}
         >
           {exporting ? (
             <>
               <span className="mr-2">Exporting...</span>
-              <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+              <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" aria-hidden="true"></div>
             </>
           ) : (
             <>
-              <Download className="mr-2 h-4 w-4" />
+              <Download className="mr-2 h-4 w-4" aria-hidden="true" />
               Export CSV
             </>
           )}
@@ -99,7 +100,7 @@ const Journal = () => {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1 text-gray-700">
+              <label className="block text-sm font-medium mb-1 text-gray-700" id="start-date-label">
                 Start Date
               </label>
               <Popover>
@@ -110,8 +111,9 @@ const Journal = () => {
                       "w-full justify-start text-left font-normal",
                       !startDate && "text-muted-foreground"
                     )}
+                    aria-labelledby="start-date-label"
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    <CalendarIcon className="mr-2 h-4 w-4" aria-hidden="true" />
                     {startDate ? format(startDate, 'PPP') : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
@@ -121,13 +123,14 @@ const Journal = () => {
                     selected={startDate}
                     onSelect={(date) => date && setStartDate(date)}
                     initialFocus
+                    aria-label="Select start date"
                   />
                 </PopoverContent>
               </Popover>
             </div>
             
             <div>
-              <label className="block text-sm font-medium mb-1 text-gray-700">
+              <label className="block text-sm font-medium mb-1 text-gray-700" id="end-date-label">
                 End Date
               </label>
               <Popover>
@@ -138,8 +141,9 @@ const Journal = () => {
                       "w-full justify-start text-left font-normal",
                       !endDate && "text-muted-foreground"
                     )}
+                    aria-labelledby="end-date-label"
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    <CalendarIcon className="mr-2 h-4 w-4" aria-hidden="true" />
                     {endDate ? format(endDate, 'PPP') : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
@@ -149,6 +153,7 @@ const Journal = () => {
                     selected={endDate}
                     onSelect={(date) => date && setEndDate(date)}
                     initialFocus
+                    aria-label="Select end date"
                   />
                 </PopoverContent>
               </Popover>
@@ -163,13 +168,17 @@ const Journal = () => {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+            <div className="flex justify-center py-8" aria-live="polite" aria-atomic="true">
+              <div 
+                className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"
+                aria-hidden="true"
+              ></div>
+              <span className="sr-only">Loading logs...</span>
             </div>
           ) : logs.length > 0 ? (
             <LogTable data={logs} onExport={handleExportCsv} />
           ) : (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500" aria-live="polite">
               No import logs found for the selected period
             </div>
           )}
