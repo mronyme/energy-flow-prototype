@@ -50,9 +50,10 @@ const PiPreview: React.FC = () => {
   const loadTagsForSite = async (siteId: string) => {
     setLoading(true);
     try {
-      // Since we don't have these methods in the API, let's filter the sample data
+      // Filter the sample data by site (mocked)
+      const sitePrefix = `Plant${siteId}`;
       const filteredTags = samplePiData
-        .filter(tag => tag.site_id === siteId)
+        .filter(tag => tag.tag_name.includes(sitePrefix))
         .map(transformToPiTag);
       
       setTags(filteredTags);
@@ -79,13 +80,11 @@ const PiPreview: React.FC = () => {
   };
   
   const transformToPiTag = (csvRow: any): PiTag => ({
-    id: csvRow.id || String(Math.random()),
+    id: csvRow.tag_id || String(Math.random()),
     name: csvRow.tag_name,
     description: csvRow.description || '',
-    site_id: csvRow.site_id,
     unit: csvRow.unit || '',
-    // Initialize status as boolean false, it will be updated when tested
-    status: false
+    status: csvRow.status === 'active'
   });
   
   const handleTestTag = async (tagName: string) => {
@@ -107,7 +106,7 @@ const PiPreview: React.FC = () => {
       );
       
       if (result.success) {
-        // Fix: Use the tag's unit from the tags array instead of result.unit which doesn't exist
+        // Use the tag's unit from the tags array
         const tagUnit = tags.find(t => t.name === tagName)?.unit || '';
         toast.success(`Tag '${tagName}' is available: ${result.value} ${tagUnit} ${result.timestamp || ''}`);
       } else {

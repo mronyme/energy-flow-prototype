@@ -1,7 +1,5 @@
 
 declare module '*.csv' {
-  const content: {
-    [key: string]: string;
-  }[];
+  const content: Record<string, string>[];
   export default content;
 }
