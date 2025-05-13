@@ -26,7 +26,8 @@ const Users: React.FC = () => {
     try {
       setLoading(true);
       const usersData = await adminService.getUsers();
-      setUsers(usersData);
+      // Ensure the type is correct before setting state
+      setUsers(usersData as User[]);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching users:', error);

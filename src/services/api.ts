@@ -1,5 +1,4 @@
-
-import { Site, Anomaly } from '@/types';
+import { Site, Anomaly, Role } from '@/types';
 
 // Mock API endpoint URLs
 const API_BASE_URL = 'https://your-api.com'; // Replace with your actual API base URL
@@ -252,11 +251,12 @@ const updateEmissionFactor = async ({ id, value }: { id: string; value: number }
   return { success: true };
 };
 
-// Mock users
+// Mock users with proper Role type
 const mockUsers = [
-  { id: 'user1', email: 'admin@example.com', role: 'Admin' },
-  { id: 'user2', email: 'operator@example.com', role: 'Operator' },
-  { id: 'user3', email: 'viewer@example.com', role: 'Viewer' }
+  { id: 'user1', email: 'admin@example.com', role: 'Admin' as Role },
+  { id: 'user2', email: 'operator@example.com', role: 'Operator' as Role },
+  { id: 'user3', email: 'manager@example.com', role: 'Manager' as Role },
+  { id: 'user4', email: 'datamanager@example.com', role: 'DataManager' as Role }
 ];
 
 const getUsers = async () => {
