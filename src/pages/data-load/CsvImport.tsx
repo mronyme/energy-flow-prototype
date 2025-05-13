@@ -1,12 +1,13 @@
+
 import React, { useState, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import { toast } from 'sonner';
 import FileUploadAdapter from '@/components/data-load/FileUploadAdapter';
 import WizardStep from '@/components/data-load/WizardStep';
 import { useAnnouncer } from '@/components/common/A11yAnnouncer';
 import { readingService, importLogService } from '@/services/api';
-import { useAuth } from '@/contexts/AuthContext'; // Updated import path
+import { useAuth } from '@/hooks/useAuth'; // Use the new hook path
 import * as csvUtils from '@/utils/csvUtils';
 import { Reading, ImportLog } from '@/types';
 
