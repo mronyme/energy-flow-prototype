@@ -1,21 +1,15 @@
 
 import React from 'react';
 import TestTagButton from './TestTagButton';
-
-interface PiTag {
-  id: string;
-  name: string;
-  description: string;
-  unit: string;
-  status: boolean | null;
-}
+import { PiTag } from '@/types/pi-tag';
 
 interface TagTableROProps {
   tags: PiTag[];
+  loading?: boolean;
   onTagTest: (tagName: string, result: boolean) => void;
 }
 
-const TagTableRO: React.FC<TagTableROProps> = ({ tags, onTagTest }) => {
+const TagTableRO: React.FC<TagTableROProps> = ({ tags, loading, onTagTest }) => {
   return (
     <div className="overflow-x-auto" role="region" aria-labelledby="tag-table-label">
       <h2 id="tag-table-label" className="sr-only">PI Tags Preview Table</h2>
@@ -57,24 +51,30 @@ const TagTableRO: React.FC<TagTableROProps> = ({ tags, onTagTest }) => {
                 <td className="px-4 py-3 text-sm text-gray-600">{tag.description}</td>
                 <td className="px-4 py-3 text-sm text-gray-600">{tag.unit}</td>
                 <td className="px-4 py-3 text-center">
-                  {tag.status === null ? (
-                    <span className="inline-block w-4 h-4 rounded-full bg-gray-300" 
-                          aria-label="Status: Not tested"></span>
-                  ) : tag.status ? (
-                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-800" 
-                          aria-label="Status: OK">
-                      <span aria-hidden="true">OK</span>
-                    </span>
+                  {typeof tag.status === 'boolean' ? (
+                    tag.status === null || tag.status === undefined ? (
+                      <span className="inline-block w-4 h-4 rounded-full bg-gray-300" 
+                            aria-label="Status: Not tested"></span>
+                    ) : tag.status ? (
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-800" 
+                            aria-label="Status: OK">
+                        <span aria-hidden="true">OK</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-100 text-red-800" 
+                            aria-label="Status: Failed">
+                        <span aria-hidden="true">KO</span>
+                      </span>
+                    )
                   ) : (
-                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-100 text-red-800" 
-                          aria-label="Status: Failed">
-                      <span aria-hidden="true">KO</span>
+                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-gray-800">
+                      {tag.status}
                     </span>
                   )}
                 </td>
                 <td className="px-4 py-3 text-center">
                   <TestTagButton 
-                    status={tag.status === null ? null : tag.status ? 'OK' : 'KO'}
+                    status={typeof tag.status === 'boolean' ? (tag.status ? 'OK' : 'KO') : tag.status || null}
                     onClick={async () => {
                       // This will be handled by the onTestComplete
                       return Promise.resolve();

@@ -2,9 +2,9 @@
 export interface PiTag {
   id: string;
   name: string;
-  description?: string;
+  description: string;
   site_id?: string;
-  status: boolean; // Changed from string to boolean to match expected type
+  status: boolean | string; // Allow both boolean and string for status
   value?: number;
   unit?: string;
   timestamp?: string;

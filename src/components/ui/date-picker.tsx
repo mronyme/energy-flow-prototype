@@ -13,6 +13,8 @@ interface DatePickerProps {
   disabled?: boolean;
   className?: string;
   label?: string;
+  placeholder?: string;
+  mode?: string;
 }
 
 export function DatePicker({
@@ -21,14 +23,16 @@ export function DatePicker({
   disabled = false,
   className,
   label = "Date",
+  placeholder = "Pick a date",
+  mode = "single"
 }: DatePickerProps) {
-  const id = React.useId();
+  // Generate unique ID for accessibility
+  const uniqueId = React.useId();
   
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button
-          id={id}
           variant="outline"
           className={cn(
             "w-full justify-start text-left font-normal",
@@ -40,7 +44,7 @@ export function DatePicker({
           aria-haspopup="dialog"
         >
           <CalendarIcon className="mr-2 h-4 w-4" aria-hidden="true" />
-          {selected ? format(selected, "PPP") : <span>Pick a date</span>}
+          {selected ? format(selected, "PPP") : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">

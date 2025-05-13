@@ -78,17 +78,19 @@ const PiPreview: React.FC = () => {
     name: csvRow.tag_name,
     description: csvRow.description || '',
     unit: csvRow.unit || '',
-    status: null
+    status: false // Initialize as a boolean false
   });
   
   const handleTestTag = async (tag: string) => {
     try {
       const result = await piService.testTag(tag);
       
-      // Update the tag's status
+      // Update the tag's status - convert string status to boolean
       setTags(prevTags => 
         prevTags.map(t => 
-          t.name === tag ? { ...t, status: result.success ? 'OK' : 'KO' } : t
+          t.name === tag 
+            ? { ...t, status: result.success } 
+            : t
         )
       );
       
@@ -133,8 +135,7 @@ const PiPreview: React.FC = () => {
       <TagTableRO 
         tags={tags} 
         loading={loading}
-        onTestTag={handleTestTag}
-        TestButton={TestTagButton} 
+        onTagTest={handleTestTag} 
       />
     </div>
   );

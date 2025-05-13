@@ -15,7 +15,8 @@ export interface Meter {
   id: string;
   site_id: string;
   type: MeterType;
-  site_name?: string; // Add this for compatibility
+  site_name?: string;
+  site_country?: string; // Add this for compatibility
 }
 
 export interface Reading {
@@ -58,19 +59,19 @@ export interface User {
   role: Role;
 }
 
-// Updated PiTag interface to match what's expected
+// Updated PiTag interface to make it more flexible
 export interface PiTag {
   id: string;
   name: string;
-  description?: string;
+  description: string;
   site_id?: string;
-  status: boolean | string; // Make it accept either boolean or string
+  status: boolean | string; // Allow both boolean and string for status
   value?: number;
   unit?: string;
   timestamp?: string;
 }
 
-// Updated interfaces for the components that have missing prop types
+// Updated interfaces for the components
 export interface SkipLinkProps {
   href?: string;
   target?: string;
@@ -81,7 +82,7 @@ export interface WizardStepProps {
   currentStep: number;
   totalSteps: number;
   stepTitle: string;
-  steps?: { id: string; label: string; isActive: boolean; isComplete: boolean; }[]; // Add this for compatibility
+  steps: { id: string; label: string; isActive: boolean; isComplete: boolean; }[]; // Make steps required
 }
 
 export interface FileUploadProps {
@@ -93,10 +94,12 @@ export interface FileUploadProps {
 export interface LogTableProps {
   entries: ImportLog[];
   isLoading?: boolean;
+  logs?: ImportLog[]; // Add this for compatibility
+  loading?: boolean; // Add this for compatibility
 }
 
 export interface UserListProps {
-  users: { id: string; email: string; role: Role; }[];
+  users: User[];
   onDeleteUser?: (id: string) => void;
   isLoading?: boolean;
 }

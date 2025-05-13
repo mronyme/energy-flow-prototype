@@ -12,6 +12,7 @@ import { useAnnouncer } from '@/components/common/A11yAnnouncer';
 
 const CsvImport = () => {
   const [parsedData, setParsedData] = useState<any[]>([]);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -29,6 +30,7 @@ const CsvImport = () => {
 
   const handleFileSelected = (data: any[], file: File) => {
     setParsedData(data);
+    setUploadedFile(file);
     setPreviewVisible(true);
     setCurrentStep(2);
     announce('CSV file parsed and data is ready for preview.', true);
@@ -50,7 +52,7 @@ const CsvImport = () => {
         meter_id: item.meter_id,
         ts: item.ts,
         value: parseFloat(item.value),
-      }));
+      })) as Reading[];
 
       // Perform bulk save
       const result = await readingService.bulkSaveReadings(readings);
@@ -68,7 +70,7 @@ const CsvImport = () => {
         user_email: 'user@example.com', // This would come from auth context
         rows_ok: result.inserted || 0,
         rows_err: result.errors || 0,
-        file_name: file ? file.name : 'uploaded-data.csv',
+        file_name: uploadedFile ? uploadedFile.name : 'uploaded-data.csv',
       };
 
       const newLog = await importLogService.createImportLog(log);
@@ -95,7 +97,8 @@ const CsvImport = () => {
       <WizardStep 
         currentStep={currentStep} 
         totalSteps={totalSteps} 
-        stepTitle={steps[currentStep-1].label} 
+        stepTitle={steps[currentStep-1].label}
+        steps={steps}
       />
       
       <Separator className="my-4" />

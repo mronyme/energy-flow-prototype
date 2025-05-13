@@ -10,17 +10,10 @@ const DataGridEditableAdapter = ({
   onRowUpdate,
   isLoading = false
 }: DataGridEditableProps) => {
-  // Transform columns format if needed
-  const transformedColumns = columns.map(col => ({
-    field: col.field,
-    headerName: col.headerName,
-    type: col.type
-  }));
-
   return (
     <DataGridEditable
       data={data}
-      columns={transformedColumns}
+      columns={columns}
       onRowUpdate={onRowUpdate}
       isLoading={isLoading}
     />

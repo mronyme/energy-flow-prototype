@@ -6,9 +6,13 @@ import { SkipLinkProps } from '@/types';
 // Adapter component to handle prop difference
 const SkipLinkAdapter = ({
   href,
-  label
+  label,
+  target
 }: SkipLinkProps) => {
-  return <SkipLink target={href} label={label} />;
+  // Use either href or target, with target taking precedence if provided
+  const linkTarget = target || href || '#main-content';
+  
+  return <SkipLink href={linkTarget} label={label} />;
 };
 
 export default SkipLinkAdapter;
