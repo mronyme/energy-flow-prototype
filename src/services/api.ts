@@ -692,7 +692,7 @@ const adminService = {
       // Cast the result to User[] with proper type conversion
       return data.map(profile => ({
         id: profile.id,
-        email: profile.id + '@example.com', // Mock email since it's missing
+        email: profile.email || `${profile.id}@example.com`, // Add missing email field
         role: profile.role as Role
       })) as User[];
     } catch (error) {
@@ -839,7 +839,7 @@ const fixUserTypeInAdminService = {
       // Cast the result to User[] with proper type conversion
       return data.map(profile => ({
         id: profile.id,
-        email: profile.id + '@example.com', // Mock email since it's missing
+        email: profile.email || `${profile.id}@example.com`, // Add missing email field
         role: profile.role as Role
       })) as User[];
     } catch (error) {

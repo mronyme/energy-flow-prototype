@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth'; // Fixed import path
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -88,39 +88,76 @@ const Login = () => {
     }
   };
 
+  // Modified handleDemoLogin function
   const handleDemoLogin = async (demoEmail: string) => {
-    // For demo purposes, we'll add a demo user to Supabase Auth
     try {
       const demoPassword = 'demo123456'; // Simple password for demo accounts
+      setIsSubmitting(true);
       
-      // Check if user exists first
-      const { data: existingUsers } = await supabase.auth.signInWithPassword({
+      // First check if user already exists in auth system
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email: demoEmail,
         password: demoPassword
       });
       
-      if (existingUsers?.user) {
-        // User exists, log them in
-        await login(demoEmail, demoPassword);
-      } else {
-        // Create the demo user
-        const { data, error } = await supabase.auth.signUp({
-          email: demoEmail,
-          password: demoPassword
-        });
+      if (signInData?.user) {
+        // User exists, simply log them in and set the session
+        toast.success('Demo login successful!');
+        announce('Demo login successful.', true);
         
-        if (error) throw error;
-        
-        toast.success('Demo account created! Logging in...');
-        announce('Demo account created. Logging in.', true);
-        setTimeout(() => {
-          login(demoEmail, demoPassword);
-        }, 1000);
+        // The login method will handle state updates and navigation
+        return;
       }
+      
+      // If we got here, the user doesn't exist or there was an auth error
+      console.log('Demo user not found, creating new demo account:', demoEmail);
+      
+      // Create the demo user with auto-confirmation (for demo purposes)
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email: demoEmail,
+        password: demoPassword,
+        options: {
+          // For demo purposes, we're setting the role directly in user metadata
+          data: {
+            role: getRoleFromEmail(demoEmail)
+          },
+          // This would auto-confirm the user, but only works on self-hosted Supabase
+          // emailRedirectTo: window.location.origin + '/login'
+        }
+      });
+      
+      if (signUpError) {
+        console.error('Error creating demo account:', signUpError);
+        toast.error('Failed to create demo account');
+        announce('Failed to create demo account.', true);
+        setIsSubmitting(false);
+        return;
+      }
+      
+      // Now try to login with the credentials
+      toast.success('Demo account ready. Logging in...');
+      announce('Demo account ready. Logging in...', true);
+      
+      // Wait a moment to ensure the user is created in the database
+      setTimeout(async () => {
+        await login(demoEmail, demoPassword);
+        setIsSubmitting(false);
+      }, 1500);
+      
     } catch (error: any) {
+      console.error('Demo login error:', error);
       toast.error(error.message || 'Failed to use demo account');
       announce('Failed to use demo account.', true);
+      setIsSubmitting(false);
     }
+  };
+  
+  // Helper function to get role from email
+  const getRoleFromEmail = (email: string): Role => {
+    if (email.includes('admin')) return 'Admin';
+    if (email.includes('manager')) return 'Manager';
+    if (email.includes('datamanager')) return 'DataManager';
+    return 'Operator';
   };
 
   const togglePasswordVisibility = () => {

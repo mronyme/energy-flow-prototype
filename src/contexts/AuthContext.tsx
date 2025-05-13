@@ -31,6 +31,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // First set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.id);
+        
         if (event === 'SIGNED_IN' && session?.user) {
           try {
             // Get user role from profiles table
@@ -73,6 +75,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user) {
+          console.log('Found existing session:', session.user.id);
+          
           // Get user role from profiles table
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
@@ -116,6 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
+      console.log('Logging in with:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -126,6 +131,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       if (data?.user) {
+        console.log('Login successful:', data.user.id);
+        
         // Get user role from profiles table
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
@@ -149,6 +156,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         navigate('/');
       }
     } catch (error: any) {
+      console.error('Login error:', error);
+      
       // More specific error messages for better accessibility
       if (error.message.includes('Invalid login credentials')) {
         toast.error('Invalid email or password. Please try again.');
