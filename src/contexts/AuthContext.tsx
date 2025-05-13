@@ -35,7 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (event === 'SIGNED_IN' && session?.user) {
           try {
-            // Get user role from profiles table
+            // Get user role from profiles table or create profile if it doesn't exist
             const { data: profileData, error: profileError } = await supabase
               .from('profiles')
               .select('role')
@@ -43,17 +43,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               .single();
             
             if (profileError) {
-              console.error('Error fetching user profile:', profileError);
-              return;
+              if (profileError.code === 'PGRST116') {
+                // Profile doesn't exist, create it with default role
+                const metadata = session.user.user_metadata || {};
+                const role = (metadata.role as Role) || 'Operator';
+                
+                const { error: insertError } = await supabase
+                  .from('profiles')
+                  .insert({
+                    id: session.user.id,
+                    role: role
+                  });
+                
+                if (insertError) {
+                  console.error('Error creating user profile:', insertError);
+                  return;
+                }
+                
+                setUser({
+                  id: session.user.id,
+                  email: session.user.email || '',
+                  role
+                });
+              } else {
+                console.error('Error fetching user profile:', profileError);
+                return;
+              }
+            } else {
+              const role = profileData?.role as Role || 'Operator';
+              
+              setUser({
+                id: session.user.id,
+                email: session.user.email || '',
+                role
+              });
             }
-            
-            const role = profileData?.role as Role || 'Operator';
-            
-            setUser({
-              id: session.user.id,
-              email: session.user.email || '',
-              role
-            });
             
             // Redirect to dashboard if on login page
             if (window.location.pathname === '/login') {
@@ -85,18 +109,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             .single();
           
           if (profileError) {
-            console.error('Error fetching user profile:', profileError);
-            setLoading(false);
-            return;
+            if (profileError.code === 'PGRST116') {
+              // Profile doesn't exist, create it with default role
+              const metadata = session.user.user_metadata || {};
+              const role = (metadata.role as Role) || 'Operator';
+              
+              const { error: insertError } = await supabase
+                .from('profiles')
+                .insert({
+                  id: session.user.id,
+                  role: role
+                });
+              
+              if (insertError) {
+                console.error('Error creating user profile:', insertError);
+                setLoading(false);
+                return;
+              }
+              
+              setUser({
+                id: session.user.id,
+                email: session.user.email || '',
+                role
+              });
+            } else {
+              console.error('Error fetching user profile:', profileError);
+              setLoading(false);
+              return;
+            }
+          } else {
+            const role = profileData?.role as Role || 'Operator';
+            
+            setUser({
+              id: session.user.id,
+              email: session.user.email || '',
+              role
+            });
           }
-          
-          const role = profileData?.role as Role || 'Operator';
-          
-          setUser({
-            id: session.user.id,
-            email: session.user.email || '',
-            role
-          });
           
           // Redirect to dashboard if on login page
           if (window.location.pathname === '/login') {
@@ -133,27 +182,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data?.user) {
         console.log('Login successful:', data.user.id);
         
-        // Get user role from profiles table
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', data.user.id)
-          .single();
-        
-        if (profileError) {
-          throw profileError;
-        }
-        
-        const role = profileData?.role as Role || 'Operator';
-        
-        setUser({
-          id: data.user.id,
-          email: data.user.email || '',
-          role
-        });
-        
+        // User role will be handled by the auth state change listener
         toast.success('Login successful');
-        navigate('/');
       }
     } catch (error: any) {
       console.error('Login error:', error);
@@ -166,6 +196,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         toast.error(error.message || 'Login failed. Please try again.');
       }
+      
+      throw error; // Re-throw to allow error handling in the component
     } finally {
       setLoading(false);
     }
@@ -190,7 +222,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       if (data?.user) {
-        // The profile will be created automatically via database trigger
+        // For demo purposes, let's also create the profile immediately
+        // This ensures the profile exists when they try to log in
+        try {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              id: data.user.id,
+              role: role
+            });
+            
+          if (profileError) {
+            console.error('Error creating profile during signup:', profileError);
+          }
+        } catch (profileErr) {
+          console.error('Failed to create profile during signup:', profileErr);
+        }
+        
         toast.success('Account created successfully! You can now log in.');
       }
     } catch (error: any) {
@@ -199,6 +247,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         toast.error(error.message || 'Failed to create account. Please try again.');
       }
+      throw error; // Re-throw to allow error handling in the component
     } finally {
       setLoading(false);
     }
