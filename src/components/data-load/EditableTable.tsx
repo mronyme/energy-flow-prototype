@@ -72,8 +72,11 @@ const EditableTable: React.FC<EditableTableProps> = ({ data = [], onSave, refres
       onSave(id, parseFloat(value));
     } else {
       try {
-        // Fix the update call to only use one parameter (id), with value passed inside an object
-        await readingService.update(id, { value: parseFloat(value) });
+        // Fix: Pass a single object with id and value properties to update
+        await readingService.update({
+          id: id,
+          value: parseFloat(value)
+        });
         toast.success('Reading updated successfully');
         
         // Update the local table data
