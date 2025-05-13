@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,6 @@ import { toast } from 'sonner';
 import FileUploadAdapter from '@/components/data-load/FileUploadAdapter';
 import WizardStep from '@/components/data-load/WizardStep';
 import PreviewTable from '@/components/data-load/PreviewTable';
-import { csvUtils } from '@/utils/csvUtils';
 import { readingService, importLogService } from '@/services/api';
 import { ImportLog, Reading } from '@/types';
 import { useAnnouncer } from '@/components/common/A11yAnnouncer';
@@ -45,8 +45,8 @@ const CsvImport = () => {
     announce('Import process started.', true);
 
     try {
-      // Transform parsed data into Reading objects
-      const readings: Reading[] = parsedData.map(item => ({
+      // Transform parsed data into Reading objects with optional id
+      const readings = parsedData.map(item => ({
         meter_id: item.meter_id,
         ts: item.ts,
         value: parseFloat(item.value),
@@ -64,17 +64,16 @@ const CsvImport = () => {
       }
 
       // Create import log
-      const log: Omit<ImportLog, 'id' | 'ts'> = {
-        filename: 'uploaded-data.csv', // Replace with actual filename if available
-        rows: parsedData.length,
-        success: result.success,
-        inserted: result.inserted,
-        errors: result.errors,
+      const log = {
+        user_email: 'user@example.com', // This would come from auth context
+        rows_ok: result.inserted || 0,
+        rows_err: result.errors || 0,
+        file_name: file ? file.name : 'uploaded-data.csv',
       };
 
       const newLog = await importLogService.createImportLog(log);
       if (newLog) {
-        setImportLog(newLog);
+        setImportLog(newLog as ImportLog);
         toast.success('Import log created successfully.');
         announce('Import log created successfully.', true);
       } else {
@@ -93,7 +92,11 @@ const CsvImport = () => {
 
   return (
     <div>
-      <WizardStep steps={steps} />
+      <WizardStep 
+        currentStep={currentStep} 
+        totalSteps={totalSteps} 
+        stepTitle={steps[currentStep-1].label} 
+      />
       
       <Separator className="my-4" />
 
@@ -129,16 +132,15 @@ const CsvImport = () => {
           {importLog ? (
             <>
               <p>Import Log:</p>
-              <p>Filename: {importLog.filename}</p>
-              <p>Rows: {importLog.rows}</p>
-              <p>Success: {importLog.success ? 'Yes' : 'No'}</p>
-              <p>Inserted: {importLog.inserted}</p>
-              <p>Errors: {importLog.errors}</p>
+              <p>Filename: {importLog.file_name}</p>
+              <p>Rows OK: {importLog.rows_ok}</p>
+              <p>Rows with Errors: {importLog.rows_err}</p>
+              <p>Timestamp: {new Date(importLog.ts).toLocaleString()}</p>
             </>
           ) : (
             <p>No import log available.</p>
           )}
-          <Button onClick={() => setCurrentStep(1)}>Import Another File</Button>
+          <Button onClick={() => setCurrentStep(1)} className="mt-4">Import Another File</Button>
         </div>
       )}
     </div>

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
@@ -6,6 +7,7 @@ import SkipLinkAdapter from '@/components/common/SkipLinkAdapter';
 import { adminService } from '@/services/api';
 import { useAnnouncer } from '@/components/common/A11yAnnouncer';
 import { toast } from 'sonner';
+import { Card } from '@/components/ui/card';
 
 interface EmissionFactor {
   id: string;
@@ -63,7 +65,7 @@ const EmissionFactors = () => {
 
   return (
     <div className="container mx-auto py-8">
-      <SkipLinkAdapter target="#factors-grid" label="Skip to emission factors" />
+      <SkipLinkAdapter href="#factors-grid" label="Skip to emission factors" />
       
       <h1 className="text-2xl font-bold mb-6">Emission Factors</h1>
       
@@ -76,15 +78,14 @@ const EmissionFactors = () => {
           </div>
         ) : (
           <DataGridEditableAdapter
-            id="factors-grid"
             data={factors}
             columns={[
-              { key: 'name', header: 'Energy Source', editable: false },
-              { key: 'value', header: 'Value', editable: true, type: 'number' },
-              { key: 'unit', header: 'Unit', editable: false },
-              { key: 'updatedAt', header: 'Last Updated', editable: false }
+              { field: 'name', headerName: 'Energy Source', type: 'text' },
+              { field: 'value', headerName: 'Value', type: 'number' },
+              { field: 'unit', headerName: 'Unit', type: 'text' },
+              { field: 'updatedAt', headerName: 'Last Updated', type: 'text' }
             ]}
-            onSave={handleSave}
+            onRowUpdate={handleSave}
             isLoading={saving}
           />
         )}

@@ -1,3 +1,4 @@
+
 export type Role = 'Operator' | 'DataManager' | 'Manager' | 'Admin';
 
 export type MeterType = 'ELEC' | 'GAS' | 'WATER';
@@ -14,10 +15,11 @@ export interface Meter {
   id: string;
   site_id: string;
   type: MeterType;
+  site_name?: string; // Add this for compatibility
 }
 
 export interface Reading {
-  id: string;
+  id?: string; // Make id optional for creation
   meter_id: string;
   ts: string;
   value: number;
@@ -47,6 +49,7 @@ export interface Anomaly {
   type: AnomalyType;
   delta: number | null;
   comment: string | null;
+  reading?: any; // Add this for compatibility
 }
 
 export interface User {
@@ -55,17 +58,22 @@ export interface User {
   role: Role;
 }
 
+// Updated PiTag interface to match what's expected
 export interface PiTag {
   id: string;
   name: string;
-  description: string;
-  unit: string;
-  status: 'active' | 'inactive' | 'OK' | 'KO' | null;
+  description?: string;
+  site_id?: string;
+  status: boolean | string; // Make it accept either boolean or string
+  value?: number;
+  unit?: string;
+  timestamp?: string;
 }
 
-// Add interfaces for the components that have missing prop types
+// Updated interfaces for the components that have missing prop types
 export interface SkipLinkProps {
-  href: string;
+  href?: string;
+  target?: string;
   label: string;
 }
 
@@ -73,6 +81,7 @@ export interface WizardStepProps {
   currentStep: number;
   totalSteps: number;
   stepTitle: string;
+  steps?: { id: string; label: string; isActive: boolean; isComplete: boolean; }[]; // Add this for compatibility
 }
 
 export interface FileUploadProps {
@@ -83,7 +92,7 @@ export interface FileUploadProps {
 
 export interface LogTableProps {
   entries: ImportLog[];
-  isLoading: boolean;
+  isLoading?: boolean;
 }
 
 export interface UserListProps {
@@ -94,6 +103,7 @@ export interface UserListProps {
 
 export interface UserFormProps {
   onSubmit: (formData: { email: string; password: string; role: Role; }) => Promise<void>;
+  isSubmitting?: boolean;
 }
 
 export interface DataGridEditableProps {
@@ -101,4 +111,19 @@ export interface DataGridEditableProps {
   columns: { field: string; headerName: string; type: 'text' | 'number' }[];
   onRowUpdate: (id: string, field: string, value: any) => Promise<void>;
   isLoading?: boolean;
+}
+
+export interface ThresholdBadgeProps {
+  value?: number;
+  delta?: number;
+  className?: string;
+}
+
+export interface AlertCardProps {
+  id?: string;
+  title?: string;
+  description?: string;
+  anomaly?: any;
+  onClick?: () => void;
+  key?: string;
 }

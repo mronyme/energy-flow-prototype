@@ -10,18 +10,19 @@ const DataGridEditableAdapter = ({
   onRowUpdate,
   isLoading = false
 }: DataGridEditableProps) => {
-  // Convert the onRowUpdate function from (id, field, value) to (id, value)
-  // by capturing the field and using a curried function
-  const handleColumnUpdate = (id: string, value: number) => {
-    // Assuming we're always updating the "value" field for emission factors
-    return onRowUpdate(id, "value", value);
-  };
+  // Transform columns format if needed
+  const transformedColumns = columns.map(col => ({
+    field: col.field,
+    headerName: col.headerName,
+    type: col.type
+  }));
 
   return (
     <DataGridEditable
       data={data}
-      columns={columns}
-      onRowUpdate={handleColumnUpdate}
+      columns={transformedColumns}
+      onRowUpdate={onRowUpdate}
+      isLoading={isLoading}
     />
   );
 };

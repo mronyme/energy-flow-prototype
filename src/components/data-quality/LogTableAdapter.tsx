@@ -8,7 +8,12 @@ const LogTableAdapter = ({
   entries,
   isLoading
 }: LogTableProps) => {
-  return <LogTable logs={entries} loading={isLoading} />;
+  const handleExport = () => {
+    // A stub function that would be implemented for the export functionality
+    console.log("Export functionality would be implemented here");
+  };
+
+  return <LogTable data={entries} onExport={handleExport} />;
 };
 
 export default LogTableAdapter;

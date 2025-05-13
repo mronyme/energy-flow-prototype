@@ -26,7 +26,7 @@ const Login = () => {
   
   const [activeTab, setActiveTab] = useState('login');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { announce, announcer } = useAnnouncer();
+  const { announce } = useAnnouncer();
   
   const { login, signup, loading, user } = useAuth();
   const navigate = useNavigate();
@@ -136,7 +136,6 @@ const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
-        {announcer}
         <div>
           <div className="flex justify-center">
             <img src="/logo.png" alt="ENGIE Logo" className="h-12 w-auto" />

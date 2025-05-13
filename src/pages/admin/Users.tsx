@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
 import UserFormAdapter from '@/components/admin/UserFormAdapter';
@@ -7,6 +8,8 @@ import { Role, User } from '@/types';
 import { adminService } from '@/services/api';
 import { useAnnouncer } from '@/components/common/A11yAnnouncer';
 import SkipLinkAdapter from '@/components/common/SkipLinkAdapter';
+import { Card } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 const Users = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -30,10 +33,10 @@ const Users = () => {
     loadUsers();
   }, []);
 
-  const handleCreateUser = async (email: string, password: string, role: Role) => {
+  const handleCreateUser = async (formData: { email: string; password: string; role: Role }) => {
     try {
       setLoading(true);
-      const result = await adminService.createUser({ email, password, role });
+      const result = await adminService.createUser(formData);
       
       if (result) {
         toast.success('User created successfully');
@@ -50,7 +53,7 @@ const Users = () => {
   
   return (
     <div className="container mx-auto py-8">
-      <SkipLinkAdapter target="#users-heading" label="Skip to user management" />
+      <SkipLinkAdapter href="#users-heading" label="Skip to user management" />
       
       <h1 id="users-heading" className="text-2xl font-bold mb-6">User Management</h1>
       
@@ -62,11 +65,14 @@ const Users = () => {
           </TabsList>
           
           <TabsContent value="list">
-            <UserList users={users} isLoading={loading} />
+            <UserList users={users} />
           </TabsContent>
           
           <TabsContent value="create">
-            <UserFormAdapter onSubmit={handleCreateUser} isSubmitting={loading} />
+            <UserFormAdapter 
+              onSubmit={handleCreateUser} 
+              isSubmitting={loading} 
+            />
           </TabsContent>
         </Tabs>
       </Card>
