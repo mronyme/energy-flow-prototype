@@ -1,23 +1,46 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Save } from 'lucide-react';
+import { readingService } from '@/services/api';
+import { toast } from 'sonner';
 
 interface EditableTableProps {
-  data: Array<{
+  data?: Array<{
     id: string;
     name: string;
     value: number | null;
     unit: string;
   }>;
-  onSave: (id: string, value: number) => void;
+  onSave?: (id: string, value: number) => void;
+  refreshTrigger?: number;
 }
 
-const EditableTable: React.FC<EditableTableProps> = ({ data, onSave }) => {
+const EditableTable: React.FC<EditableTableProps> = ({ data = [], onSave, refreshTrigger = 0 }) => {
   const [editValues, setEditValues] = useState<Record<string, string>>({});
   const [editErrors, setEditErrors] = useState<Record<string, string>>({});
+  const [tableData, setTableData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  
+  // Load recent readings when component mounts or refreshTrigger changes
+  useEffect(() => {
+    const fetchRecentReadings = async () => {
+      try {
+        setLoading(true);
+        const readings = await readingService.getRecent();
+        setTableData(readings || []);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching recent readings:', error);
+        toast.error('Failed to load recent readings');
+        setLoading(false);
+      }
+    };
+    
+    fetchRecentReadings();
+  }, [refreshTrigger]);
   
   const handleInputChange = (id: string, value: string) => {
     setEditValues(prev => ({ ...prev, [id]: value }));
@@ -36,7 +59,7 @@ const EditableTable: React.FC<EditableTableProps> = ({ data, onSave }) => {
     }
   };
   
-  const handleSave = (id: string) => {
+  const handleSave = async (id: string) => {
     const value = editValues[id];
     
     if (!value || isNaN(parseFloat(value)) || parseFloat(value) < 0) {
@@ -44,7 +67,25 @@ const EditableTable: React.FC<EditableTableProps> = ({ data, onSave }) => {
       return;
     }
     
-    onSave(id, parseFloat(value));
+    if (onSave) {
+      onSave(id, parseFloat(value));
+    } else {
+      try {
+        // Implement default save behavior if no onSave is provided
+        await readingService.update(id, parseFloat(value));
+        toast.success('Reading updated successfully');
+        
+        // Update the local table data
+        setTableData(prev => 
+          prev.map(item => 
+            item.id === id ? { ...item, value: parseFloat(value) } : item
+          )
+        );
+      } catch (error) {
+        console.error('Error updating reading:', error);
+        toast.error('Failed to update reading');
+      }
+    }
     
     // Clear the value from editValues after saving
     setEditValues(prev => {
@@ -56,50 +97,64 @@ const EditableTable: React.FC<EditableTableProps> = ({ data, onSave }) => {
 
   return (
     <div className="bg-white rounded-lg shadow-sm ring-1 ring-dark/10 overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Meter</TableHead>
-            <TableHead>Current Value</TableHead>
-            <TableHead>New Value</TableHead>
-            <TableHead className="w-[100px]">Action</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data.map((row) => (
-            <TableRow key={row.id}>
-              <TableCell className="font-medium">{row.name}</TableCell>
-              <TableCell>{row.value !== null ? `${row.value} ${row.unit}` : 'N/A'}</TableCell>
-              <TableCell>
-                <div className="relative">
-                  <Input
-                    value={editValues[row.id] || ''}
-                    onChange={(e) => handleInputChange(row.id, e.target.value)}
-                    placeholder="Enter value"
-                    className={editErrors[row.id] ? 'border-red-500' : ''}
-                  />
-                  {editErrors[row.id] && (
-                    <p className="text-xs text-red-500 absolute">
-                      {editErrors[row.id]}
-                    </p>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleSave(row.id)}
-                  disabled={!!editErrors[row.id] || !editValues[row.id]}
-                >
-                  <Save size={16} className="mr-1" />
-                  Save
-                </Button>
-              </TableCell>
+      {loading ? (
+        <div className="flex justify-center items-center p-6">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+        </div>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Meter</TableHead>
+              <TableHead>Current Value</TableHead>
+              <TableHead>New Value</TableHead>
+              <TableHead className="w-[100px]">Action</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {tableData.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center py-6 text-gray-500">
+                  No recent readings found
+                </TableCell>
+              </TableRow>
+            ) : (
+              tableData.map((row) => (
+                <TableRow key={row.id}>
+                  <TableCell className="font-medium">{row.name}</TableCell>
+                  <TableCell>{row.value !== null ? `${row.value} ${row.unit || ''}` : 'N/A'}</TableCell>
+                  <TableCell>
+                    <div className="relative">
+                      <Input
+                        value={editValues[row.id] || ''}
+                        onChange={(e) => handleInputChange(row.id, e.target.value)}
+                        placeholder="Enter value"
+                        className={editErrors[row.id] ? 'border-red-500' : ''}
+                      />
+                      {editErrors[row.id] && (
+                        <p className="text-xs text-red-500 absolute">
+                          {editErrors[row.id]}
+                        </p>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSave(row.id)}
+                      disabled={!!editErrors[row.id] || !editValues[row.id]}
+                    >
+                      <Save size={16} className="mr-1" />
+                      Save
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      )}
     </div>
   );
 };

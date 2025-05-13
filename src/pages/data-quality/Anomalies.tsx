@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { AlertCardSummary } from '@/components/data-quality/AlertCard';
 import CorrectionModal from '@/components/data-quality/CorrectionModal';
@@ -14,23 +13,27 @@ import { Button } from '@/components/ui/button';
 import { AlertTriangle, Ban, Info } from 'lucide-react';
 import { AnomalyType } from '@/types';
 
-interface Anomaly {
+// Updated interface to match the CorrectionModal component's expected props
+interface AnomalyData {
   id: string;
   readingId: string;
   meterId: string;
   meterName: string;
   siteName: string;
-  date: string;
+  date: string; 
   value: number | null;
   type: AnomalyType;
   delta: number | null;
+  comment: string;
+  // Add the missing properties
   site: string;
   meter: string;
-  comment: string;
+  meterType: string;
+  timestamp: string;
 }
 
 const Anomalies: React.FC = () => {
-  const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
+  const [anomalies, setAnomalies] = useState<AnomalyData[]>([]);
   const [sites, setSites] = useState<{id: string, name: string}[]>([]);
   const [selectedSite, setSelectedSite] = useState<string>('all');
   const [loading, setLoading] = useState(false);
@@ -42,7 +45,7 @@ const Anomalies: React.FC = () => {
   const [endDate, setEndDate] = useState<Date>(new Date());
   
   // Correction modal state
-  const [selectedAnomaly, setSelectedAnomaly] = useState<Anomaly | null>(null);
+  const [selectedAnomaly, setSelectedAnomaly] = useState<AnomalyData | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   
   // Reset modal state when closed
@@ -80,11 +83,18 @@ const Anomalies: React.FC = () => {
         endDate: format(endDate, 'yyyy-MM-dd')
       });
       
-      setAnomalies(anomalyData);
+      // Map the received data to include all required properties
+      const mappedAnomalies = anomalyData.map(anomaly => ({
+        ...anomaly,
+        timestamp: anomaly.date, // Use date as timestamp
+        meterType: anomaly.type, // Default meterType to avoid type error
+      }));
+      
+      setAnomalies(mappedAnomalies);
       setLoading(false);
       
       // Announce for screen readers
-      announce(`Loaded ${anomalyData.length} anomalies`);
+      announce(`Loaded ${mappedAnomalies.length} anomalies`);
       
     } catch (error) {
       console.error('Error fetching anomalies:', error);
@@ -136,7 +146,7 @@ const Anomalies: React.FC = () => {
   };
   
   // Handle row click to open correction modal (IF-05)
-  const handleRowClick = (anomaly: Anomaly) => {
+  const handleRowClick = (anomaly: AnomalyData) => {
     setSelectedAnomaly(anomaly);
     setModalOpen(true);
     
@@ -215,19 +225,19 @@ const Anomalies: React.FC = () => {
         <AlertCardSummary
           title="Missing Readings"
           count={anomalies.filter(a => a.type === 'MISSING').length}
-          type="warning"
+          type="MISSING"
           icon={Ban}
         />
         <AlertCardSummary
           title="Spikes"
           count={anomalies.filter(a => a.type === 'SPIKE').length}
-          type="error"
+          type="SPIKE"
           icon={AlertTriangle}
         />
         <AlertCardSummary
           title="Flat Values"
           count={anomalies.filter(a => a.type === 'FLAT').length}
-          type="info"
+          type="FLAT"
           icon={Info}
         />
       </div>
