@@ -1,0 +1,323 @@
+
+{
+  "sites": [
+    {
+      "id": "b8acfb98-3e28-4430-8cdb-3f865c10671a",
+      "name": "Paris-Nord",
+      "country": "FR"
+    },
+    {
+      "id": "d7f6453e-6059-43d8-9a8c-4e55c3d1bc3e",
+      "name": "Lyon-East",
+      "country": "FR"
+    },
+    {
+      "id": "a3b12c8f-5e9d-4e8a-9a1b-2c3d4e5f6a7b",
+      "name": "Marseille-Port",
+      "country": "FR"
+    }
+  ],
+  "meters": [
+    {
+      "id": "c5d4e3f2-1a2b-3c4d-5e6f-7a8b9c0d1e2f",
+      "site_id": "b8acfb98-3e28-4430-8cdb-3f865c10671a",
+      "type": "ELEC"
+    },
+    {
+      "id": "e2f3d4c5-6b7a-8c9d-0e1f-2a3b4c5d6e7f",
+      "site_id": "b8acfb98-3e28-4430-8cdb-3f865c10671a",
+      "type": "GAS"
+    },
+    {
+      "id": "f3e2d1c0-b9a8-7c6d-5e4f-3a2b1c0d9e8f",
+      "site_id": "b8acfb98-3e28-4430-8cdb-3f865c10671a",
+      "type": "WATER"
+    },
+    {
+      "id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+      "site_id": "d7f6453e-6059-43d8-9a8c-4e55c3d1bc3e",
+      "type": "ELEC"
+    },
+    {
+      "id": "b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e",
+      "site_id": "d7f6453e-6059-43d8-9a8c-4e55c3d1bc3e",
+      "type": "GAS"
+    },
+    {
+      "id": "c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f",
+      "site_id": "d7f6453e-6059-43d8-9a8c-4e55c3d1bc3e",
+      "type": "WATER"
+    },
+    {
+      "id": "d4e5f6a7-b8c9-0d1e-2f3a-4b5c6d7e8f9a",
+      "site_id": "a3b12c8f-5e9d-4e8a-9a1b-2c3d4e5f6a7b",
+      "type": "ELEC"
+    },
+    {
+      "id": "e5f6a7b8-c9d0-1e2f-3a4b-5c6d7e8f9a0b",
+      "site_id": "a3b12c8f-5e9d-4e8a-9a1b-2c3d4e5f6a7b",
+      "type": "GAS"
+    },
+    {
+      "id": "f6a7b8c9-d0e1-2f3a-4b5c-6d7e8f9a0b1c",
+      "site_id": "a3b12c8f-5e9d-4e8a-9a1b-2c3d4e5f6a7b",
+      "type": "WATER"
+    }
+  ],
+  "readings": [
+    {
+      "id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+      "meter_id": "c5d4e3f2-1a2b-3c4d-5e6f-7a8b9c0d1e2f",
+      "ts": "2023-11-01T00:00:00Z",
+      "value": 1245.678
+    },
+    {
+      "id": "2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e",
+      "meter_id": "c5d4e3f2-1a2b-3c4d-5e6f-7a8b9c0d1e2f",
+      "ts": "2023-11-02T00:00:00Z",
+      "value": 1289.345
+    },
+    {
+      "id": "3c4d5e6f-7a8b-9c0d-1e2f-3a4b5c6d7e8f",
+      "meter_id": "c5d4e3f2-1a2b-3c4d-5e6f-7a8b9c0d1e2f",
+      "ts": "2023-11-03T00:00:00Z",
+      "value": 1312.567
+    },
+    {
+      "id": "4d5e6f7a-8b9c-0d1e-2f3a-4b5c6d7e8f9a",
+      "meter_id": "c5d4e3f2-1a2b-3c4d-5e6f-7a8b9c0d1e2f",
+      "ts": "2023-11-04T00:00:00Z",
+      "value": 1876.234
+    },
+    {
+      "id": "5e6f7a8b-9c0d-1e2f-3a4b-5c6d7e8f9a0b",
+      "meter_id": "c5d4e3f2-1a2b-3c4d-5e6f-7a8b9c0d1e2f",
+      "ts": "2023-11-05T00:00:00Z",
+      "value": 1367.678
+    },
+    {
+      "id": "6f7a8b9c-0d1e-2f3a-4b5c-6d7e8f9a0b1c",
+      "meter_id": "c5d4e3f2-1a2b-3c4d-5e6f-7a8b9c0d1e2f",
+      "ts": "2023-11-06T00:00:00Z",
+      "value": 1289.123
+    },
+    {
+      "id": "7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
+      "meter_id": "c5d4e3f2-1a2b-3c4d-5e6f-7a8b9c0d1e2f",
+      "ts": "2023-11-07T00:00:00Z",
+      "value": 1256.789
+    }
+  ],
+  "kpi_daily": [
+    {
+      "id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+      "site_id": "b8acfb98-3e28-4430-8cdb-3f865c10671a",
+      "day": "2023-11-01",
+      "kwh": 2456.789,
+      "co2": 578.901,
+      "cost_eur": 245.67
+    },
+    {
+      "id": "b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e",
+      "site_id": "b8acfb98-3e28-4430-8cdb-3f865c10671a",
+      "day": "2023-11-02",
+      "kwh": 2512.345,
+      "co2": 591.678,
+      "cost_eur": 251.23
+    },
+    {
+      "id": "c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f",
+      "site_id": "b8acfb98-3e28-4430-8cdb-3f865c10671a",
+      "day": "2023-11-03",
+      "kwh": 2567.890,
+      "co2": 604.456,
+      "cost_eur": 256.79
+    },
+    {
+      "id": "d4e5f6a7-b8c9-0d1e-2f3a-4b5c6d7e8f9a",
+      "site_id": "b8acfb98-3e28-4430-8cdb-3f865c10671a",
+      "day": "2023-11-04",
+      "kwh": 3678.901,
+      "co2": 866.123,
+      "cost_eur": 367.89
+    },
+    {
+      "id": "e5f6a7b8-c9d0-1e2f-3a4b-5c6d7e8f9a0b",
+      "site_id": "b8acfb98-3e28-4430-8cdb-3f865c10671a",
+      "day": "2023-11-05",
+      "kwh": 2745.678,
+      "co2": 646.456,
+      "cost_eur": 274.57
+    },
+    {
+      "id": "f6a7b8c9-d0e1-2f3a-4b5c-6d7e8f9a0b1c",
+      "site_id": "b8acfb98-3e28-4430-8cdb-3f865c10671a",
+      "day": "2023-11-06",
+      "kwh": 2678.345,
+      "co2": 630.789,
+      "cost_eur": 267.83
+    },
+    {
+      "id": "a7b8c9d0-e1f2-3a4b-5c6d-7e8f9a0b1c2d",
+      "site_id": "b8acfb98-3e28-4430-8cdb-3f865c10671a",
+      "day": "2023-11-07",
+      "kwh": 2589.012,
+      "co2": 609.456,
+      "cost_eur": 258.90
+    },
+    {
+      "id": "b8c9d0e1-f2a3-4b5c-6d7e-8f9a0b1c2d3e",
+      "site_id": "d7f6453e-6059-43d8-9a8c-4e55c3d1bc3e",
+      "day": "2023-11-01",
+      "kwh": 1876.543,
+      "co2": 442.123,
+      "cost_eur": 187.65
+    },
+    {
+      "id": "c9d0e1f2-a3b4-5c6d-7e8f-9a0b1c2d3e4f",
+      "site_id": "d7f6453e-6059-43d8-9a8c-4e55c3d1bc3e",
+      "day": "2023-11-02",
+      "kwh": 1912.678,
+      "co2": 450.456,
+      "cost_eur": 191.27
+    },
+    {
+      "id": "d0e1f2a3-b4c5-6d7e-8f9a-0b1c2d3e4f5a",
+      "site_id": "d7f6453e-6059-43d8-9a8c-4e55c3d1bc3e",
+      "day": "2023-11-03",
+      "kwh": 1945.789,
+      "co2": 458.123,
+      "cost_eur": 194.58
+    },
+    {
+      "id": "e1f2a3b4-c5d6-7e8f-9a0b-1c2d3e4f5a6b",
+      "site_id": "d7f6453e-6059-43d8-9a8c-4e55c3d1bc3e",
+      "day": "2023-11-04",
+      "kwh": 2789.012,
+      "co2": 656.789,
+      "cost_eur": 278.90
+    },
+    {
+      "id": "f2a3b4c5-d6e7-8f9a-0b1c-2d3e4f5a6b7c",
+      "site_id": "d7f6453e-6059-43d8-9a8c-4e55c3d1bc3e",
+      "day": "2023-11-05",
+      "kwh": 2056.345,
+      "co2": 484.123,
+      "cost_eur": 205.63
+    },
+    {
+      "id": "a3b4c5d6-e7f8-9a0b-1c2d-3e4f5a6b7c8d",
+      "site_id": "d7f6453e-6059-43d8-9a8c-4e55c3d1bc3e",
+      "day": "2023-11-06",
+      "kwh": 2012.678,
+      "co2": 473.901,
+      "cost_eur": 201.27
+    },
+    {
+      "id": "b4c5d6e7-f8a9-0b1c-2d3e-4f5a6b7c8d9e",
+      "site_id": "d7f6453e-6059-43d8-9a8c-4e55c3d1bc3e",
+      "day": "2023-11-07",
+      "kwh": 1978.456,
+      "co2": 465.789,
+      "cost_eur": 197.85
+    },
+    {
+      "id": "c5d6e7f8-a9b0-1c2d-3e4f-5a6b7c8d9e0f",
+      "site_id": "a3b12c8f-5e9d-4e8a-9a1b-2c3d4e5f6a7b",
+      "day": "2023-11-01",
+      "kwh": 3456.789,
+      "co2": 813.901,
+      "cost_eur": 345.68
+    },
+    {
+      "id": "d6e7f8a9-b0c1-2d3e-4f5a-6b7c8d9e0f1a",
+      "site_id": "a3b12c8f-5e9d-4e8a-9a1b-2c3d4e5f6a7b",
+      "day": "2023-11-02",
+      "kwh": 3512.345,
+      "co2": 827.123,
+      "cost_eur": 351.23
+    },
+    {
+      "id": "e7f8a9b0-c1d2-3e4f-5a6b-7c8d9e0f1a2b",
+      "site_id": "a3b12c8f-5e9d-4e8a-9a1b-2c3d4e5f6a7b",
+      "day": "2023-11-03",
+      "kwh": 3567.890,
+      "co2": 840.456,
+      "cost_eur": 356.79
+    },
+    {
+      "id": "f8a9b0c1-d2e3-4f5a-6b7c-8d9e0f1a2b3c",
+      "site_id": "a3b12c8f-5e9d-4e8a-9a1b-2c3d4e5f6a7b",
+      "day": "2023-11-04",
+      "kwh": 5123.456,
+      "co2": 1205.901,
+      "cost_eur": 512.35
+    },
+    {
+      "id": "a9b0c1d2-e3f4-5a6b-7c8d-9e0f1a2b3c4d",
+      "site_id": "a3b12c8f-5e9d-4e8a-9a1b-2c3d4e5f6a7b",
+      "day": "2023-11-05",
+      "kwh": 3789.012,
+      "co2": 892.345,
+      "cost_eur": 378.90
+    },
+    {
+      "id": "b0c1d2e3-f4a5-6b7c-8d9e-0f1a2b3c4d5e",
+      "site_id": "a3b12c8f-5e9d-4e8a-9a1b-2c3d4e5f6a7b",
+      "day": "2023-11-06",
+      "kwh": 3678.345,
+      "co2": 866.123,
+      "cost_eur": 367.83
+    },
+    {
+      "id": "c1d2e3f4-a5b6-7c8d-9e0f-1a2b3c4d5e6f",
+      "site_id": "a3b12c8f-5e9d-4e8a-9a1b-2c3d4e5f6a7b",
+      "day": "2023-11-07",
+      "kwh": 3589.678,
+      "co2": 845.456,
+      "cost_eur": 358.97
+    }
+  ],
+  "anomalies": [
+    {
+      "id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+      "reading_id": "4d5e6f7a-8b9c-0d1e-2f3a-4b5c6d7e8f9a",
+      "type": "SPIKE",
+      "delta": 43.12,
+      "comment": null
+    },
+    {
+      "id": "2b3c4d5e-6f7a-8b9c-0d1e-2f3a4b5c6d7e",
+      "reading_id": "7a8b9c0d-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
+      "type": "FLAT",
+      "delta": 0.0,
+      "comment": null
+    }
+  ],
+  "import_logs": [
+    {
+      "id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+      "ts": "2023-11-01T10:23:45Z",
+      "user_email": "operator@engie.com",
+      "rows_ok": 120,
+      "rows_err": 3,
+      "file_name": "readings_nov01.csv"
+    },
+    {
+      "id": "b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e",
+      "ts": "2023-11-02T09:15:30Z",
+      "user_email": "operator@engie.com",
+      "rows_ok": 115,
+      "rows_err": 0,
+      "file_name": "readings_nov02.csv"
+    },
+    {
+      "id": "c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f",
+      "ts": "2023-11-03T11:45:12Z",
+      "user_email": "datamanager@engie.com",
+      "rows_ok": 118,
+      "rows_err": 2,
+      "file_name": "readings_nov03.csv"
+    }
+  ]
+}
