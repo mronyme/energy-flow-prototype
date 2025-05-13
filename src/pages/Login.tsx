@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth'; // Fixed import path
+import { useAuth } from '../hooks/useAuth';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -92,66 +92,70 @@ const Login = () => {
     }
   };
 
-  // Improved handleDemoLogin function
+  // Improved handleDemoLogin function with better error handling and flow control
   const handleDemoLogin = async (demoEmail: string) => {
     try {
       setIsSubmitting(true);
       announce(`Attempting demo login with ${demoEmail}...`, true);
       
-      // First check if the user already exists by attempting to sign in
+      const role = getRoleFromEmail(demoEmail);
+      toast.info('Logging in to demo account...', { duration: 2000 });
+      
+      // First try to sign in - the account might already exist
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email: demoEmail,
         password: DEMO_PASSWORD
       });
       
-      if (signInData?.user) {
-        // User exists and login was successful
+      // If login successful, we're done
+      if (signInData?.user && !signInError) {
         toast.success('Demo login successful!');
         announce('Demo login successful. Redirecting to dashboard.', true);
         return;
       }
       
-      // User doesn't exist or credentials are wrong, attempt to create the account
-      console.log('Creating demo account:', demoEmail);
-      const role = getRoleFromEmail(demoEmail);
+      // If error is not "Invalid login credentials" then it's something else
+      if (signInError && !signInError.message.includes('Invalid login credentials')) {
+        throw new Error(`Login failed: ${signInError.message}`);
+      }
+      
+      // User doesn't exist, create a new account
+      toast.info('Creating demo account...', { duration: 2000 });
       
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: demoEmail,
         password: DEMO_PASSWORD,
         options: {
           data: {
-            role
+            role: role
           }
         }
       });
       
       if (signUpError) {
-        throw signUpError;
+        throw new Error(`Failed to create account: ${signUpError.message}`);
       }
       
-      if (signUpData?.user) {
-        toast.success('Demo account created. Signing in...');
-        announce('Demo account created. Signing in...', true);
-        
-        // Try to sign in with the newly created account
-        const { data: finalSignInData, error: finalSignInError } = await supabase.auth.signInWithPassword({
-          email: demoEmail,
-          password: DEMO_PASSWORD
-        });
-        
-        if (finalSignInError) {
-          throw finalSignInError;
-        }
-        
-        if (finalSignInData?.user) {
-          toast.success('Demo login successful!');
-          announce('Demo login successful. Redirecting to dashboard.', true);
-        }
+      if (!signUpData?.user) {
+        throw new Error('Failed to create account: No user returned');
       }
+      
+      // Finally, try to sign in with the newly created account
+      const { error: finalSignInError } = await supabase.auth.signInWithPassword({
+        email: demoEmail,
+        password: DEMO_PASSWORD
+      });
+      
+      if (finalSignInError) {
+        throw new Error(`Login failed after account creation: ${finalSignInError.message}`);
+      }
+      
+      toast.success('Demo login successful!');
+      announce('Demo login successful. Redirecting to dashboard.', true);
       
     } catch (error: any) {
       console.error('Demo login error:', error);
-      toast.error(`Login failed: ${error.message || 'Unknown error'}`);
+      toast.error(error.message || 'Login failed. Please try again.');
       announce('Demo login failed. Please try again.', true);
     } finally {
       setIsSubmitting(false);

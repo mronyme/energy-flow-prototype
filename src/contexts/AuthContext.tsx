@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Role } from '../types';
 import { toast } from 'sonner';
+import { Session } from '@supabase/supabase-js';
 
 interface User {
   id: string;
@@ -24,79 +25,91 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState<Session | null>(null);
   const navigate = useNavigate();
 
-  // Check if user is already logged in and set up auth state listener
+  // Unified function to fetch and set user profile
+  const fetchAndSetUserProfile = async (userId: string, userEmail: string | null) => {
+    try {
+      // Get user role from profiles table
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .single();
+      
+      if (profileError) {
+        if (profileError.code === 'PGRST116') {
+          // Profile doesn't exist, get role from user metadata
+          const { data: userData } = await supabase.auth.getUser();
+          const metadata = userData?.user?.user_metadata || {};
+          const role = (metadata.role as Role) || 'Operator';
+          
+          // Create profile
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: userId,
+              role: role
+            });
+          
+          if (insertError) {
+            console.error('Error creating user profile:', insertError);
+            toast.error('Error setting up user profile');
+            return null;
+          }
+          
+          return {
+            id: userId,
+            email: userEmail || '',
+            role
+          };
+        } else {
+          console.error('Error fetching user profile:', profileError);
+          return null;
+        }
+      }
+      
+      return {
+        id: userId,
+        email: userEmail || '',
+        role: profileData?.role as Role || 'Operator'
+      };
+    } catch (error) {
+      console.error('Error in fetchAndSetUserProfile:', error);
+      return null;
+    }
+  };
+
+  // Handle auth state changes and session initialization
   useEffect(() => {
     // First set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id);
+      (event, sessionData) => {
+        console.log('Auth state changed:', event, sessionData?.user?.id);
+        setSession(sessionData);
         
-        if (session?.user) {
-          try {
-            // Get user role from profiles table or create profile if it doesn't exist
-            const { data: profileData, error: profileError } = await supabase
-              .from('profiles')
-              .select('role')
-              .eq('id', session.user.id)
-              .single();
+        if (sessionData?.user) {
+          const userId = sessionData.user.id;
+          const userEmail = sessionData.user.email;
+          
+          // Use setTimeout to avoid potential deadlocks with Supabase auth
+          setTimeout(async () => {
+            const userProfile = await fetchAndSetUserProfile(userId, userEmail);
             
-            if (profileError) {
-              if (profileError.code === 'PGRST116') {
-                // Profile doesn't exist, create it with default role or role from metadata
-                const metadata = session.user.user_metadata || {};
-                const role = (metadata.role as Role) || 'Operator';
-                
-                console.log('Creating profile for user:', session.user.id, 'with role:', role);
-                
-                const { error: insertError } = await supabase
-                  .from('profiles')
-                  .insert({
-                    id: session.user.id,
-                    role: role
-                  });
-                
-                if (insertError) {
-                  console.error('Error creating user profile:', insertError);
-                  toast.error('Error setting up user profile');
-                  return;
-                }
-                
-                setUser({
-                  id: session.user.id,
-                  email: session.user.email || '',
-                  role
-                });
-                
-                toast.success(`Logged in as ${role}`);
-              } else {
-                console.error('Error fetching user profile:', profileError);
-                toast.error('Error loading user profile');
-                return;
-              }
-            } else {
-              const role = profileData?.role as Role || 'Operator';
-              
-              setUser({
-                id: session.user.id,
-                email: session.user.email || '',
-                role
-              });
+            if (userProfile) {
+              setUser(userProfile);
               
               if (event === 'SIGNED_IN') {
                 toast.success(`Welcome back`);
+                
+                // Redirect to dashboard if on login page
+                if (window.location.pathname === '/login') {
+                  navigate('/');
+                }
               }
             }
-            
-            // Redirect to dashboard if on login page
-            if (window.location.pathname === '/login') {
-              navigate('/');
-            }
-          } catch (err) {
-            console.error('Error processing auth state change:', err);
-            toast.error('Authentication error');
-          }
+          }, 0);
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
           navigate('/login');
@@ -107,62 +120,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Then check for existing session
     const checkCurrentSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session: existingSession } } = await supabase.auth.getSession();
+        setSession(existingSession);
         
-        if (session?.user) {
-          console.log('Found existing session:', session.user.id);
+        if (existingSession?.user) {
+          const userId = existingSession.user.id;
+          const userEmail = existingSession.user.email;
           
-          // Get user role from profiles table
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', session.user.id)
-            .single();
+          const userProfile = await fetchAndSetUserProfile(userId, userEmail);
           
-          if (profileError) {
-            if (profileError.code === 'PGRST116') {
-              // Profile doesn't exist, create it with default role or role from metadata
-              const metadata = session.user.user_metadata || {};
-              const role = (metadata.role as Role) || 'Operator';
-              
-              console.log('Creating profile for existing user:', session.user.id);
-              
-              const { error: insertError } = await supabase
-                .from('profiles')
-                .insert({
-                  id: session.user.id,
-                  role: role
-                });
-              
-              if (insertError) {
-                console.error('Error creating user profile during session check:', insertError);
-                setLoading(false);
-                return;
-              }
-              
-              setUser({
-                id: session.user.id,
-                email: session.user.email || '',
-                role
-              });
-            } else {
-              console.error('Error fetching user profile during session check:', profileError);
-              setLoading(false);
-              return;
-            }
-          } else {
-            const role = profileData?.role as Role || 'Operator';
+          if (userProfile) {
+            setUser(userProfile);
             
-            setUser({
-              id: session.user.id,
-              email: session.user.email || '',
-              role
-            });
-          }
-          
-          // Redirect to dashboard if on login page
-          if (window.location.pathname === '/login') {
-            navigate('/');
+            // Redirect to dashboard if on login page
+            if (window.location.pathname === '/login') {
+              navigate('/');
+            }
           }
         }
       } catch (error) {
@@ -192,12 +165,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
       
-      if (data?.user) {
-        console.log('Login successful:', data.user.id);
-        
-        // User role will be handled by the auth state change listener
-        toast.success('Login successful');
-      }
+      // User and session will be handled by the auth state change listener
+      toast.success('Login successful');
     } catch (error: any) {
       console.error('Login error:', error);
       
@@ -253,7 +222,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         
         toast.success('Account created successfully! You can now log in.');
+        return;
       }
+      
+      toast.success('Signup successful! Please check your email to confirm your account.');
+      
     } catch (error: any) {
       if (error.message.includes('unique constraint')) {
         toast.error('This email is already registered. Please use another email or log in.');
@@ -271,6 +244,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await supabase.auth.signOut();
       setUser(null);
+      setSession(null);
       toast.success('Logged out successfully');
       navigate('/login');
     } catch (error: any) {
