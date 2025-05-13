@@ -6,9 +6,10 @@ import { Download } from 'lucide-react';
 import { ImportLog } from '@/types';
 import { format } from 'date-fns';
 
-interface LogTableProps {
+export interface LogTableProps {
   data: ImportLog[];
   onExport: () => void;
+  entries?: ImportLog[]; // Add this for compatibility with existing code
 }
 
 const LogTable: React.FC<LogTableProps> = ({ data, onExport }) => {

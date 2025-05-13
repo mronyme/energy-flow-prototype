@@ -7,26 +7,40 @@ import { Badge } from '@/components/ui/badge';
 
 interface GridRow {
   id: string;
-  name: string;
-  value: number;
-  unit: string;
+  [key: string]: any;
 }
 
-interface DataGridEditableProps {
+export interface DataGridEditableProps {
   data: GridRow[];
-  onSave: (id: string, value: number) => Promise<void>;
+  columns: { field: string; headerName: string; type: "number" | "text" }[];
+  onRowUpdate: (id: string, field: string, value: any) => Promise<void>;
+  isLoading?: boolean;
 }
 
-const DataGridEditable: React.FC<DataGridEditableProps> = ({ data, onSave }) => {
+const DataGridEditable: React.FC<DataGridEditableProps> = ({ 
+  data, 
+  columns, 
+  onRowUpdate,
+  isLoading = false
+}) => {
   const [editState, setEditState] = useState<{
-    [key: string]: { value: string; editing: boolean; saving: boolean; error: string | null; justSaved: boolean }
+    [key: string]: { 
+      field: string; 
+      value: string; 
+      editing: boolean; 
+      saving: boolean; 
+      error: string | null; 
+      justSaved: boolean 
+    }
   }>({});
   
-  const startEditing = (row: GridRow) => {
+  const startEditing = (row: GridRow, field: string) => {
+    const key = `${row.id}-${field}`;
     setEditState(prev => ({
       ...prev,
-      [row.id]: { 
-        value: row.value.toString(), 
+      [key]: { 
+        field,
+        value: String(row[field]), 
         editing: true, 
         saving: false,
         error: null,
@@ -35,70 +49,81 @@ const DataGridEditable: React.FC<DataGridEditableProps> = ({ data, onSave }) => 
     }));
   };
   
-  const handleInputChange = (id: string, value: string) => {
+  const handleInputChange = (key: string, value: string) => {
     setEditState(prev => ({
       ...prev,
-      [id]: { 
-        ...prev[id], 
+      [key]: { 
+        ...prev[key], 
         value,
-        error: validateInput(value),
+        error: validateInput(prev[key].field, value),
         justSaved: false
       }
     }));
   };
   
-  const validateInput = (value: string): string | null => {
+  const validateInput = (field: string, value: string): string | null => {
+    const column = columns.find(col => col.field === field);
+    if (!column) return null;
+    
     if (!value.trim()) {
       return 'Value is required';
     }
     
-    const num = parseFloat(value);
-    if (isNaN(num)) {
-      return 'Must be a number';
-    }
-    
-    if (num < 0) {
-      return 'Must be non-negative';
+    if (column.type === 'number') {
+      const num = parseFloat(value);
+      if (isNaN(num)) {
+        return 'Must be a number';
+      }
+      
+      if (num < 0) {
+        return 'Must be non-negative';
+      }
     }
     
     return null;
   };
   
-  const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>, id: string) => {
+  const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>, id: string, key: string, field: string) => {
     if (e.key === 'Enter') {
-      await saveValue(id);
+      await saveValue(id, key, field);
     } else if (e.key === 'Escape') {
-      cancelEditing(id);
+      cancelEditing(key);
     }
   };
   
-  const cancelEditing = (id: string) => {
+  const cancelEditing = (key: string) => {
     setEditState(prev => {
       const newState = { ...prev };
-      delete newState[id];
+      delete newState[key];
       return newState;
     });
   };
   
-  const saveValue = async (id: string) => {
-    const state = editState[id];
+  const saveValue = async (id: string, key: string, field: string) => {
+    const state = editState[key];
     if (!state || state.error) return;
     
-    const newValue = parseFloat(state.value);
+    let newValue: any = state.value;
+    const column = columns.find(col => col.field === field);
+    
+    // Convert value based on column type
+    if (column?.type === 'number') {
+      newValue = parseFloat(state.value);
+    }
     
     setEditState(prev => ({
       ...prev,
-      [id]: { ...prev[id], saving: true, error: null }
+      [key]: { ...prev[key], saving: true, error: null }
     }));
     
     try {
-      await onSave(id, newValue);
+      await onRowUpdate(id, field, newValue);
       
       // Show "Saved" badge temporarily
       setEditState(prev => ({
         ...prev,
-        [id]: { 
-          ...prev[id], 
+        [key]: { 
+          ...prev[key], 
           editing: false,
           saving: false,
           justSaved: true 
@@ -109,7 +134,7 @@ const DataGridEditable: React.FC<DataGridEditableProps> = ({ data, onSave }) => 
       setTimeout(() => {
         setEditState(prev => {
           const newState = { ...prev };
-          delete newState[id];
+          delete newState[key];
           return newState;
         });
       }, 2000);
@@ -117,8 +142,8 @@ const DataGridEditable: React.FC<DataGridEditableProps> = ({ data, onSave }) => 
     } catch (error) {
       setEditState(prev => ({
         ...prev,
-        [id]: { 
-          ...prev[id], 
+        [key]: { 
+          ...prev[key], 
           saving: false, 
           error: 'Failed to save',
           justSaved: false
@@ -132,67 +157,68 @@ const DataGridEditable: React.FC<DataGridEditableProps> = ({ data, onSave }) => 
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Emission Factor</TableHead>
-            <TableHead className="w-[180px]">Value</TableHead>
-            <TableHead>Unit</TableHead>
+            {columns.map((column) => (
+              <TableHead key={column.field}>{column.headerName}</TableHead>
+            ))}
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map((row) => {
-            const isEditing = editState[row.id]?.editing;
-            const isSaving = editState[row.id]?.saving;
-            const error = editState[row.id]?.error;
-            const justSaved = editState[row.id]?.justSaved;
-            
-            return (
-              <TableRow key={row.id}>
-                <TableCell className="font-medium">{row.name}</TableCell>
-                <TableCell>
-                  {isEditing ? (
-                    <div className="relative">
-                      <div className="flex items-center">
-                        <Input
-                          value={editState[row.id].value}
-                          onChange={(e) => handleInputChange(row.id, e.target.value)}
-                          onKeyDown={(e) => handleKeyDown(e, row.id)}
-                          onBlur={() => !isSaving && saveValue(row.id)}
-                          disabled={isSaving}
-                          className={error ? 'border-red-500 pr-8' : 'pr-8'}
-                          autoFocus
-                        />
-                        {!error && !isSaving && (
-                          <button
-                            onClick={() => saveValue(row.id)}
-                            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-green-500 hover:text-green-700"
-                          >
-                            <Check size={16} />
-                          </button>
+          {data.map((row) => (
+            <TableRow key={row.id}>
+              {columns.map((column) => {
+                const key = `${row.id}-${column.field}`;
+                const isEditing = editState[key]?.editing;
+                const isSaving = editState[key]?.saving;
+                const error = editState[key]?.error;
+                const justSaved = editState[key]?.justSaved;
+                const isEditable = column.type === 'number'; // Only number fields are editable
+                
+                return (
+                  <TableCell key={column.field}>
+                    {isEditing ? (
+                      <div className="relative">
+                        <div className="flex items-center">
+                          <Input
+                            value={editState[key].value}
+                            onChange={(e) => handleInputChange(key, e.target.value)}
+                            onKeyDown={(e) => handleKeyDown(e, row.id, key, column.field)}
+                            onBlur={() => !isSaving && saveValue(row.id, key, column.field)}
+                            disabled={isSaving}
+                            className={error ? 'border-red-500 pr-8' : 'pr-8'}
+                            autoFocus
+                          />
+                          {!error && !isSaving && (
+                            <button
+                              onClick={() => saveValue(row.id, key, column.field)}
+                              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-green-500 hover:text-green-700"
+                              aria-label="Save changes"
+                            >
+                              <Check size={16} />
+                            </button>
+                          )}
+                        </div>
+                        {error && (
+                          <p className="text-xs text-red-500 mt-1">{error}</p>
                         )}
                       </div>
-                      {error && (
-                        <p className="text-xs text-red-500 mt-1">
-                          {error}
-                        </p>
-                      )}
-                    </div>
-                  ) : justSaved ? (
-                    <div className="flex items-center gap-2">
-                      <div className="p-2">{row.value}</div>
-                      <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Saved</Badge>
-                    </div>
-                  ) : (
-                    <div 
-                      className="p-2 hover:bg-gray-100 rounded cursor-pointer"
-                      onClick={() => startEditing(row)}
-                    >
-                      {row.value}
-                    </div>
-                  )}
-                </TableCell>
-                <TableCell>{row.unit}</TableCell>
-              </TableRow>
-            );
-          })}
+                    ) : justSaved ? (
+                      <div className="flex items-center gap-2">
+                        <div className="p-2">{row[column.field]}</div>
+                        <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">Saved</Badge>
+                      </div>
+                    ) : (
+                      <div 
+                        className={isEditable ? "p-2 hover:bg-gray-100 rounded cursor-pointer" : "p-2"}
+                        onClick={isEditable ? () => startEditing(row, column.field) : undefined}
+                      >
+                        {row[column.field]}
+                      </div>
+                    )}
+                  </TableCell>
+                );
+              })}
+            </TableRow>
+          ))}
         </TableBody>
       </Table>
     </div>

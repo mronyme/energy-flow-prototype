@@ -1,7 +1,7 @@
 
 import React from 'react';
 import LogTable from './LogTable';
-import { LogTableProps, ImportLog } from '@/types';
+import { ImportLog } from '@/types';
 
 // Adapter to bridge prop type differences
 const LogTableAdapter = ({
@@ -24,7 +24,7 @@ const LogTableAdapter = ({
     console.log("Export functionality would be implemented here");
   };
 
-  return <LogTable data={logEntries} onExport={handleExport} entries={logEntries} />;
+  return <LogTable data={logEntries} onExport={handleExport} />;
 };
 
 export default LogTableAdapter;

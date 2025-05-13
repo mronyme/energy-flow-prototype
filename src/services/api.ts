@@ -437,6 +437,23 @@ const kpiService = {
       console.error('Error deleting KPI daily data:', error);
       return false;
     }
+  },
+
+  async getAllSitesKpi(startDate: string, endDate: string): Promise<KpiDaily[]> {
+    try {
+      let { data, error } = await supabase
+        .from('kpi_daily')
+        .select('*')
+        .gte('day', startDate)
+        .lte('day', endDate)
+        .order('day', { ascending: false });
+
+      if (error) throw error;
+      return data as KpiDaily[];
+    } catch (error) {
+      console.error('Error getting KPI data for all sites:', error);
+      return [];
+    }
   }
 };
 
@@ -594,17 +611,27 @@ const anomalyService = {
     }
   },
 
-  async updateAnomaly(anomaly: Anomaly): Promise<Anomaly | null> {
+  async updateAnomaly(id: string, update: Partial<Anomaly>): Promise<Anomaly | null> {
     try {
       const { data, error } = await supabase
         .from('anomaly')
-        .update(anomaly)
-        .eq('id', anomaly.id)
+        .update(update)
+        .eq('id', id)
         .select('*')
         .single();
 
       if (error) throw error;
-      return data as Anomaly;
+      
+      // Add proper type casting
+      const anomaly: Anomaly = {
+        id: data.id,
+        reading_id: data.reading_id,
+        type: data.type as AnomalyType,
+        delta: data.delta,
+        comment: data.comment
+      };
+      
+      return anomaly;
     } catch (error) {
       console.error('Error updating anomaly:', error);
       return null;
@@ -639,8 +666,12 @@ const adminService = {
         throw error;
       }
       
-      // Cast the result to User[] to ensure type safety
-      return data as unknown as User[];
+      // Cast the result to User[] with proper type conversion
+      return data.map(profile => ({
+        id: profile.id,
+        email: profile.id + '@example.com', // Mock email since it's missing
+        role: profile.role as Role
+      })) as User[];
     } catch (error) {
       console.error('Error in getUsers:', error);
       throw error;
@@ -716,15 +747,15 @@ const adminService = {
     // This is a mock implementation that returns dummy data
     console.log('Using mock getFactors method');
     return [
-      { id: '1', factor: 'Electricity', value: 0.5, unit: 'kgCO2/kWh' },
-      { id: '2', factor: 'Natural Gas', value: 0.2, unit: 'kgCO2/kWh' },
-      { id: '3', factor: 'Diesel', value: 0.27, unit: 'kgCO2/kWh' }
+      { id: '1', name: 'Electricity', value: 0.5, unit: 'kgCO2/kWh', updatedAt: '2023-01-15' },
+      { id: '2', name: 'Natural Gas', value: 0.2, unit: 'kgCO2/kWh', updatedAt: '2023-01-15' },
+      { id: '3', name: 'Diesel', value: 0.27, unit: 'kgCO2/kWh', updatedAt: '2023-01-15' }
     ];
   },
   
-  async updateFactor(id: string, field: string, value: any): Promise<void> {
+  async updateFactor(id: string, value: number): Promise<void> {
     // This is a mock implementation that logs the update
-    console.log(`Mock updateFactor: Updating factor ${id}, field ${field} to ${value}`);
+    console.log(`Mock updateFactor: Updating factor ${id} to value ${value}`);
     // In a real implementation, this would update the database
   }
 };
@@ -745,8 +776,58 @@ const piService = {
 const journalService = {
   async getLogs(): Promise<ImportLog[]> {
     return importLogService.getImportLogs();
+  },
+
+  async getJournalEntries(): Promise<ImportLog[]> {
+    return importLogService.getImportLogs();
+  },
+  
+  async getJournalEntriesByDateRange(startDate: string, endDate: string): Promise<ImportLog[]> {
+    try {
+      // In a real implementation, this would filter by date range
+      // For now, we'll get all logs and filter them manually
+      const logs = await importLogService.getImportLogs();
+      return logs.filter(log => {
+        const logDate = new Date(log.ts);
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        return logDate >= start && logDate <= end;
+      });
+    } catch (error) {
+      console.error('Error getting journal entries by date range:', error);
+      return [];
+    }
   }
 };
+
+// Fix the adminService.getUsers() method
+const fixUserTypeInAdminService = {
+  async getUsers(): Promise<User[]> {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*');
+      
+      if (error) {
+        console.error('Error fetching users:', error);
+        throw error;
+      }
+      
+      // Cast the result to User[] with proper type conversion
+      return data.map(profile => ({
+        id: profile.id,
+        email: profile.id + '@example.com', // Mock email since it's missing
+        role: profile.role as Role
+      })) as User[];
+    } catch (error) {
+      console.error('Error in getUsers:', error);
+      throw error;
+    }
+  }
+};
+
+// Replace the existing adminService.getUsers method
+adminService.getUsers = fixUserTypeInAdminService.getUsers;
 
 export { 
   siteService, 
@@ -757,5 +838,5 @@ export {
   anomalyService, 
   adminService, 
   piService,
-  journalService // Add the journalService to exports
+  journalService // Export the journalService
 };

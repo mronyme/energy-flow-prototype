@@ -1,59 +1,63 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { Activity } from 'lucide-react';
+import { piService } from '@/services/api';
+
+type TestTagStatus = 'OK' | 'KO' | 'active' | 'inactive' | null | string;
 
 interface TestTagButtonProps {
+  tagName: string;
+  status: TestTagStatus;
   onClick: () => Promise<void>;
-  status: 'OK' | 'KO' | 'active' | 'inactive' | null;
-  tagName?: string; // Added tagName prop
-  onTestComplete?: (result: boolean) => void; // Added onTestComplete prop
+  onTestComplete: (result: boolean) => void;
 }
 
-const TestTagButton: React.FC<TestTagButtonProps> = ({ onClick, status, tagName, onTestComplete }) => {
-  const [isLoading, setIsLoading] = useState(false);
+const TestTagButton: React.FC<TestTagButtonProps> = ({ 
+  tagName, 
+  status, 
+  onClick,
+  onTestComplete 
+}) => {
+  const [loading, setLoading] = useState(false);
   
-  const handleTest = async () => {
-    setIsLoading(true);
+  const handleClick = async () => {
     try {
+      setLoading(true);
+      
+      // Call the provided click handler if any
       await onClick();
-      // If onTestComplete is provided, call it with true/false based on status
-      if (onTestComplete) {
-        onTestComplete(status === 'OK' || status === 'active');
-      }
+      
+      // Test the tag connection
+      const result = await piService.testTag(tagName);
+      
+      // Call the completion handler with the test result
+      onTestComplete(result.success);
+    } catch (error) {
+      console.error('Error testing tag:', error);
+      // Call the completion handler with failure
+      onTestComplete(false);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
   
   return (
-    <div className="flex items-center space-x-2">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleTest}
-        disabled={isLoading}
-        className="transition-all duration-100 ease-out"
-      >
-        {isLoading ? 'Testing...' : 'Test Tag'}
-      </Button>
-      
-      {status && (
-        <Badge 
-          variant="outline"
-          className={cn(
-            "px-2.5 py-0.5 font-medium",
-            status === 'OK' && "bg-green-100 text-green-800",
-            status === 'KO' && "bg-red-100 text-red-800",
-            status === 'active' && "bg-blue-100 text-blue-800",
-            status === 'inactive' && "bg-gray-100 text-gray-800"
-          )}
-        >
-          {status}
-        </Badge>
+    <Button
+      variant={status === 'OK' || status === 'active' ? "ghost" : "outline"} 
+      size="sm"
+      onClick={handleClick}
+      disabled={loading}
+      className="flex items-center gap-1"
+      aria-label={`Test connection for tag ${tagName}`}
+    >
+      {loading ? (
+        <Activity className="h-4 w-4 animate-pulse" />
+      ) : (
+        <Activity className="h-4 w-4" />
       )}
-    </div>
+      <span>Test</span>
+    </Button>
   );
 };
 

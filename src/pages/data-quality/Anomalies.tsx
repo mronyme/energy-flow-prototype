@@ -54,7 +54,7 @@ const Anomalies: React.FC = () => {
       setLoading(true);
       
       // Get all anomalies - in a real implementation, we would filter by date range and site
-      const anomalyResults = await anomalyService.getAnomalies(100);
+      const anomalyResults = await anomalyService.getAnomalies();
       
       // Process the results into the expected format
       const processedAnomalies: AnomalyData[] = anomalyResults.map(anomaly => {
@@ -106,7 +106,7 @@ const Anomalies: React.FC = () => {
   const handleSaveCorrection = async (readingId: string, newValue: number, comment: string, anomalyId: string) => {
     try {
       // Update the reading's value
-      await readingService.saveReading({
+      await readingService.updateReading({
         id: readingId,
         value: newValue
       });

@@ -21,6 +21,7 @@ const EmissionFactors = () => {
   const [factors, setFactors] = useState<EmissionFactor[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const { announce } = useAnnouncer();
 
   useEffect(() => {
     const loadFactors = async () => {

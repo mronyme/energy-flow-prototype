@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -50,14 +51,12 @@ const Journal = () => {
             <h2 className="text-xl font-medium mb-2">Filter by Date</h2>
             <div className="flex items-center space-x-2">
               <DatePicker
-                id="start-date"
                 mode="single"
                 selected={startDate}
                 onSelect={setStartDate}
                 placeholder="Start date"
               />
               <DatePicker
-                id="end-date"
                 mode="single"
                 selected={endDate}
                 onSelect={setEndDate}
@@ -73,7 +72,7 @@ const Journal = () => {
       
       <h2 className="text-xl font-medium mb-2">Recent Activity</h2>
       <Card>
-        <LogTableAdapter logs={logs} loading={loading} />
+        <LogTableAdapter entries={logs} loading={loading} />
       </Card>
     </div>
   );
