@@ -1,5 +1,5 @@
 
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/hooks/use-toast";
 import {
   Toast,
   ToastClose,
@@ -7,14 +7,10 @@ import {
   ToastProvider,
   ToastTitle,
   ToastViewport,
-} from "@/components/ui/toast"
+} from "@/components/ui/toast";
 
 export function Toaster() {
-  const { toast } = useToast()
-
-  // Create a dummy toasts array to satisfy the type check
-  // This will be replaced by the actual implementation later
-  const toasts: any[] = [];
+  const { toasts } = useToast();
 
   return (
     <ToastProvider>

@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, Ban, Info } from 'lucide-react';
 import { AnomalyType } from '@/types';
+import { toastMessages } from '@/utils/validation';
 
 // Updated interface to match the CorrectionModal component's expected props
 interface AnomalyData {
@@ -24,8 +25,7 @@ interface AnomalyData {
   value: number | null;
   type: AnomalyType;
   delta: number | null;
-  comment: string;
-  // Add the missing properties
+  comment: string | null;
   site: string;
   meter: string;
   meterType: string;
@@ -83,11 +83,13 @@ const Anomalies: React.FC = () => {
         endDate: format(endDate, 'yyyy-MM-dd')
       });
       
-      // Map the received data to include all required properties
+      // Map the received data to include all required properties for the correction modal
       const mappedAnomalies = anomalyData.map(anomaly => ({
         ...anomaly,
-        timestamp: anomaly.date, // Use date as timestamp
-        meterType: anomaly.type, // Default meterType to avoid type error
+        timestamp: anomaly.date, // Ensure timestamp is available
+        site: anomaly.siteName, // Add site property for compatibility
+        meter: anomaly.meterName, // Add meter property for compatibility
+        comment: anomaly.comment || null, // Ensure comment is never undefined
       }));
       
       setAnomalies(mappedAnomalies);
@@ -114,21 +116,23 @@ const Anomalies: React.FC = () => {
   // Handle anomaly correction (IF-06)
   const handleSaveCorrection = async (
     readingId: string, 
-    value: number, 
-    comment: string
+    newValue: number, 
+    comment: string,
+    anomalyId: string
   ) => {
     try {
-      // Call API to update the reading
+      // Call API to update the reading and anomaly comment
       await anomalyService.correctAnomaly({
         readingId,
-        value,
-        comment
+        value: newValue,
+        comment,
+        anomalyId
       });
       
       // Success message
       toast.success({
         title: 'Success',
-        description: 'Correction saved'
+        description: toastMessages.correctionSaved()
       });
       announce("Anomaly correction saved successfully");
       
@@ -159,6 +163,14 @@ const Anomalies: React.FC = () => {
     loadAnomalies();
   };
   
+  // Handle keyboard navigation for table rows
+  const handleRowKeyDown = (e: React.KeyboardEvent, anomaly: AnomalyData) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleRowClick(anomaly);
+    }
+  };
+  
   return (
     <>
       {announcer} {/* Screen reader announcements */}
@@ -171,13 +183,13 @@ const Anomalies: React.FC = () => {
       </div>
       
       {/* Filters */}
-      <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
+      <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <Label htmlFor="site-select">Site</Label>
             <select
               id="site-select"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
               value={selectedSite}
               onChange={(e) => setSelectedSite(e.target.value)}
               disabled={loading}
@@ -199,6 +211,7 @@ const Anomalies: React.FC = () => {
               onSelect={setStartDate}
               disabled={loading}
               label="Start date"
+              className="mt-1"
             />
           </div>
           
@@ -209,12 +222,17 @@ const Anomalies: React.FC = () => {
               onSelect={setEndDate}
               disabled={loading}
               label="End date"
+              className="mt-1"
             />
           </div>
         </div>
         
         <div className="mt-4 flex justify-end">
-          <Button onClick={applyFilters} disabled={loading}>
+          <Button 
+            onClick={applyFilters} 
+            disabled={loading}
+            className="transition-all duration-100 ease-out focus:ring-2 focus:ring-primary focus:ring-offset-2"
+          >
             Apply Filters
           </Button>
         </div>
@@ -287,14 +305,9 @@ const Anomalies: React.FC = () => {
                 anomalies.map((anomaly) => (
                   <tr 
                     key={anomaly.id}
-                    className="cursor-pointer hover:bg-gray-50 transition-standard"
+                    className="cursor-pointer hover:bg-gray-50 transition-all duration-100 ease-out"
                     onClick={() => handleRowClick(anomaly)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        handleRowClick(anomaly);
-                      }
-                    }}
+                    onKeyDown={(e) => handleRowKeyDown(e, anomaly)}
                     tabIndex={0}
                     role="button"
                     aria-label={`Anomaly at ${anomaly.siteName}, ${anomaly.meterName}, ${anomaly.date}`}
@@ -306,10 +319,10 @@ const Anomalies: React.FC = () => {
                       {anomaly.value === null ? '—' : anomaly.value.toFixed(2)}
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <AnomalyBadge type={anomaly.type} />
+                      <AnomalyBadge type={anomaly.type} delta={anomaly.delta} />
                     </td>
                     <td className="px-4 py-3 text-sm text-right">
-                      {anomaly.delta === null ? '—' : `${anomaly.delta.toFixed(2)}%`}
+                      {anomaly.delta === null ? '—' : `${anomaly.delta.toFixed(1)}%`}
                     </td>
                   </tr>
                 ))

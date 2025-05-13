@@ -31,7 +31,7 @@ const AnomalyBadge: React.FC<AnomalyBadgeProps> = ({
   const getTooltipText = () => {
     switch(type) {
       case 'SPIKE':
-        return delta 
+        return delta !== null && delta !== undefined 
           ? `Value exceeds historical mean by ${delta > 0 ? '+' : ''}${delta.toFixed(1)}%` 
           : 'Value exceeds historical mean by ≥ +40%';
       case 'MISSING':

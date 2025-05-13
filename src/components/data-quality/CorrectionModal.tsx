@@ -39,8 +39,7 @@ const CorrectionModal: React.FC<CorrectionModalProps> = ({
   
   const valueInputRef = useRef<HTMLInputElement>(null);
   
-  // Use the focus trap hook correctly, passing isOpen as the first argument
-  // and the onClose function as the escape handler
+  // Fix: Use the focus trap hook correctly - first parameter is boolean, second is escape handler
   const modalContentRef = useFocusTrap(isOpen, onClose);
   
   // Reset state when modal opens or closes
