@@ -689,7 +689,8 @@ const mockAnomalies = [
     delta: 45.2,
     site: 'site1',
     meter: 'meter1',
-    comment: ''
+    comment: '',
+    meterType: 'ELEC'
   },
   { 
     id: 'anom2', 
@@ -704,7 +705,8 @@ const mockAnomalies = [
     delta: null,
     site: 'site2',
     meter: 'meter4',
-    comment: ''
+    comment: '',
+    meterType: 'ELEC'
   },
   { 
     id: 'anom3', 
@@ -719,7 +721,8 @@ const mockAnomalies = [
     delta: 0,
     site: 'site1',
     meter: 'meter2',
-    comment: ''
+    comment: '',
+    meterType: 'GAS'
   },
   { 
     id: 'anom4', 
@@ -734,7 +737,8 @@ const mockAnomalies = [
     delta: 62.8,
     site: 'site3',
     meter: 'meter7',
-    comment: ''
+    comment: '',
+    meterType: 'ELEC'
   }
 ];
 

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AlertCardSummary } from '@/components/data-quality/AlertCard';
 import CorrectionModal from '@/components/data-quality/CorrectionModal';
@@ -90,6 +91,8 @@ const Anomalies: React.FC = () => {
         site: anomaly.siteName, // Add site property for compatibility
         meter: anomaly.meterName, // Add meter property for compatibility
         comment: anomaly.comment || null, // Ensure comment is never undefined
+        meterType: anomaly.type === 'ELEC' ? 'ELEC' : 
+                  anomaly.type === 'GAS' ? 'GAS' : 'WATER' // Fix: Add meterType property
       }));
       
       setAnomalies(mappedAnomalies);
@@ -122,12 +125,15 @@ const Anomalies: React.FC = () => {
   ) => {
     try {
       // Call API to update the reading and anomaly comment
+      // Fix: Update the anomaly comment separately after updating the reading
       await anomalyService.correctAnomaly({
         readingId,
         value: newValue,
-        comment,
-        anomalyId
+        comment
       });
+      
+      // Update the anomaly comment if needed
+      await anomalyService.updateComment(anomalyId, comment);
       
       // Success message
       toast.success({
