@@ -4,7 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { siteService, meterService, readingService } from '../../services/api';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DatePicker } from '@/components/ui/calendar';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
 import EditableTable from '../../components/data-load/EditableTable';
 import { toast } from 'sonner';

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { importLogService } from '../../services/api';
-import { DatePicker } from '@/components/ui/calendar';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
 import LogTable from '../../components/data-quality/LogTable';
 import { toast } from 'sonner';
