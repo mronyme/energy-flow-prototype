@@ -36,44 +36,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .from('profiles')
         .select('role')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
       
       if (profileError) {
-        if (profileError.code === 'PGRST116') {
-          // Profile doesn't exist, get role from user metadata
-          const { data: userData } = await supabase.auth.getUser();
-          const metadata = userData?.user?.user_metadata || {};
-          const role = (metadata.role as Role) || 'Operator';
-          
-          // Create profile
-          const { error: insertError } = await supabase
-            .from('profiles')
-            .insert({
-              id: userId,
-              role: role
-            });
-          
-          if (insertError) {
-            console.error('Error creating user profile:', insertError);
-            toast.error('Error setting up user profile');
-            return null;
-          }
-          
-          return {
-            id: userId,
-            email: userEmail || '',
-            role
-          };
-        } else {
-          console.error('Error fetching user profile:', profileError);
-          return null;
-        }
+        console.error('Error fetching user profile:', profileError);
+        return null;
+      }
+      
+      // If profile exists, return user with role
+      if (profileData) {
+        return {
+          id: userId,
+          email: userEmail || '',
+          role: profileData.role as Role
+        };
+      }
+      
+      // Profile doesn't exist, get role from user metadata or use default
+      const { data: userData } = await supabase.auth.getUser();
+      const metadata = userData?.user?.user_metadata || {};
+      const role = (metadata.role as Role) || 'Operator';
+      
+      // Create profile
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          role: role
+        });
+      
+      if (insertError) {
+        console.error('Error creating user profile:', insertError);
+        toast.error('Error setting up user profile');
+        return null;
       }
       
       return {
         id: userId,
         email: userEmail || '',
-        role: profileData?.role as Role || 'Operator'
+        role
       };
     } catch (error) {
       console.error('Error in fetchAndSetUserProfile:', error);

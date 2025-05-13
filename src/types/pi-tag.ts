@@ -4,8 +4,8 @@ export interface PiTag {
   name: string;
   description: string;
   site_id?: string;
-  // Standardize status handling - can be boolean (false/true) or string ('KO'/'OK')
-  status: 'OK' | 'KO' | boolean;
+  // Standardize status handling - make it a union type with specific values
+  status: 'OK' | 'KO' | 'active' | 'inactive';
   value?: number;
   unit?: string;
   timestamp?: string;

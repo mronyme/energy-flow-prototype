@@ -3,12 +3,11 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Activity } from 'lucide-react';
 import { piService } from '@/services/api';
-
-type TestTagStatus = 'OK' | 'KO' | 'active' | 'inactive' | null | string;
+import { toast } from 'sonner';
 
 interface TestTagButtonProps {
   tagName: string;
-  status: TestTagStatus;
+  status: 'OK' | 'KO' | 'active' | 'inactive';
   onClick: () => Promise<void>;
   onTestComplete: (result: boolean) => void;
 }
@@ -24,6 +23,7 @@ const TestTagButton: React.FC<TestTagButtonProps> = ({
   const handleClick = async () => {
     try {
       setLoading(true);
+      toast.info(`Testing connection for ${tagName}...`);
       
       // Call the provided click handler if any
       await onClick();
@@ -33,18 +33,28 @@ const TestTagButton: React.FC<TestTagButtonProps> = ({
       
       // Call the completion handler with the test result
       onTestComplete(result.success);
+      
+      if (result.success) {
+        toast.success(`Connection to ${tagName} successful`);
+      } else {
+        toast.error(`Connection to ${tagName} failed`);
+      }
     } catch (error) {
       console.error('Error testing tag:', error);
       // Call the completion handler with failure
       onTestComplete(false);
+      toast.error(`Error testing ${tagName}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
   };
   
+  // Determine if the tag is active based on status
+  const isActive = status === 'OK' || status === 'active';
+  
   return (
     <Button
-      variant={status === 'OK' || status === 'active' ? "ghost" : "outline"} 
+      variant={isActive ? "ghost" : "outline"} 
       size="sm"
       onClick={handleClick}
       disabled={loading}
