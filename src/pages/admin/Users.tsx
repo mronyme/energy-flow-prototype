@@ -20,8 +20,8 @@ const Users = () => {
     const loadUsers = async () => {
       try {
         const data = await adminService.getUsers();
-        // The data from getUsers matches the User type, so we can cast it
-        setUsers(data as User[]);
+        setUsers(data);
+        console.log('Loaded users:', data);
       } catch (error) {
         console.error('Error loading users:', error);
         toast.error('Failed to load users');
@@ -40,12 +40,23 @@ const Users = () => {
       
       if (result) {
         toast.success('User created successfully');
-        setUsers(prev => [...prev, result as User]);
+        setUsers(prev => [...prev, result]);
         setActiveTab('list');
       }
     } catch (error) {
       console.error('Error creating user:', error);
-      toast.error('Failed to create user');
+      let errorMessage = 'Failed to create user';
+      
+      // Improved error handling for demo
+      if (error instanceof Error) {
+        if (error.message.includes('unique constraint')) {
+          errorMessage = 'This email is already registered';
+        } else if (error.message.includes('email')) {
+          errorMessage = 'Invalid email format';
+        }
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -65,7 +76,13 @@ const Users = () => {
           </TabsList>
           
           <TabsContent value="list">
-            <UserList users={users} />
+            {!loading && users.length === 0 ? (
+              <div className="p-4 text-center text-muted-foreground">
+                No users found. Create a new user to get started.
+              </div>
+            ) : (
+              <UserList users={users} />
+            )}
           </TabsContent>
           
           <TabsContent value="create">
