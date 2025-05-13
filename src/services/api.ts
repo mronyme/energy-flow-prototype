@@ -678,7 +678,8 @@ const mockPiTags = [
 const mockAnomalies = [
   { 
     id: 'anom1', 
-    readingId: 'read1', 
+    readingId: 'read1',
+    reading_id: 'read1', // Add database field name for compatibility 
     meterId: 'meter1', 
     meterName: 'Main Power',
     siteName: 'Paris HQ',
@@ -692,7 +693,8 @@ const mockAnomalies = [
   },
   { 
     id: 'anom2', 
-    readingId: 'read2', 
+    readingId: 'read2',
+    reading_id: 'read2',
     meterId: 'meter4', 
     meterName: 'Production Line',
     siteName: 'Lyon Factory',
@@ -706,7 +708,8 @@ const mockAnomalies = [
   },
   { 
     id: 'anom3', 
-    readingId: 'read3', 
+    readingId: 'read3',
+    reading_id: 'read3',
     meterId: 'meter2', 
     meterName: 'Heating',
     siteName: 'Paris HQ',
@@ -720,7 +723,8 @@ const mockAnomalies = [
   },
   { 
     id: 'anom4', 
-    readingId: 'read4', 
+    readingId: 'read4',
+    reading_id: 'read4',
     meterId: 'meter7', 
     meterName: 'Lighting',
     siteName: 'Marseille Warehouse',

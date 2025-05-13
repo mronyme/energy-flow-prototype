@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { dateUtils } from '../../utils/validation';
+import { AnomalyType } from '@/types';
 
 interface CorrectionModalProps {
   isOpen: boolean;
@@ -12,9 +13,9 @@ interface CorrectionModalProps {
   anomaly: {
     id: string;
     readingId: string;
-    value: number;
+    value: number | null;
     timestamp: string;
-    type: string;
+    type: AnomalyType;
     delta: number | null;
     comment: string | null;
     siteName: string;
@@ -37,7 +38,7 @@ const CorrectionModal: React.FC<CorrectionModalProps> = ({
   // Reset state when modal opens or closes
   React.useEffect(() => {
     if (isOpen && anomaly) {
-      setNewValue(anomaly.value.toString());
+      setNewValue(anomaly.value !== null ? anomaly.value.toString() : '');
       setComment(anomaly.comment || '');
       setError(null);
     }
@@ -117,7 +118,7 @@ const CorrectionModal: React.FC<CorrectionModalProps> = ({
               <label htmlFor="current-value" className="text-sm font-medium">
                 Current Value:
               </label>
-              <span className="text-sm">{anomaly.value}</span>
+              <span className="text-sm">{anomaly.value !== null ? anomaly.value : 'Missing'}</span>
             </div>
             
             <div className="space-y-1">

@@ -7,7 +7,7 @@ import { Search } from 'lucide-react';
 import TagTableRO from '@/components/data-load/TagTableRO';
 import TestTagButton from '@/components/data-load/TestTagButton';
 import { piService } from '@/services/api';
-import { PiTag } from '@/types';
+import { PiTag } from '@/types/pi-tag';
 
 const PiPreview = () => {
   const [sites, setSites] = useState<{ id: string; name: string }[]>([]);
@@ -40,8 +40,11 @@ const PiPreview = () => {
         setLoading(true);
         const tagsData = await piService.getTagsBySite(selectedSite);
         
-        // Transform to match our component needs
-        setPiTags(tagsData);
+        // All tags initially have null status until tested
+        setPiTags(tagsData.map(tag => ({
+          ...tag,
+          status: null
+        })));
       } catch (error) {
         console.error('Error fetching PI tags:', error);
       } finally {
@@ -141,7 +144,7 @@ const PiPreview = () => {
               data={filteredTags}
               actionColumn={(tag) => (
                 <TestTagButton 
-                  status={tag.status || null}
+                  status={tag.status}
                   onClick={() => handleTestTag(tag.id)}
                 />
               )}

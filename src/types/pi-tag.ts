@@ -1,5 +1,5 @@
 
-import { MeterType, ImportLog } from './index';
+import { MeterType } from './index';
 
 export interface PiTag {
   id: string;
@@ -35,7 +35,8 @@ export interface AnomalyFilter {
 
 export interface Anomaly {
   id: string;
-  readingId: string;
+  readingId: string;  // Frontend property name
+  reading_id?: string; // Database property name for compatibility
   meterId: string;
   meterName: string;
   siteName: string;
@@ -63,4 +64,13 @@ export interface JournalService {
 export interface JournalFilter {
   startDate: string;
   endDate: string;
+}
+
+export interface ImportLog {
+  id: string;
+  ts: string;
+  user_email: string;
+  rows_ok: number;
+  rows_err: number;
+  file_name: string;
 }

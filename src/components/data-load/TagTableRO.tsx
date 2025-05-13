@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PiTag } from '@/types';
+import { PiTag } from '@/types/pi-tag';
 
 interface TagTableROProps {
   data: PiTag[];
@@ -9,6 +9,22 @@ interface TagTableROProps {
 }
 
 const TagTableRO: React.FC<TagTableROProps> = ({ data, actionColumn }) => {
+  // Helper function to get appropriate class based on status
+  const getStatusClass = (status: string | null) => {
+    switch (status) {
+      case 'OK':
+        return 'bg-green-100 text-green-800';
+      case 'KO':
+        return 'bg-red-100 text-red-800';
+      case 'active':
+        return 'bg-blue-100 text-blue-800';
+      case 'inactive':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm ring-1 ring-dark/10 overflow-x-auto">
       <Table>
@@ -31,11 +47,7 @@ const TagTableRO: React.FC<TagTableROProps> = ({ data, actionColumn }) => {
               <TableCell>{tag.unit}</TableCell>
               <TableCell>
                 {tag.status && (
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    tag.status === 'OK' ? 'bg-green-100 text-green-800' : 
-                    tag.status === 'KO' ? 'bg-red-100 text-red-800' : 
-                    'bg-gray-100 text-gray-800'
-                  }`}>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusClass(tag.status)}`}>
                     {tag.status}
                   </span>
                 )}
