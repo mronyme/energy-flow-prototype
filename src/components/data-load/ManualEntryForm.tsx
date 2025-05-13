@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -48,7 +47,7 @@ const ManualEntryForm: React.FC<ManualEntryFormProps> = ({ onSave }) => {
     const fetchMeters = async () => {
       try {
         setIsLoading(true);
-        const metersData = await meterService.getSiteMeters(selectedSite);
+        const metersData = await meterService.getMetersBySite(selectedSite);
         setMeters(metersData);
         setIsLoading(false);
       } catch (error) {
@@ -71,10 +70,10 @@ const ManualEntryForm: React.FC<ManualEntryFormProps> = ({ onSave }) => {
     const checkExistingReading = async () => {
       try {
         const formattedDate = readingDate.toISOString().split('T')[0];
-        // For now, let's use getReadingsByDateRange as a workaround since getByMeterAndDate doesn't exist
-        const readings = await readingService.getMeterReadings(selectedMeter);
+        // Use getReadings and filter manually
+        const readings = await readingService.getReadings();
         
-        // Filter readings by date manually
+        // Filter readings by date and meter id manually
         const existingData = readings.find(r => 
           r.ts.split('T')[0] === formattedDate && r.meter_id === selectedMeter
         );
@@ -110,8 +109,12 @@ const ManualEntryForm: React.FC<ManualEntryFormProps> = ({ onSave }) => {
         value: parseFloat(readingValue)
       };
 
-      // Insert or update reading
-      await readingService.saveReading(readingData);
+      // Insert or update reading depending on whether it exists
+      if (existingReading?.id) {
+        await readingService.updateReading(readingData);
+      } else {
+        await readingService.createReading(readingData);
+      }
       
       toast.success('Reading saved');
       onSave();

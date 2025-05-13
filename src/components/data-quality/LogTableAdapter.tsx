@@ -9,7 +9,12 @@ const LogTableAdapter = ({
   logs,
   isLoading,
   loading
-}: LogTableProps) => {
+}: {
+  entries?: ImportLog[];
+  logs?: ImportLog[];
+  isLoading?: boolean;
+  loading?: boolean;
+}) => {
   // Use either entries or logs, with entries taking precedence
   const logEntries = entries || logs || [];
   const isDataLoading = isLoading || loading || false;
@@ -19,7 +24,7 @@ const LogTableAdapter = ({
     console.log("Export functionality would be implemented here");
   };
 
-  return <LogTable data={logEntries} onExport={handleExport} />;
+  return <LogTable data={logEntries} onExport={handleExport} entries={logEntries} />;
 };
 
 export default LogTableAdapter;

@@ -1,7 +1,14 @@
 
 import React from 'react';
 import DataGridEditable from './DataGridEditable';
-import { DataGridEditableProps } from '@/types';
+
+// Define the DataGridEditableProps interface to match what DataGridEditable expects
+interface DataGridEditableProps {
+  data: any[];
+  columns: { field: string; headerName: string; type: "number" | "text" }[];
+  onRowUpdate: (id: string, field: string, value: any) => Promise<void>;
+  isLoading?: boolean;
+}
 
 // This is an adapter for DataGridEditable that matches the API expected by EmissionFactors.tsx
 const DataGridEditableAdapter = ({

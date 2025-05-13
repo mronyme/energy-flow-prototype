@@ -15,6 +15,8 @@ interface DatePickerProps {
   label?: string;
   placeholder?: string;
   mode?: string;
+  // Allow any additional props
+  [key: string]: any;
 }
 
 export function DatePicker({
@@ -24,7 +26,8 @@ export function DatePicker({
   className,
   label = "Date",
   placeholder = "Pick a date",
-  mode = "single"
+  mode = "single",
+  ...props
 }: DatePickerProps) {
   // Generate unique ID for accessibility
   const uniqueId = React.useId();
@@ -42,6 +45,7 @@ export function DatePicker({
           disabled={disabled}
           aria-label={`${label}: ${selected ? format(selected, "PPP") : "No date selected"}`}
           aria-haspopup="dialog"
+          {...props}
         >
           <CalendarIcon className="mr-2 h-4 w-4" aria-hidden="true" />
           {selected ? format(selected, "PPP") : <span>{placeholder}</span>}

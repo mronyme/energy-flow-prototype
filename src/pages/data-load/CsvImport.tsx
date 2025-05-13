@@ -1,149 +1,130 @@
-
-import React, { useState } from 'react';
-import { Separator } from '@/components/ui/separator';
+import React, { useState, useCallback } from 'react';
+import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import FileUploadAdapter from '@/components/data-load/FileUploadAdapter';
-import WizardStep from '@/components/data-load/WizardStep';
-import PreviewTable from '@/components/data-load/PreviewTable';
-import { readingService, importLogService } from '@/services/api';
-import { ImportLog, Reading } from '@/types';
-import { useAnnouncer } from '@/components/common/A11yAnnouncer';
+import Papa from 'papaparse';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { importLogService, readingService } from '@/services/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { ImportLog } from '@/types';
 
 const CsvImport = () => {
-  const [parsedData, setParsedData] = useState<any[]>([]);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [previewVisible, setPreviewVisible] = useState(false);
-  const [importing, setImporting] = useState(false);
-  const [importLog, setImportLog] = useState<ImportLog | null>(null);
-  const { announce } = useAnnouncer();
-  
-  const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 3;
+  const [rawData, setRawData] = useState<any[]>([]);
+  const [step, setStep] = useState(1);
+  const [filename, setFilename] = useState('');
+  const { user } = useAuth();
 
-  const steps = [
-    { id: '1', label: 'Upload CSV', isActive: currentStep === 1, isComplete: currentStep > 1 },
-    { id: '2', label: 'Preview Data', isActive: currentStep === 2, isComplete: currentStep > 2 },
-    { id: '3', label: 'Import Data', isActive: currentStep === 3, isComplete: false },
-  ];
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    if (acceptedFiles.length === 0) return;
 
-  const handleFileSelected = (data: any[], file: File) => {
-    setParsedData(data);
-    setUploadedFile(file);
-    setPreviewVisible(true);
-    setCurrentStep(2);
-    announce('CSV file parsed and data is ready for preview.', true);
+    const file = acceptedFiles[0];
+    setFilename(file.name);
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        handleFileUpload(results.data, file);
+      },
+      error: (error) => {
+        toast.error(`CSV Parsing Error: ${error.message}`);
+      }
+    });
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, accept: { 'text/csv': ['.csv'] } });
+
+  const createImportLog = async (results: any, filename: string) => {
+    try {
+      // Create new log entry with all required fields
+      const log: Omit<ImportLog, 'id'> = {
+        user_email: user?.email || 'anonymous',
+        rows_ok: results.data.length - results.errors.length,
+        rows_err: results.errors.length,
+        file_name: filename,
+        ts: new Date().toISOString() // Provide timestamp
+      };
+      
+      await importLogService.createImportLog(log as ImportLog);
+      toast.success('Import logged successfully');
+    } catch (error) {
+      console.error('Error logging import:', error);
+      toast.error('Failed to log import');
+    }
   };
 
-  const handleImport = async () => {
-    if (!parsedData.length) {
-      toast.error('No data to import.');
-      announce('Import failed. No data to import.', true);
-      return;
-    }
+  const handleFileUpload = (parsedData: any[], file: File) => {
+    setRawData(parsedData);
+    setStep(2);
+    // Pass the actual file name to createImportLog
+    createImportLog({ data: parsedData, errors: [] }, file.name);
+  };
 
-    setImporting(true);
-    announce('Import process started.', true);
-
+  const handleSaveData = async () => {
     try {
-      // Transform parsed data into Reading objects with optional id
-      const readings = parsedData.map(item => ({
-        meter_id: item.meter_id,
-        ts: item.ts,
-        value: parseFloat(item.value),
-      })) as Reading[];
+      const readings = rawData.map(row => ({
+        meter_id: row.meter_id,
+        ts: row.ts,
+        value: parseFloat(row.value)
+      }));
 
-      // Perform bulk save
       const result = await readingService.bulkSaveReadings(readings);
 
       if (result.success) {
-        toast.success(`Successfully imported ${result.inserted} readings.`);
-        announce(`Successfully imported ${result.inserted} readings.`, true);
+        toast.success(`${result.inserted} readings saved successfully`);
       } else {
-        toast.error(`Failed to import all readings. Errors: ${result.errors}.`);
-        announce(`Failed to import all readings. Errors: ${result.errors}.`, true);
+        toast.error('Failed to save readings');
       }
-
-      // Create import log
-      const log = {
-        user_email: 'user@example.com', // This would come from auth context
-        rows_ok: result.inserted || 0,
-        rows_err: result.errors || 0,
-        file_name: uploadedFile ? uploadedFile.name : 'uploaded-data.csv',
-      };
-
-      const newLog = await importLogService.createImportLog(log);
-      if (newLog) {
-        setImportLog(newLog as ImportLog);
-        toast.success('Import log created successfully.');
-        announce('Import log created successfully.', true);
-      } else {
-        toast.error('Failed to create import log.');
-        announce('Failed to create import log.', true);
-      }
-    } catch (error: any) {
-      console.error('Import error:', error);
-      toast.error(error.message || 'An error occurred during import.');
-      announce('An error occurred during import.', true);
-    } finally {
-      setImporting(false);
-      setCurrentStep(3);
+    } catch (error) {
+      console.error('Error saving data:', error);
+      toast.error('Failed to save data');
     }
   };
 
   return (
-    <div>
-      <WizardStep 
-        currentStep={currentStep} 
-        totalSteps={totalSteps} 
-        stepTitle={steps[currentStep-1].label}
-        steps={steps}
-      />
-      
-      <Separator className="my-4" />
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Import Readings from CSV</h1>
 
-      {currentStep === 1 && (
-        <div>
-          <h3 className="text-xl font-semibold mb-4">Upload CSV File</h3>
-          <FileUploadAdapter onFileSelected={handleFileSelected} />
+      {step === 1 && (
+        <div {...getRootProps()} className="border-2 border-dashed rounded-md p-8 text-center">
+          <input {...getInputProps()} />
+          {
+            isDragActive ?
+              <p>Drop the files here ...</p> :
+              <>
+                <p>Drag 'n' drop some files here, or click to select files</p>
+                <p>(Only *.csv files will be accepted)</p>
+              </>
+          }
         </div>
       )}
 
-      {currentStep === 2 && (
-        <div>
-          <h3 className="text-xl font-semibold mb-4">Preview Data</h3>
-          {parsedData.length > 0 ? (
-            <>
-              <PreviewTable data={parsedData} />
-              <div className="mt-4 flex justify-between">
-                <Button variant="secondary" onClick={() => setCurrentStep(1)}>Back to Upload</Button>
-                <Button onClick={handleImport} disabled={importing}>
-                  {importing ? 'Importing...' : 'Import Data'}
-                </Button>
-              </div>
-            </>
-          ) : (
-            <p>No data to preview.</p>
-          )}
-        </div>
-      )}
-
-      {currentStep === 3 && (
-        <div>
-          <h3 className="text-xl font-semibold mb-4">Import Complete</h3>
-          {importLog ? (
-            <>
-              <p>Import Log:</p>
-              <p>Filename: {importLog.file_name}</p>
-              <p>Rows OK: {importLog.rows_ok}</p>
-              <p>Rows with Errors: {importLog.rows_err}</p>
-              <p>Timestamp: {new Date(importLog.ts).toLocaleString()}</p>
-            </>
-          ) : (
-            <p>No import log available.</p>
-          )}
-          <Button onClick={() => setCurrentStep(1)} className="mt-4">Import Another File</Button>
+      {step === 2 && (
+        <div className="mt-4">
+          <h2 className="text-lg font-semibold mb-2">Review Data</h2>
+          <p>File: {filename}</p>
+          <div className="overflow-x-auto">
+            <table className="min-w-full border border-gray-200">
+              <thead>
+                <tr>
+                  {Object.keys(rawData[0]).map(key => (
+                    <th key={key} className="border border-gray-200 px-4 py-2">{key}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rawData.map((row, index) => (
+                  <tr key={index}>
+                    {Object.values(row).map((value, index2) => (
+                      <td key={index2} className="border border-gray-200 px-4 py-2">{value}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Button onClick={handleSaveData} className="mt-4">Save Readings</Button>
         </div>
       )}
     </div>
