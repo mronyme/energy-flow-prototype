@@ -1,350 +1,185 @@
 
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import WizardStep from '../../components/data-load/WizardStep';
-import UploadDropZone from '../../components/data-load/UploadDropZone';
-import PreviewTable from '../../components/data-load/PreviewTable';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import WizardStep from '@/components/data-load/WizardStep';
+import UploadDropZone from '@/components/data-load/UploadDropZone';
+import PreviewTable from '@/components/data-load/PreviewTable';
 import { toast } from 'sonner';
-import { readingService, importLogService, meterService } from '../../services/api';
-import { validateCsvRow } from '../../utils/validation';
-import { useNavigate } from 'react-router-dom';
+import { importService } from '@/services/api';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface CsvRow {
-  meter_id: string;
+  site: string;
+  meter: string;
   date: string;
-  time?: string;
   value: string;
+  unit: string;
 }
 
 const CsvImport = () => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  
-  const [currentStep, setCurrentStep] = useState(1);
-  const [file, setFile] = useState<File | null>(null);
+  const currentStep = parseInt(searchParams.get('step') || '1');
   const [csvData, setCsvData] = useState<CsvRow[]>([]);
-  const [validationErrors, setValidationErrors] = useState<{row: number; errors: string[]}[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
-  
-  // Parse current step from URL
+  const [fileName, setFileName] = useState<string>('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // Set step to 1 if not specified
   useEffect(() => {
-    const step = searchParams.get('step');
-    if (step) {
-      const stepNum = parseInt(step);
-      if (stepNum >= 1 && stepNum <= 3) {
-        setCurrentStep(stepNum);
-      }
+    if (!searchParams.has('step')) {
+      setSearchParams({ step: '1' });
     }
-  }, [searchParams]);
-  
-  // Update URL when step changes
-  useEffect(() => {
-    setSearchParams({ step: currentStep.toString() });
-  }, [currentStep, setSearchParams]);
-  
-  const handleFileSelect = (selectedFile: File) => {
-    setFile(selectedFile);
+  }, [searchParams, setSearchParams]);
+
+  const handleFileUpload = (parsedData: any[], file: File) => {
+    // Transform data to expected format
+    const transformedData = parsedData.map((row) => ({
+      site: row.site || '',
+      meter: row.meter || '',
+      date: row.date || '',
+      value: row.value || '',
+      unit: row.unit || ''
+    }));
     
-    // Read the CSV file
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      if (e.target?.result) {
-        const csvText = e.target.result as string;
-        parseCsv(csvText);
-      }
-    };
-    reader.readAsText(selectedFile);
+    setCsvData(transformedData);
+    setFileName(file.name);
+    
+    // Move to step 2
+    setSearchParams({ step: '2' });
   };
-  
-  const parseCsv = (csvText: string) => {
-    // Split by lines
-    const lines = csvText.split('\n');
-    if (lines.length < 2) {
-      toast.error('Invalid CSV format');
-      return;
-    }
-    
-    // Get headers from first line
-    const headers = lines[0].split(',').map(h => h.trim());
-    
-    // Validate headers
-    if (!headers.includes('meter_id') || !headers.includes('date') || !headers.includes('value')) {
-      toast.error('CSV must include meter_id, date, and value columns');
-      return;
-    }
-    
-    // Parse data rows
-    const dataRows: CsvRow[] = [];
-    const errors: {row: number; errors: string[]}[] = [];
-    
-    for (let i = 1; i < lines.length; i++) {
-      if (!lines[i].trim()) continue; // Skip empty lines
-      
-      const values = lines[i].split(',').map(v => v.trim());
-      if (values.length !== headers.length) {
-        errors.push({
-          row: i - 1,
-          errors: ['Column count mismatch']
-        });
-        continue;
-      }
-      
-      // Create object with header keys
-      const row: Record<string, string> = {};
-      headers.forEach((header, index) => {
-        row[header] = values[index];
-      });
-      
-      // Validate required fields
-      const rowErrors: string[] = [];
-      
-      if (!validateCsvRow(row, ['meter_id', 'date', 'value'])) {
-        rowErrors.push('Missing required fields');
-      }
-      
-      // Validate value is a number
-      if (isNaN(parseFloat(row.value)) || parseFloat(row.value) < 0) {
-        rowErrors.push('Value must be a positive number');
-      }
-      
-      // Add errors if any
-      if (rowErrors.length > 0) {
-        errors.push({
-          row: i - 1,
-          errors: rowErrors
-        });
-      }
-      
-      // Add to data rows
-      dataRows.push(row as unknown as CsvRow);
-    }
-    
-    setCsvData(dataRows);
-    setValidationErrors(errors);
-    
-    // If no rows were parsed
-    if (dataRows.length === 0) {
-      toast.error('No valid data found in CSV');
-    } else {
-      // Automatically go to next step if file is valid
-      if (errors.length === 0) {
-        goToNextStep();
-      }
-    }
+
+  const handleNextClick = () => {
+    // IF-03: Move to step 3 (preview)
+    setSearchParams({ step: '3' });
   };
-  
-  const goToNextStep = () => {
-    if (currentStep < 3) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
-  
-  const goToPreviousStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-  
+
   const handleConfirmImport = async () => {
-    if (!user) return;
+    if (!user) {
+      toast.error('You must be logged in to import data');
+      return;
+    }
     
-    setIsProcessing(true);
+    setLoading(true);
     
     try {
-      // Filter out rows with validation errors
-      const validRows = csvData.filter((_, index) => 
-        !validationErrors.some(err => err.row === index)
-      );
-      
-      // Format data for the API
-      const readingsToImport = validRows.map(row => ({
-        meter_id: row.meter_id,
-        ts: row.time 
-          ? `${row.date}T${row.time}Z` 
-          : `${row.date}T00:00:00Z`,
-        value: parseFloat(row.value)
-      }));
-      
-      // Perform the bulk create
-      const result = await readingService.bulkImport(readingsToImport);
-      
-      // Create import log
-      await importLogService.create({
-        user_email: user.email,
-        rows_ok: result.rowsOk,
-        rows_err: result.rowsErr,
-        file_name: file?.name || 'unknown.csv'
+      // Process import
+      const result = await importService.importCsv({
+        data: csvData,
+        fileName: fileName,
+        userEmail: user.email
       });
       
-      // Show success message
+      // IF-02: Green toast "Import complete: {{ok}} / {{err}}"
       toast.success(`Import complete: ${result.rowsOk} rows, ${result.rowsErr} errors`);
       
-      // Redirect to the journal page
+      // IF-02: Redirect to journal page
       navigate('/data-quality/journal');
+      
     } catch (error) {
-      console.error('Error importing data:', error);
-      toast.error('Failed to import data');
+      console.error('Error importing CSV:', error);
+      toast.error('Import failed');
     } finally {
-      setIsProcessing(false);
+      setLoading(false);
     }
   };
-  
-  // Check if we can proceed to next step
-  const canProceedToStep2 = file !== null && csvData.length > 0;
-  const canProceedToStep3 = csvData.length > 0;
-  const canConfirmImport = validationErrors.length === 0 && csvData.length > 0;
-  
+
+  const handleBackClick = () => {
+    const prevStep = currentStep - 1;
+    if (prevStep >= 1) {
+      setSearchParams({ step: prevStep.toString() });
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-dark">CSV Import</h1>
-      
-      {currentStep === 1 && (
-        <WizardStep
-          step={1}
-          totalSteps={3}
-          title="Select CSV File"
-          description="Upload a CSV file with meter readings"
-        >
-          <div className="space-y-6">
-            <UploadDropZone onFileSelect={handleFileSelect} />
-            
-            <div className="mt-6 text-sm text-gray-500">
-              <h3 className="font-medium text-dark mb-2">CSV Format Requirements:</h3>
-              <ul className="list-disc pl-5 space-y-1">
-                <li>File must be in CSV format with comma-separated values</li>
-                <li>Required columns: <code>meter_id</code>, <code>date</code>, <code>value</code></li>
-                <li>Optional columns: <code>time</code> (defaults to 00:00:00 if omitted)</li>
-                <li>Date format: YYYY-MM-DD</li>
-                <li>Time format: HH:MM:SS</li>
-                <li>Values must be positive numbers</li>
-              </ul>
-            </div>
-            
-            <div className="flex justify-end">
-              <Button
-                onClick={goToNextStep}
-                disabled={!canProceedToStep2}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        </WizardStep>
-      )}
-      
-      {currentStep === 2 && (
-        <WizardStep
-          step={2}
-          totalSteps={3}
-          title="Validate Data"
-          description="Review and validate the imported data"
-        >
-          <div className="space-y-6">
-            {csvData.length > 0 ? (
-              <>
-                <PreviewTable
-                  data={csvData}
-                  headers={Object.keys(csvData[0])}
-                  validationErrors={validationErrors}
-                />
-                
-                <div className="flex justify-between">
-                  <Button
-                    variant="outline"
-                    onClick={goToPreviousStep}
-                  >
-                    Back
-                  </Button>
-                  
-                  <Button
-                    onClick={goToNextStep}
-                    disabled={!canProceedToStep3}
-                  >
-                    Next
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-10 text-gray-500">
-                No data to display. Please go back and upload a valid CSV file.
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <h1 className="text-2xl font-bold text-dark">CSV Import</h1>
+      </div>
+
+      <div className="flex justify-between mb-6">
+        <WizardStep 
+          number={1} 
+          title="Upload CSV" 
+          active={currentStep === 1} 
+          completed={currentStep > 1} 
+        />
+        <WizardStep 
+          number={2} 
+          title="Validate" 
+          active={currentStep === 2} 
+          completed={currentStep > 2} 
+        />
+        <WizardStep 
+          number={3} 
+          title="Preview & Import" 
+          active={currentStep === 3} 
+          completed={currentStep > 3} 
+        />
+      </div>
+
+      <Card className="shadow-sm ring-1 ring-dark/10">
+        <CardHeader>
+          <CardTitle>
+            {currentStep === 1 ? "Upload CSV File" : 
+             currentStep === 2 ? "Validate Data" : 
+             "Preview & Import"}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {currentStep === 1 && (
+            <UploadDropZone onFileProcessed={handleFileUpload} />
+          )}
+          
+          {currentStep === 2 && (
+            <div className="space-y-4">
+              <div className="bg-blue-50 rounded p-4 text-blue-800">
+                <h3 className="font-semibold mb-2">File Ready for Validation</h3>
+                <p>Filename: {fileName}</p>
+                <p>Rows: {csvData.length}</p>
               </div>
-            )}
-          </div>
-        </WizardStep>
-      )}
-      
-      {currentStep === 3 && (
-        <WizardStep
-          step={3}
-          totalSteps={3}
-          title="Confirm Import"
-          description="Review the import summary and confirm"
-        >
-          <div className="space-y-6">
-            <div className="bg-gray-50 p-4 rounded-md">
-              <h3 className="font-medium text-lg text-dark mb-4">Import Summary</h3>
               
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-gray-500">Filename:</p>
-                  <p className="font-medium">{file?.name || 'Unknown'}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">File Size:</p>
-                  <p className="font-medium">{file ? `${(file.size / 1024).toFixed(1)} KB` : 'Unknown'}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Total Rows:</p>
-                  <p className="font-medium">{csvData.length}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Valid Rows:</p>
-                  <p className="font-medium text-green-600">{csvData.length - validationErrors.length}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Error Rows:</p>
-                  <p className={`font-medium ${validationErrors.length > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                    {validationErrors.length}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-500">User:</p>
-                  <p className="font-medium">{user?.email || 'Unknown'}</p>
-                </div>
-              </div>
-            </div>
-            
-            {validationErrors.length > 0 && (
-              <div className="bg-red-50 p-4 rounded-md border border-red-100">
-                <h3 className="font-medium text-red-800 mb-2">Warning: Data Contains Errors</h3>
-                <p className="text-sm text-red-700">
-                  There are {validationErrors.length} rows with errors. These rows will be skipped during import.
-                </p>
-              </div>
-            )}
-            
-            <div className="flex justify-between">
-              <Button
-                variant="outline"
-                onClick={goToPreviousStep}
-              >
-                Back
-              </Button>
+              <PreviewTable data={csvData.slice(0, 5)} />
               
-              <Button
-                onClick={handleConfirmImport}
-                disabled={!canConfirmImport || isProcessing}
-              >
-                {isProcessing ? 'Importing...' : 'Confirm Import'}
-              </Button>
+              <div className="flex justify-end gap-2 mt-4">
+                <Button variant="outline" onClick={handleBackClick}>
+                  Back
+                </Button>
+                <Button onClick={handleNextClick}>
+                  Next
+                </Button>
+              </div>
             </div>
-          </div>
-        </WizardStep>
-      )}
+          )}
+          
+          {currentStep === 3 && (
+            <div className="space-y-4">
+              <PreviewTable data={csvData.slice(0, 10)} />
+              
+              <div className="flex justify-end gap-2 mt-4">
+                <Button variant="outline" onClick={handleBackClick} disabled={loading}>
+                  Back
+                </Button>
+                <Button 
+                  onClick={handleConfirmImport} 
+                  disabled={loading || csvData.length === 0}
+                >
+                  {loading ? (
+                    <>
+                      <span className="mr-2">Processing...</span>
+                      <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                    </>
+                  ) : (
+                    'Confirm Import'
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

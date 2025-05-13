@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { ChevronsDown, ChevronsUp, BarChart } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface KpiCardProps {
   title: string;
@@ -9,6 +10,7 @@ interface KpiCardProps {
   change?: number;
   icon?: React.ReactNode;
   onClick?: () => void;
+  isActive?: boolean;
 }
 
 const KpiCard: React.FC<KpiCardProps> = ({
@@ -17,14 +19,18 @@ const KpiCard: React.FC<KpiCardProps> = ({
   unit,
   change,
   icon = <BarChart className="text-primary" />,
-  onClick
+  onClick,
+  isActive = false
 }) => {
   const isPositiveChange = change && change > 0;
   const isNegativeChange = change && change < 0;
   
   return (
     <div 
-      className="kpi-card cursor-pointer hover:shadow-md transition-standard"
+      className={cn(
+        "kpi-card cursor-pointer hover:shadow-md transition-all duration-100 ease-out",
+        isActive && "ring-2 ring-primary"
+      )}
       onClick={onClick}
     >
       <div className="flex justify-between items-start mb-2">

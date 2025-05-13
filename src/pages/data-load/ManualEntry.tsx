@@ -1,65 +1,68 @@
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import { siteService, meterService, readingService } from '../../services/api';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DatePicker } from '@/components/ui/date-picker';
 import { Button } from '@/components/ui/button';
-import EditableTable from '../../components/data-load/EditableTable';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import EditableTable from '@/components/data-load/EditableTable';
+import { meterService } from '@/services/api';
 import { toast } from 'sonner';
-import { Site, Meter, Reading } from '../../types';
-import { dateUtils } from '../../utils/validation';
+import { CalendarIcon, Save } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { useAuth } from '@/contexts/AuthContext';
+
+interface Meter {
+  id: string;
+  name: string;
+  site_id: string;
+  type: 'ELEC' | 'GAS' | 'WATER';
+  value: number | null;
+  unit: string;
+}
 
 const ManualEntry = () => {
-  const { user } = useAuth();
-  
-  const [sites, setSites] = useState<Site[]>([]);
-  const [meters, setMeters] = useState<Meter[]>([]);
+  const [sites, setSites] = useState<{ id: string; name: string }[]>([]);
   const [selectedSite, setSelectedSite] = useState<string>('');
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [tableData, setTableData] = useState<Array<{
-    id: string;
-    name: string;
-    value: number | null;
-    unit: string;
-  }>>([]);
-  const [loading, setLoading] = useState(true);
-  
-  // Load sites on component mount
+  const [meters, setMeters] = useState<Meter[]>([]);
+  const [date, setDate] = useState<Date>(new Date());
+  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+
   useEffect(() => {
     const fetchSites = async () => {
       try {
-        const sitesData = await siteService.getAll();
+        const sitesData = await meterService.getSites();
         setSites(sitesData);
-        
-        // Pre-select the first site if available
         if (sitesData.length > 0) {
           setSelectedSite(sitesData[0].id);
         }
       } catch (error) {
         console.error('Error fetching sites:', error);
         toast.error('Failed to load sites');
-      } finally {
-        setLoading(false);
       }
     };
-    
+
     fetchSites();
   }, []);
-  
-  // Load meters when site changes
+
   useEffect(() => {
     if (!selectedSite) return;
     
     const fetchMeters = async () => {
-      setLoading(true);
       try {
-        const metersData = await meterService.getBySiteId(selectedSite);
-        setMeters(metersData);
+        setLoading(true);
+        const metersData = await meterService.getMetersBySite(selectedSite);
         
-        // Now get readings for these meters for the selected date
-        await loadReadings(metersData, selectedDate);
+        // Transform the data to include value field
+        const transformedMeters = metersData.map(meter => ({
+          ...meter,
+          value: null,
+          unit: meter.type === 'ELEC' ? 'kWh' : meter.type === 'GAS' ? 'm³' : 'L'
+        }));
+        
+        setMeters(transformedMeters);
       } catch (error) {
         console.error('Error fetching meters:', error);
         toast.error('Failed to load meters');
@@ -67,122 +70,64 @@ const ManualEntry = () => {
         setLoading(false);
       }
     };
-    
+
     fetchMeters();
   }, [selectedSite]);
-  
-  // Load readings when date changes
-  useEffect(() => {
-    if (meters.length > 0) {
-      loadReadings(meters, selectedDate);
+
+  const handleSaveReading = async (meterId: string, value: number) => {
+    if (!user) {
+      toast.error('You must be logged in to save readings');
+      return;
     }
-  }, [selectedDate]);
-  
-  const loadReadings = async (metersToLoad: Meter[], date: Date) => {
-    setLoading(true);
     
     try {
-      // Format date as YYYY-MM-DD
-      const formattedDate = dateUtils.format(date);
+      // Format date to YYYY-MM-DD
+      const formattedDate = format(date, 'yyyy-MM-dd');
       
-      // Get all readings
-      const allReadings = await readingService.getAll();
-      
-      // Prepare table data
-      const newTableData = metersToLoad.map(meter => {
-        // Find reading for this meter on the selected date (if exists)
-        const reading = allReadings.find(r => 
-          r.meter_id === meter.id && 
-          r.ts.split('T')[0] === formattedDate
-        );
-        
-        // Get meter type to determine unit
-        const unit = meter.type === 'ELEC' ? 'kWh' : meter.type === 'GAS' ? 'm³' : 'm³';
-        
-        return {
-          id: meter.id,
-          name: `${getSelectedSiteName()} - ${meter.type}`,
-          value: reading ? reading.value : null,
-          unit
-        };
+      await meterService.saveReading({
+        meter_id: meterId,
+        value,
+        ts: `${formattedDate}T12:00:00Z` // Use noon as default time
       });
       
-      setTableData(newTableData);
-    } catch (error) {
-      console.error('Error loading readings:', error);
-      toast.error('Failed to load readings');
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  const getSelectedSiteName = () => {
-    const site = sites.find(s => s.id === selectedSite);
-    return site ? site.name : '';
-  };
-  
-  const handleSaveReading = async (meterId: string, value: number) => {
-    if (!user) return;
-    
-    try {
-      // Format date as YYYY-MM-DD
-      const formattedDate = dateUtils.format(selectedDate);
-      
-      // Create ISO timestamp for selected date at midnight UTC
-      const timestamp = `${formattedDate}T00:00:00Z`;
-      
-      // Get all readings to check if one already exists
-      const allReadings = await readingService.getAll();
-      
-      // Check if reading already exists for this meter on this date
-      const existingReading = allReadings.find(r => 
-        r.meter_id === meterId && 
-        r.ts.split('T')[0] === formattedDate
+      // Update the meters list with the new value
+      setMeters(prev => 
+        prev.map(meter => 
+          meter.id === meterId ? { ...meter, value } : meter
+        )
       );
       
-      if (existingReading) {
-        // Update existing reading
-        await readingService.update({
-          ...existingReading,
-          value
-        });
-      } else {
-        // Create new reading
-        await readingService.create({
-          meter_id: meterId,
-          ts: timestamp,
-          value
-        });
-      }
-      
-      // Refresh the table
-      await loadReadings(meters, selectedDate);
-      
+      // IF-01: Green toast "Reading saved"
       toast.success('Reading saved');
+      
     } catch (error) {
       console.error('Error saving reading:', error);
       toast.error('Failed to save reading');
     }
   };
-  
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-dark">Manual Entry</h1>
-      
-      <Card>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <h1 className="text-2xl font-bold text-dark">Manual Entry</h1>
+      </div>
+
+      <Card className="shadow-sm ring-1 ring-dark/10">
         <CardHeader>
-          <CardTitle>Enter Meter Readings</CardTitle>
+          <CardTitle>Enter B1 Reading</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Site</label>
-              <Select value={selectedSite} onValueChange={setSelectedSite} disabled={loading}>
-                <SelectTrigger>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-700">
+                Site
+              </label>
+              <Select value={selectedSite} onValueChange={setSelectedSite}>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select site" />
                 </SelectTrigger>
                 <SelectContent>
-                  {sites.map(site => (
+                  {sites.map((site) => (
                     <SelectItem key={site.id} value={site.id}>
                       {site.name}
                     </SelectItem>
@@ -190,33 +135,51 @@ const ManualEntry = () => {
                 </SelectContent>
               </Select>
             </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Date</label>
-              <DatePicker
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                disabled={loading}
-                className="w-full"
-              />
+
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-700">
+                Date
+              </label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !date && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date ? format(date, 'PPP') : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={(date) => date && setDate(date)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
-          
+
           {loading ? (
-            <div className="flex justify-center items-center h-40">
+            <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
             </div>
+          ) : meters.length > 0 ? (
+            <EditableTable 
+              data={meters} 
+              onSave={handleSaveReading} 
+            />
           ) : (
-            tableData.length > 0 ? (
-              <EditableTable 
-                data={tableData} 
-                onSave={handleSaveReading} 
-              />
-            ) : (
-              <div className="text-center py-10 text-gray-500">
-                No meters available for the selected site
-              </div>
-            )
+            <div className="text-center py-8 text-gray-500">
+              {selectedSite 
+                ? "No meters found for this site"
+                : "Select a site to view meters"}
+            </div>
           )}
         </CardContent>
       </Card>

@@ -1,134 +1,173 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
-import TagTableRO from '../../components/data-load/TagTableRO';
-import { toast } from 'sonner';
+import TagTableRO from '@/components/data-load/TagTableRO';
+import TestTagButton from '@/components/data-load/TestTagButton';
+import { piService } from '@/services/api';
 
 interface PiTag {
-  tag_id: string;
-  tag_name: string;
-  description: string;
-  unit: string;
+  id: string;
+  name: string;
+  path: string;
   server: string;
-  status: string;
-  last_value: string | number;
-  last_timestamp: string;
+  status: 'OK' | 'KO' | null;
 }
 
 const PiPreview = () => {
-  const [tags, setTags] = useState<PiTag[]>([]);
-  const [filteredTags, setFilteredTags] = useState<PiTag[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(true);
-  
+  const [sites, setSites] = useState<{ id: string; name: string }[]>([]);
+  const [selectedSite, setSelectedSite] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [piTags, setPiTags] = useState<PiTag[]>([]);
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
-    // Load sample PI data from CSV
-    const loadPiData = async () => {
+    const fetchSites = async () => {
       try {
-        const response = await fetch('/src/data/sample_pi.csv');
-        const csvText = await response.text();
-        
-        // Parse CSV
-        const lines = csvText.split('\n');
-        const headers = lines[0].split(',');
-        
-        const parsedTags: PiTag[] = [];
-        
-        for (let i = 1; i < lines.length; i++) {
-          if (!lines[i].trim()) continue;
-          
-          const values = lines[i].split(',');
-          const tag: Record<string, string> = {};
-          
-          headers.forEach((header, index) => {
-            tag[header] = values[index] || '';
-          });
-          
-          parsedTags.push(tag as unknown as PiTag);
+        const sitesData = await piService.getSites();
+        setSites(sitesData);
+        if (sitesData.length > 0) {
+          setSelectedSite(sitesData[0].id);
         }
-        
-        setTags(parsedTags);
-        setFilteredTags(parsedTags);
-        
       } catch (error) {
-        console.error('Error loading PI data:', error);
-        toast.error('Failed to load PI tag data');
+        console.error('Error fetching sites:', error);
+      }
+    };
+
+    fetchSites();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedSite) return;
+    
+    const fetchPiTags = async () => {
+      try {
+        setLoading(true);
+        const tagsData = await piService.getTagsBySite(selectedSite);
+        
+        // Transform to match our component needs
+        const transformedTags = tagsData.map(tag => ({
+          ...tag,
+          status: null
+        }));
+        
+        setPiTags(transformedTags);
+      } catch (error) {
+        console.error('Error fetching PI tags:', error);
       } finally {
         setLoading(false);
       }
     };
-    
-    loadPiData();
-  }, []);
-  
-  const handleSearch = () => {
-    if (!searchQuery.trim()) {
-      setFilteredTags(tags);
-      return;
+
+    fetchPiTags();
+  }, [selectedSite]);
+
+  const handleTestTag = async (tagId: string) => {
+    try {
+      // Find the tag
+      const tag = piTags.find(t => t.id === tagId);
+      if (!tag) return;
+      
+      // Call PI service to test the tag
+      const result = await piService.testTag(tag.path);
+      
+      // Update tag status (IF-04: Green badge "OK" or red "KO")
+      setPiTags(prev => 
+        prev.map(t => 
+          t.id === tagId ? { ...t, status: result.success ? 'OK' : 'KO' } : t
+        )
+      );
+      
+    } catch (error) {
+      console.error('Error testing tag:', error);
+      // Update as KO if there's an error
+      setPiTags(prev => 
+        prev.map(t => 
+          t.id === tagId ? { ...t, status: 'KO' } : t
+        )
+      );
     }
-    
-    const query = searchQuery.toLowerCase();
-    const filtered = tags.filter(tag => 
-      tag.tag_id.toLowerCase().includes(query) ||
-      tag.tag_name.toLowerCase().includes(query) ||
-      tag.description.toLowerCase().includes(query)
-    );
-    
-    setFilteredTags(filtered);
   };
-  
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
-  };
-  
+
+  const filteredTags = searchQuery
+    ? piTags.filter(tag => 
+        tag.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tag.path.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : piTags;
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-dark">PI Tag Preview</h1>
-      
-      <Card>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <h1 className="text-2xl font-bold text-dark">PI Tag Preview</h1>
+      </div>
+
+      <Card className="shadow-sm ring-1 ring-dark/10">
         <CardHeader>
           <CardTitle>Available PI Tags</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Search tags..."
-                className="pr-10"
-              />
-              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                <Search className="h-4 w-4 text-gray-400" />
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-700">
+                Site
+              </label>
+              <Select value={selectedSite} onValueChange={setSelectedSite}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select site" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sites.map((site) => (
+                    <SelectItem key={site.id} value={site.id}>
+                      {site.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1 text-gray-700">
+                Search Tags
+              </label>
+              <div className="relative">
+                <Input 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by name or path"
+                  className="pl-10"
+                />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
               </div>
             </div>
-            <Button onClick={handleSearch}>Search</Button>
           </div>
-          
+
           {loading ? (
-            <div className="flex justify-center items-center h-40">
+            <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
             </div>
+          ) : filteredTags.length > 0 ? (
+            <TagTableRO 
+              data={filteredTags}
+              actionColumn={(tag) => (
+                <TestTagButton 
+                  status={tag.status}
+                  onClick={() => handleTestTag(tag.id)}
+                />
+              )}
+            />
           ) : (
-            filteredTags.length > 0 ? (
-              <TagTableRO data={filteredTags} />
-            ) : (
-              <div className="text-center py-10 text-gray-500">
-                No PI tags found matching your search criteria
-              </div>
-            )
+            <div className="text-center py-8 text-gray-500">
+              {selectedSite 
+                ? searchQuery 
+                  ? "No tags found matching your search" 
+                  : "No PI tags found for this site"
+                : "Select a site to view PI tags"}
+            </div>
           )}
-          
-          <div className="bg-blue-50 p-4 rounded-md text-sm text-blue-800 border border-blue-100">
-            <p className="font-medium mb-1">Note:</p>
-            <p>This is a read-only preview of available PI tags. In the production application, these tags would be connected to the PI System for real-time data acquisition.</p>
-          </div>
         </CardContent>
       </Card>
     </div>

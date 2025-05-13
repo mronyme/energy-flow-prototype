@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Site, Meter, Reading, KpiDaily, ImportLog, Anomaly, PiTag, User, Role } from "../types";
@@ -38,34 +37,76 @@ export const siteService = {
 
 // Meter service
 export const meterService = {
-  getBySiteId: async (siteId: string): Promise<Meter[]> => {
+  getSites: async () => {
     try {
       const { data, error } = await supabase
-        .from('meter')
-        .select('*')
-        .eq('site_id', siteId);
-      
+        .from('site')
+        .select('id, name')
+        .order('name');
+        
       if (error) throw error;
-      return data as Meter[];
+      return data || [];
     } catch (error) {
-      console.error('Error fetching meters:', error);
-      return [];
+      console.error('Error fetching sites:', error);
+      throw error;
     }
   },
   
-  getById: async (id: string): Promise<Meter | null> => {
+  getMetersBySite: async (siteId: string) => {
     try {
       const { data, error } = await supabase
         .from('meter')
-        .select('*')
-        .eq('id', id)
-        .single();
-      
+        .select('id, site_id, type')
+        .eq('site_id', siteId);
+        
       if (error) throw error;
-      return data as Meter;
+      
+      // Transform data to include a name field
+      return (data || []).map(meter => ({
+        ...meter,
+        name: `${meter.type}-${meter.id.substring(0, 8)}`
+      }));
     } catch (error) {
-      console.error('Error fetching meter by ID:', error);
-      return null;
+      console.error('Error fetching meters:', error);
+      throw error;
+    }
+  },
+  
+  saveReading: async ({ meter_id, value, ts }: { meter_id: string, value: number, ts: string }) => {
+    try {
+      // Check if reading already exists
+      const { data: existingReadings, error: fetchError } = await supabase
+        .from('reading')
+        .select('id')
+        .eq('meter_id', meter_id)
+        .eq('ts', ts)
+        .maybeSingle();
+        
+      if (fetchError) throw fetchError;
+      
+      if (existingReadings) {
+        // Update existing reading
+        const { error } = await supabase
+          .from('reading')
+          .update({ value })
+          .eq('id', existingReadings.id);
+          
+        if (error) throw error;
+        return { id: existingReadings.id, updated: true };
+      } else {
+        // Insert new reading
+        const { data, error } = await supabase
+          .from('reading')
+          .insert({ meter_id, value, ts })
+          .select('id')
+          .single();
+          
+        if (error) throw error;
+        return { id: data.id, updated: false };
+      }
+    } catch (error) {
+      console.error('Error saving reading:', error);
+      throw error;
     }
   }
 };
@@ -477,4 +518,180 @@ export const piService = {
 // Alias piService.testTag as piTagService.testTag for backwards compatibility
 export const piTagService = {
   testTag: piService.testTag
+};
+
+// Import service
+export const importService = {
+  importCsv: async ({ data, fileName, userEmail }: { data: any[], fileName: string, userEmail: string }) => {
+    try {
+      // Process CSV data and save to readings
+      let rowsOk = 0;
+      let rowsErr = 0;
+      
+      // In a real app, this would be a batch operation
+      // For this prototype, we'll simulate success/error counts
+      rowsOk = Math.floor(data.length * 0.9); // 90% success
+      rowsErr = data.length - rowsOk;
+      
+      // Log the import
+      const { error } = await supabase
+        .from('import_log')
+        .insert({
+          user_email: userEmail,
+          rows_ok: rowsOk,
+          rows_err: rowsErr,
+          file_name: fileName
+        });
+        
+      if (error) throw error;
+      
+      return { rowsOk, rowsErr };
+    } catch (error) {
+      console.error('Error importing CSV:', error);
+      throw error;
+    }
+  }
+};
+
+// Journal service
+export const journalService = {
+  getImportLogs: async ({ startDate, endDate }: { startDate: string, endDate: string }) => {
+    try {
+      const { data, error } = await supabase
+        .from('import_log')
+        .select('*')
+        .gte('ts', `${startDate}T00:00:00Z`)
+        .lte('ts', `${endDate}T23:59:59Z`)
+        .order('ts', { ascending: false });
+        
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching import logs:', error);
+      throw error;
+    }
+  },
+  
+  exportCsv: async ({ startDate, endDate }: { startDate: string, endDate: string }) => {
+    try {
+      // In a real app, this would generate and download a CSV file
+      // For the prototype, we'll simulate a file download
+      
+      // Get the log data
+      const { data, error } = await supabase
+        .from('import_log')
+        .select('*')
+        .gte('ts', `${startDate}T00:00:00Z`)
+        .lte('ts', `${endDate}T23:59:59Z`)
+        .order('ts', { ascending: false });
+        
+      if (error) throw error;
+      
+      // Convert data to CSV format
+      const headers = ['ID', 'Timestamp', 'User', 'Rows OK', 'Rows Error', 'File Name'];
+      const rows = (data || []).map(log => [
+        log.id,
+        new Date(log.ts).toLocaleString(),
+        log.user_email,
+        log.rows_ok,
+        log.rows_err,
+        log.file_name
+      ]);
+      
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.join(','))
+      ].join('\n');
+      
+      // Create a Blob and download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `import-logs-${startDate}-to-${endDate}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      throw error;
+    }
+  }
+};
+
+// Admin services
+export const adminService = {
+  // User management
+  getUsers: async () => {
+    try {
+      // In a real app, this would query the users table
+      // For the prototype, we'll return mock data
+      return [
+        { id: '1', email: 'admin@engie.com', role: 'Admin' },
+        { id: '2', email: 'manager@engie.com', role: 'Manager' },
+        { id: '3', email: 'datamanager@engie.com', role: 'DataManager' },
+        { id: '4', email: 'operator@engie.com', role: 'Operator' }
+      ];
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      throw error;
+    }
+  },
+  
+  createUser: async ({ email, password, role }: { email: string, password: string, role: string }) => {
+    try {
+      // In a real app, this would create a new user with Supabase Auth
+      // For the prototype, we'll simulate a successful user creation
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      return { 
+        success: true, 
+        user: { 
+          id: `new-${Date.now()}`, 
+          email, 
+          role 
+        } 
+      };
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
+    }
+  },
+  
+  // Emission factors
+  getEmissionFactors: async () => {
+    try {
+      // In a real app, this would query an emission factors table
+      // For the prototype, we'll return mock data
+      return [
+        { id: '1', name: 'Electricity - France', value: 0.0571, unit: 'kg CO2/kWh' },
+        { id: '2', name: 'Electricity - Belgium', value: 0.1762, unit: 'kg CO2/kWh' },
+        { id: '3', name: 'Natural Gas', value: 0.2043, unit: 'kg CO2/kWh' },
+        { id: '4', name: 'Diesel', value: 2.6391, unit: 'kg CO2/l' }
+      ];
+    } catch (error) {
+      console.error('Error fetching emission factors:', error);
+      throw error;
+    }
+  },
+  
+  updateEmissionFactor: async ({ id, value }: { id: string, value: number }) => {
+    try {
+      // In a real app, this would update the emission factor in the database
+      // For the prototype, we'll simulate a successful update
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      return { success: true, id, value };
+    } catch (error) {
+      console.error('Error updating emission factor:', error);
+      throw error;
+    }
+  }
 };
