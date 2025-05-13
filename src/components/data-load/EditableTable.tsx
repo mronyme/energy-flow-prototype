@@ -29,8 +29,8 @@ const EditableTable: React.FC<EditableTableProps> = ({ data = [], onSave, refres
     const fetchRecentReadings = async () => {
       try {
         setLoading(true);
-        // Using getAll instead of getRecent which doesn't exist
-        const readings = await readingService.getAll();
+        // Using getMeterReadings instead of getAll which doesn't exist
+        const readings = await readingService.getMeterReadings('all');
         setTableData(readings || []);
         setLoading(false);
       } catch (error) {
@@ -73,7 +73,7 @@ const EditableTable: React.FC<EditableTableProps> = ({ data = [], onSave, refres
     } else {
       try {
         // Fix: Pass a single object with id and value properties to update
-        await readingService.update({
+        await readingService.saveReading({
           id: id,
           value: parseFloat(value)
         });

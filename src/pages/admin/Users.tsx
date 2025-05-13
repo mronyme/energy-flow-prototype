@@ -1,131 +1,77 @@
 
 import React, { useState, useEffect } from 'react';
-import UserList from '@/components/admin/UserList';
-import UserForm from '@/components/admin/UserForm';
+import { UserList } from '@/components/admin/UserList';
+import { UserForm } from '@/components/admin/UserForm';
+import { Card } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { adminService } from '@/services/api';
-import { toast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useAnnouncer } from '@/components/common/A11yAnnouncer';
-import { Role } from '@/types';
+import { User, Role } from '@/types';
+import { toast } from 'sonner';
+import { SkipLink } from '@/components/common/SkipLink';
 
-type User = {
-  id: string;
-  email: string;
-  role: Role;
-};
-
-const Users: React.FC = () => {
+const Users = () => {
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const { announcer, announce } = useAnnouncer();
-
-  // Fetch users on component mount
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      const usersData = await adminService.getUsers();
-      // Ensure the type is correct before setting state
-      setUsers(usersData as User[]);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      toast.error('Failed to load users');
-      setLoading(false);
-    }
-  };
-
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('list');
+  
   useEffect(() => {
-    fetchUsers();
+    const loadUsers = async () => {
+      try {
+        const data = await adminService.getUsers();
+        // The data from getUsers matches the User type, so we can cast it
+        setUsers(data as User[]);
+      } catch (error) {
+        console.error('Error loading users:', error);
+        toast.error('Failed to load users');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadUsers();
   }, []);
 
-  // Function to handle user selection
-  const handleSelectUser = (user: User) => {
-    console.log("User selected:", user);
-  };
-
-  // Handle user creation
-  const handleCreateUser = async (formData: {
-    email: string;
-    password: string;
-    role: Role;
-  }) => {
+  const handleCreateUser = async (email: string, password: string, role: Role) => {
     try {
       setLoading(true);
+      const result = await adminService.createUser({ email, password, role });
       
-      // Call API to create user (IF-09)
-      const result = await adminService.createUser(formData);
-      
-      if (result.success) {
-        // Success message
-        toast.success({
-          title: "User created",
-          description: `User ${formData.email} created successfully`
-        });
-        announce("User created successfully", false);
-        
-        // Close dialog and refresh list
-        setDialogOpen(false);
-        await fetchUsers();
+      if (result) {
+        toast.success('User created successfully');
+        setUsers(prev => [...prev, result]);
+        setActiveTab('list');
       }
-      
-      setLoading(false);
     } catch (error) {
       console.error('Error creating user:', error);
-      toast.error({
-        title: 'Error',
-        description: 'Failed to create user'
-      });
+      toast.error('Failed to create user');
+    } finally {
       setLoading(false);
     }
   };
-
+  
   return (
-    <>
-      {announcer} {/* Screen reader announcements */}
+    <div className="container mx-auto py-8">
+      <SkipLink target="#users-heading" label="Skip to user management" />
       
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-dark mb-2">User Management</h1>
-        <p className="text-gray-600">
-          Create and manage users with different roles.
-        </p>
-      </div>
+      <h1 id="users-heading" className="text-2xl font-bold mb-6">User Management</h1>
       
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-lg font-semibold">Users</h2>
-          <p className="text-sm text-gray-500">{users.length} users total</p>
-        </div>
-        
-        <Button onClick={() => setDialogOpen(true)}>
-          Create User
-        </Button>
-      </div>
-      
-      {/* User List */}
-      {loading ? (
-        <div className="flex justify-center items-center p-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-          <span className="sr-only">Loading users...</span>
-        </div>
-      ) : (
-        <UserList 
-          users={users} 
-          onSelect={handleSelectUser}
-        />
-      )}
-      
-      {/* Create User Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New User</DialogTitle>
-          </DialogHeader>
-          <UserForm onSubmit={handleCreateUser} isSubmitting={loading} />
-        </DialogContent>
-      </Dialog>
-    </>
+      <Card className="p-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-6">
+            <TabsTrigger value="list">User List</TabsTrigger>
+            <TabsTrigger value="create">Create User</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="list">
+            <UserList users={users} isLoading={loading} />
+          </TabsContent>
+          
+          <TabsContent value="create">
+            <UserForm onSubmit={handleCreateUser} isSubmitting={loading} />
+          </TabsContent>
+        </Tabs>
+      </Card>
+    </div>
   );
 };
 

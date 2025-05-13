@@ -1,351 +1,244 @@
-import React, { useState, useEffect } from 'react';
-import { AlertCardSummary } from '@/components/data-quality/AlertCard';
-import CorrectionModal from '@/components/data-quality/CorrectionModal';
-import AnomalyBadge from '@/components/data-quality/AnomalyBadge';
-import { anomalyService } from '@/services/api';
-import { toast } from '@/hooks/use-toast';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { useAnnouncer } from '@/components/common/A11yAnnouncer';
-import DatePicker from '@/components/ui/date-picker';
-import { format, subDays } from 'date-fns';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { AlertTriangle, Ban, Info } from 'lucide-react';
-import { AnomalyType, MeterType } from '@/types';
-import { toastMessages } from '@/utils/validation';
 
-// Updated interface to match the CorrectionModal component's expected props
-interface AnomalyData {
-  id: string;
-  readingId: string;
-  meterId: string;
-  meterName: string;
-  siteName: string;
-  date: string; 
-  value: number | null;
-  type: AnomalyType;
-  delta: number | null;
-  comment: string | null;
-  site: string;
-  meter: string;
-  meterType: MeterType;
-  timestamp: string;
-}
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertCard } from '@/components/data-quality/AlertCard';
+import { CorrectionModal } from '@/components/data-quality/CorrectionModal';
+import { DatePicker } from '@/components/ui/date-picker';
+import { anomalyService, siteService, readingService } from '@/services/api';
+import { toast } from 'sonner';
+import { AnomalyData } from '@/types/anomaly-data';
+import { useAnnouncer } from '@/hooks/use-focus-trap';
+import { dateUtils } from '@/utils/validation';
 
 const Anomalies: React.FC = () => {
   const [anomalies, setAnomalies] = useState<AnomalyData[]>([]);
-  const [sites, setSites] = useState<{id: string, name: string}[]>([]);
-  const [selectedSite, setSelectedSite] = useState<string>('all');
-  const [loading, setLoading] = useState(false);
-  const isMobile = useIsMobile();
-  const { announcer, announce } = useAnnouncer();
-  
-  // Date filter state
-  const [startDate, setStartDate] = useState<Date>(subDays(new Date(), 7));
+  const [sites, setSites] = useState<{ id: string, name: string }[]>([]);
+  const [selectedSite, setSelectedSite] = useState('all');
+  const [selectedType, setSelectedType] = useState('all');
+  const [startDate, setStartDate] = useState<Date>(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)); // Last 7 days
   const [endDate, setEndDate] = useState<Date>(new Date());
-  
-  // Correction modal state
+  const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAnomaly, setSelectedAnomaly] = useState<AnomalyData | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
+  const { announce } = useAnnouncer();
   
-  // Reset modal state when closed
+  // Load initial data
   useEffect(() => {
-    if (!modalOpen) {
-      setSelectedAnomaly(null);
-    }
-  }, [modalOpen]);
-  
-  // Load sites on mount
-  useEffect(() => {
-    const fetchSites = async () => {
+    const fetchData = async () => {
       try {
-        const sitesData = await anomalyService.getSites();
+        setLoading(true);
+        // Load sites
+        const sitesData = await siteService.getSites();
         setSites(sitesData);
+        
+        // Load anomalies
+        await loadAnomalies();
       } catch (error) {
-        console.error('Error fetching sites:', error);
-        toast.error({
-          title: 'Error',
-          description: 'Failed to load sites'
-        });
+        console.error('Error fetching initial data:', error);
+        toast.error('Failed to load anomaly data');
+      } finally {
+        setLoading(false);
       }
     };
     
-    fetchSites();
+    fetchData();
   }, []);
   
-  // Load anomalies based on selected filters
+  // Load anomalies based on filters
   const loadAnomalies = async () => {
     try {
       setLoading(true);
-      const anomalyData = await anomalyService.getAnomalies({
-        siteId: selectedSite,
-        startDate: format(startDate, 'yyyy-MM-dd'),
-        endDate: format(endDate, 'yyyy-MM-dd')
+      
+      // Get all anomalies - in a real implementation, we would filter by date range and site
+      const anomalyResults = await anomalyService.getAnomalies(100);
+      
+      // Process the results into the expected format
+      const processedAnomalies = anomalyResults.map(anomaly => {
+        // Extract nested data from the joined query
+        const reading = anomaly.reading as any;
+        const meter = reading?.meter as any;
+        const site = meter?.site as any;
+        
+        return {
+          id: anomaly.id,
+          readingId: reading?.id || anomaly.reading_id,
+          timestamp: reading?.ts || new Date().toISOString(),
+          value: reading?.value || null,
+          meterId: meter?.id || '',
+          meterName: meter?.name || 'Unknown',
+          meterType: meter?.type || 'ELEC',
+          siteId: site?.id || '',
+          siteName: site?.name || 'Unknown',
+          type: anomaly.type,
+          delta: anomaly.delta,
+          comment: anomaly.comment
+        };
       });
       
-      // Map the received data to include all required properties for the correction modal
-      const mappedAnomalies = anomalyData.map(anomaly => ({
-        ...anomaly,
-        timestamp: anomaly.date, // Ensure timestamp is available
-        site: anomaly.siteName, // Add site property for compatibility
-        meter: anomaly.meterName, // Add meter property for compatibility
-        comment: anomaly.comment || null, // Ensure comment is never undefined
-        meterType: anomaly.meterType // Fix: Use the meterType property directly
-      }));
-      
-      setAnomalies(mappedAnomalies);
-      setLoading(false);
-      
-      // Announce for screen readers
-      announce(`Loaded ${mappedAnomalies.length} anomalies`);
-      
+      setAnomalies(processedAnomalies);
     } catch (error) {
-      console.error('Error fetching anomalies:', error);
-      toast.error({
-        title: 'Error',
-        description: 'Failed to load anomalies'
-      });
+      console.error('Error loading anomalies:', error);
+      toast.error('Failed to load anomalies');
+    } finally {
       setLoading(false);
     }
   };
   
-  useEffect(() => {
-    loadAnomalies();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedSite, startDate, endDate]);
-  
-  // Handle anomaly correction (IF-06)
-  const handleSaveCorrection = async (
-    readingId: string, 
-    newValue: number, 
-    comment: string,
-    anomalyId: string
-  ) => {
-    try {
-      // Call API to update the reading and anomaly comment
-      // Fix: Update the anomaly comment separately after updating the reading
-      await anomalyService.correctAnomaly({
-        readingId,
-        value: newValue,
-        comment
-      });
-      
-      // Update the anomaly comment if needed
-      await anomalyService.updateComment(anomalyId, comment);
-      
-      // Success message
-      toast.success({
-        title: 'Success',
-        description: toastMessages.correctionSaved()
-      });
-      announce("Anomaly correction saved successfully");
-      
-      // Close modal and refresh data
-      setModalOpen(false);
-      loadAnomalies();
-      
-    } catch (error) {
-      console.error('Error correcting anomaly:', error);
-      toast.error({
-        title: 'Error',
-        description: 'Failed to save correction'
-      });
-    }
+  const handleFilter = async () => {
+    await loadAnomalies();
+    announce('Anomalies filtered', false);
   };
   
-  // Handle row click to open correction modal (IF-05)
-  const handleRowClick = (anomaly: AnomalyData) => {
+  const handleOpenModal = (anomaly: AnomalyData) => {
     setSelectedAnomaly(anomaly);
-    setModalOpen(true);
-    
-    // Announce for screen readers
-    announce(`Opening correction modal for ${anomaly.meterName} at ${anomaly.siteName}`);
+    setIsModalOpen(true);
   };
   
-  // Handle filter updates
-  const applyFilters = () => {
-    loadAnomalies();
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedAnomaly(null);
   };
   
-  // Handle keyboard navigation for table rows
-  const handleRowKeyDown = (e: React.KeyboardEvent, anomaly: AnomalyData) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      handleRowClick(anomaly);
+  const handleSaveCorrection = async (readingId: string, newValue: number, comment: string, anomalyId: string) => {
+    try {
+      // Update the reading's value
+      await readingService.saveReading({
+        id: readingId,
+        value: newValue
+      });
+      
+      // Update the anomaly with the comment
+      await anomalyService.updateAnomaly(anomalyId, { comment });
+      
+      toast.success('Correction saved');
+      
+      // Refresh the anomaly list
+      await loadAnomalies();
+    } catch (error) {
+      console.error('Error saving correction:', error);
+      toast.error('Failed to save correction');
+      throw error; // Re-throw to let the modal handle the error
     }
   };
+  
+  // Filter anomalies based on selection
+  const filteredAnomalies = anomalies.filter(anomaly => {
+    if (selectedSite !== 'all' && anomaly.siteId !== selectedSite) return false;
+    if (selectedType !== 'all' && anomaly.type !== selectedType) return false;
+    
+    // Filter by date range
+    const anomalyDate = new Date(anomaly.timestamp);
+    return anomalyDate >= startDate && anomalyDate <= endDate;
+  });
   
   return (
-    <>
-      {announcer} {/* Screen reader announcements */}
-      
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-dark mb-2">Anomalies</h1>
-        <p className="text-gray-600">
-          Detect and fix anomalies in meter readings.
-        </p>
-      </div>
+    <div className="container mx-auto py-8">
+      <h1 className="text-2xl font-bold mb-6">Anomaly Detection & Correction</h1>
       
       {/* Filters */}
-      <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <Label htmlFor="site-select">Site</Label>
-            <select
-              id="site-select"
-              className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+      <Card className="p-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="site-filter">Site</Label>
+            <Select
               value={selectedSite}
-              onChange={(e) => setSelectedSite(e.target.value)}
-              disabled={loading}
-              aria-label="Filter anomalies by site"
+              onValueChange={setSelectedSite}
             >
-              <option value="all">All Sites</option>
-              {sites.map((site) => (
-                <option key={site.id} value={site.id}>
-                  {site.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="site-filter">
+                <SelectValue placeholder="Select a site" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Sites</SelectItem>
+                {sites.map(site => (
+                  <SelectItem key={site.id} value={site.id}>{site.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           
-          <div>
-            <Label htmlFor="start-date">From</Label>
+          <div className="space-y-2">
+            <Label htmlFor="type-filter">Anomaly Type</Label>
+            <Select
+              value={selectedType}
+              onValueChange={setSelectedType}
+            >
+              <SelectTrigger id="type-filter">
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="SPIKE">Spike</SelectItem>
+                <SelectItem value="MISSING">Missing</SelectItem>
+                <SelectItem value="FLAT">Flat</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="start-date">Start Date</Label>
             <DatePicker
+              id="start-date"
               selected={startDate}
               onSelect={setStartDate}
-              disabled={loading}
-              label="Start date"
-              className="mt-1"
             />
           </div>
           
-          <div>
-            <Label htmlFor="end-date">To</Label>
+          <div className="space-y-2">
+            <Label htmlFor="end-date">End Date</Label>
             <DatePicker
+              id="end-date"
               selected={endDate}
               onSelect={setEndDate}
-              disabled={loading}
-              label="End date"
-              className="mt-1"
             />
           </div>
         </div>
         
-        <div className="mt-4 flex justify-end">
-          <Button 
-            onClick={applyFilters} 
-            disabled={loading}
-            className="transition-all duration-100 ease-out focus:ring-2 focus:ring-primary focus:ring-offset-2"
-          >
-            Apply Filters
+        <div className="mt-6 flex justify-end">
+          <Button onClick={handleFilter} disabled={loading}>
+            {loading ? 'Loading...' : 'Apply Filters'}
           </Button>
         </div>
-      </div>
+      </Card>
       
-      {/* Anomaly summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <AlertCardSummary
-          title="Missing Readings"
-          count={anomalies.filter(a => a.type === 'MISSING').length}
-          type="error"
-          icon={Ban}
-        />
-        <AlertCardSummary
-          title="Spikes"
-          count={anomalies.filter(a => a.type === 'SPIKE').length}
-          type="warning"
-          icon={AlertTriangle}
-        />
-        <AlertCardSummary
-          title="Flat Values"
-          count={anomalies.filter(a => a.type === 'FLAT').length}
-          type="info"
-          icon={Info}
-        />
+      {/* Results */}
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">
+          Anomalies {filteredAnomalies.length > 0 && `(${filteredAnomalies.length})`}
+        </h2>
+        
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
+          </div>
+        ) : filteredAnomalies.length === 0 ? (
+          <Card className="p-8 text-center text-gray-500">
+            No anomalies found for the selected filters
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredAnomalies.map(anomaly => (
+              <AlertCard
+                key={anomaly.id}
+                anomaly={anomaly}
+                onClick={() => handleOpenModal(anomaly)}
+              />
+            ))}
+          </div>
+        )}
       </div>
-      
-      {/* Anomalies table */}
-      {loading ? (
-        <div className="flex justify-center items-center p-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-          <span className="sr-only">Loading anomalies...</span>
-        </div>
-      ) : (
-        <div className={isMobile ? "overflow-x-auto" : ""}>
-          <table className="w-full bg-white rounded-lg shadow-sm">
-            <caption className="sr-only">
-              List of detected anomalies in meter readings
-            </caption>
-            <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-4 py-3 text-left text-sm font-medium text-gray-600">
-                  Site
-                </th>
-                <th scope="col" className="px-4 py-3 text-left text-sm font-medium text-gray-600">
-                  Meter
-                </th>
-                <th scope="col" className="px-4 py-3 text-left text-sm font-medium text-gray-600">
-                  Date
-                </th>
-                <th scope="col" className="px-4 py-3 text-right text-sm font-medium text-gray-600">
-                  Value
-                </th>
-                <th scope="col" className="px-4 py-3 text-center text-sm font-medium text-gray-600">
-                  Type
-                </th>
-                <th scope="col" className="px-4 py-3 text-right text-sm font-medium text-gray-600">
-                  Delta
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {anomalies.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-gray-500">
-                    No anomalies found for the selected filters
-                  </td>
-                </tr>
-              ) : (
-                anomalies.map((anomaly) => (
-                  <tr 
-                    key={anomaly.id}
-                    className="cursor-pointer hover:bg-gray-50 transition-all duration-100 ease-out"
-                    onClick={() => handleRowClick(anomaly)}
-                    onKeyDown={(e) => handleRowKeyDown(e, anomaly)}
-                    tabIndex={0}
-                    role="button"
-                    aria-label={`Anomaly at ${anomaly.siteName}, ${anomaly.meterName}, ${anomaly.date}`}
-                  >
-                    <td className="px-4 py-3 text-sm">{anomaly.siteName}</td>
-                    <td className="px-4 py-3 text-sm">{anomaly.meterName}</td>
-                    <td className="px-4 py-3 text-sm">{anomaly.date}</td>
-                    <td className="px-4 py-3 text-sm text-right">
-                      {anomaly.value === null ? '—' : anomaly.value.toFixed(2)}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <AnomalyBadge type={anomaly.type} delta={anomaly.delta} />
-                    </td>
-                    <td className="px-4 py-3 text-sm text-right">
-                      {anomaly.delta === null ? '—' : `${anomaly.delta.toFixed(1)}%`}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
       
       {/* Correction Modal */}
-      {selectedAnomaly && (
-        <CorrectionModal
-          isOpen={modalOpen}
-          onClose={() => setModalOpen(false)}
-          anomaly={selectedAnomaly}
-          onSave={handleSaveCorrection}
-        />
-      )}
-    </>
+      <CorrectionModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        anomaly={selectedAnomaly}
+        onSave={handleSaveCorrection}
+      />
+    </div>
   );
 };
 

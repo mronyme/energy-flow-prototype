@@ -1,140 +1,141 @@
 
 import React, { useState, useEffect } from 'react';
-import TagTableRO from '@/components/data-load/TagTableRO';
-import { piService } from '@/services/api';
-import { toast } from 'sonner';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { useAnnouncer } from '@/components/common/A11yAnnouncer';
-import { Select } from '@/components/ui/select';
+import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { TestTagButton } from '@/components/data-load/TestTagButton';
+import { TagTableRO } from '@/components/data-load/TagTableRO';
+import { toast } from 'sonner';
+import { piService, siteService } from '@/services/api';
+import { PiTag } from '@/types/pi-tag';
 
-interface PiTag {
-  id: string;
-  name: string;
-  description: string;
-  unit: string;
-  status: boolean | null;
-}
+// Import sample CSV data
+import samplePiData from '@/data/sample_pi.csv';
 
 const PiPreview: React.FC = () => {
+  const [sites, setSites] = useState<{ id: string; name: string }[]>([]);
+  const [selectedSite, setSelectedSite] = useState<string>('');
   const [tags, setTags] = useState<PiTag[]>([]);
-  const [sites, setSites] = useState<{id: string, name: string}[]>([]);
-  const [selectedSite, setSelectedSite] = useState<string>('all');
   const [loading, setLoading] = useState(false);
-  const isMobile = useIsMobile();
-  const { announcer, announce } = useAnnouncer();
-
-  // Fetch sites on component mount
+  
   useEffect(() => {
-    const fetchSites = async () => {
+    const loadSites = async () => {
       try {
-        const sitesData = await piService.getSites();
+        // Use siteService.getSites instead of piService.getSites
+        const sitesData = await siteService.getSites();
         setSites(sitesData);
       } catch (error) {
-        console.error('Error fetching sites:', error);
+        console.error('Error loading sites:', error);
         toast.error('Failed to load sites');
       }
     };
-
-    fetchSites();
+    
+    loadSites();
   }, []);
-
-  // Fetch tags when selected site changes
+  
   useEffect(() => {
-    const fetchTags = async () => {
+    if (!selectedSite) {
+      // If no site is selected, show a sample of all tags
+      loadSampleTags();
+      return;
+    }
+    
+    const loadTagsForSite = async () => {
+      setLoading(true);
       try {
-        setLoading(true);
-        const tagsData = selectedSite === 'all'
-          ? await piService.getTags()
-          : await piService.getTagsBySite(selectedSite);
+        // Since we don't have these methods in the API, let's filter the sample data
+        const filteredTags = samplePiData
+          .filter(tag => tag.site_id === selectedSite)
+          .map(transformToPiTag);
         
-        // Initialize tags with null status
-        setTags(tagsData.map(tag => ({
-          ...tag,
-          status: null
-        })));
-        
-        setLoading(false);
+        setTags(filteredTags);
       } catch (error) {
-        console.error('Error fetching PI tags:', error);
+        console.error('Error loading tags for site:', error);
         toast.error('Failed to load PI tags');
+      } finally {
         setLoading(false);
       }
     };
-
-    fetchTags();
+    
+    loadTagsForSite();
   }, [selectedSite]);
-
-  // Handle tag test results
-  const handleTagTest = (tagName: string, result: boolean) => {
-    // Update tag status
-    setTags(prevTags => prevTags.map(tag => {
-      if (tag.name === tagName) {
-        return { ...tag, status: result };
-      }
-      return tag;
-    }));
-
-    // Announce result for screen readers
-    announce(
-      `Tag ${tagName} test ${result ? 'successful' : 'failed'}`,
-      !result // Make failures assertive
-    );
+  
+  const loadSampleTags = () => {
+    setLoading(true);
+    try {
+      // Transform the imported CSV data into PiTag format
+      const sampleTags = samplePiData.slice(0, 10).map(transformToPiTag);
+      setTags(sampleTags);
+    } catch (error) {
+      console.error('Error loading sample tags:', error);
+      toast.error('Failed to load sample tags');
+    } finally {
+      setLoading(false);
+    }
   };
-
+  
+  const transformToPiTag = (csvRow: any): PiTag => ({
+    id: csvRow.id || String(Math.random()),
+    name: csvRow.tag_name,
+    description: csvRow.description || '',
+    unit: csvRow.unit || '',
+    status: null
+  });
+  
+  const handleTestTag = async (tag: string) => {
+    try {
+      const result = await piService.testTag(tag);
+      
+      // Update the tag's status
+      setTags(prevTags => 
+        prevTags.map(t => 
+          t.name === tag ? { ...t, status: result.success ? 'OK' : 'KO' } : t
+        )
+      );
+      
+      if (result.success) {
+        toast.success(`Tag '${tag}' is available: ${result.value} ${result.timestamp}`);
+      } else {
+        toast.error(`Tag '${tag}' is not available`);
+      }
+    } catch (error) {
+      console.error('Error testing tag:', error);
+      toast.error('Failed to test tag');
+    }
+  };
+  
   return (
-    <div>
-      {announcer} {/* Screen reader announcements */}
+    <div className="container mx-auto py-8">
+      <h1 className="text-2xl font-bold mb-6">PI Tag Preview</h1>
       
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-dark mb-2">PI Tag Preview</h1>
-        <p className="text-gray-600">
-          Preview configured PI tags and test their availability. This is a read-only view.
-        </p>
-      </div>
-      
-      <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
-        <div className="w-full md:w-64">
-          <Label htmlFor="site-select">Filter by Site</Label>
-          <select
-            id="site-select"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-            value={selectedSite}
-            onChange={(e) => setSelectedSite(e.target.value)}
-            disabled={loading}
-            aria-label="Select site to filter PI tags"
-          >
-            <option value="all">All Sites</option>
-            {sites.map((site) => (
-              <option key={site.id} value={site.id}>
-                {site.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        
-        <div aria-live="polite" className="text-sm text-gray-500 mt-2 md:mt-8">
-          {loading ? 'Loading tags...' : `${tags.length} tags found`}
-        </div>
-      </div>
-      
-      {loading ? (
-        <div className="flex justify-center items-center p-12" role="status" aria-live="polite">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-          <span className="sr-only">Loading PI tags...</span>
-        </div>
-      ) : (
-        <div className={isMobile ? "overflow-x-auto pb-4" : ""}>
-          <TagTableRO tags={tags} onTagTest={handleTagTest} />
+      <Card className="p-6 mb-6">
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="site-select">Filter by Site</Label>
+            <select
+              id="site-select"
+              value={selectedSite}
+              onChange={(e) => setSelectedSite(e.target.value)}
+              className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">All Sites</option>
+              {sites.map((site) => (
+                <option key={site.id} value={site.id}>{site.name}</option>
+              ))}
+            </select>
+          </div>
           
-          <div className="mt-4 text-sm text-gray-500">
-            <p>
-              <span className="font-medium">Note:</span> This is a preview of available PI tags. 
-              Click "Test tag" to verify if a tag is accessible.
-            </p>
+          <div className="text-sm text-gray-500">
+            <p>This is a read-only preview of available PI tags. You can test if a tag is currently available.</p>
           </div>
         </div>
-      )}
+      </Card>
+      
+      <TagTableRO 
+        tags={tags} 
+        loading={loading}
+        onTestTag={handleTestTag}
+        TestButton={TestTagButton} 
+      />
     </div>
   );
 };

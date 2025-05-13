@@ -1,220 +1,183 @@
 
-import React, { useState, useCallback } from 'react';
-import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import WizardStep from '@/components/data-load/WizardStep';
-import UploadDropZone from '@/components/data-load/UploadDropZone';
-import PreviewTable from '@/components/data-load/PreviewTable';
+import React, { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { readingService, importLogService } from '@/services/api';
+import { Card } from '@/components/ui/card';
+import { UploadDropZone } from '@/components/data-load/UploadDropZone';
+import { WizardStep } from '@/components/data-load/WizardStep';
+import { PreviewTable } from '@/components/data-load/PreviewTable';
 import { toast } from 'sonner';
+import { readingService, importLogService } from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAnnouncer } from '@/components/common/A11yAnnouncer';
 
 const CsvImport: React.FC = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const { announcer, announce } = useAnnouncer();
+  const params = new URLSearchParams(location.search);
+  const step = parseInt(params.get('step') || '1');
   
-  // Get current step from URL query param or default to 1
-  const currentStep = parseInt(searchParams.get('step') || '1');
+  const { user } = useAuth();
   
   const [csvData, setCsvData] = useState<any[]>([]);
-  const [filename, setFilename] = useState<string>('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fileName, setFileName] = useState('');
+  const [uploadedCount, setUploadedCount] = useState(0);
+  const [errorCount, setErrorCount] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   
-  // Handle file upload completion (step 1)
-  const handleFileUploaded = useCallback((data: any[], name: string) => {
+  const handleFileUpload = (data: any[], name: string) => {
     setCsvData(data);
-    setFilename(name);
+    setFileName(name);
     
-    // Announce for screen readers
-    announce(`File ${name} uploaded with ${data.length} rows`);
-    
-    // Auto-advance to next step (mapping)
-    setSearchParams({ step: '2' });
-  }, [setSearchParams, announce]);
+    // Move to next step
+    navigateToStep(2);
+  };
   
-  // Handle click on "Next" button (step 2 -> step 3) - IF-03
-  const handleNextStep = useCallback(() => {
-    // Update URL to show step 3
-    setSearchParams({ step: '3' });
-    
-    // Announce for screen readers
-    announce("Moved to step 3: Preview and confirmation");
-  }, [setSearchParams, announce]);
+  const navigateToStep = (stepNum: number) => {
+    navigate(`/data-load/csv-import?step=${stepNum}`);
+  };
   
-  // Handle import confirmation (step 3) - IF-02
-  const handleConfirmImport = useCallback(async () => {
-    if (!csvData.length || !user) return;
-    
+  const handlePreviewNextClick = () => {
+    navigateToStep(3);
+  };
+  
+  const handleBackClick = () => {
+    navigateToStep(step - 1);
+  };
+  
+  // Process the data and prepare readings
+  const prepareReadings = () => {
     try {
-      setIsSubmitting(true);
-      
-      // Convert CSV data to readings format
-      const readings = csvData.map(row => ({
+      return csvData.map(row => ({
         meter_id: row.meter_id,
         ts: new Date(row.date).toISOString(),
         value: parseFloat(row.value)
       }));
+    } catch (error) {
+      console.error('Error preparing readings:', error);
+      toast.error('Invalid data format in CSV');
+      return [];
+    }
+  };
+  
+  const handleConfirmImport = async () => {
+    if (csvData.length === 0) {
+      toast.error('No data to import');
+      return;
+    }
+    
+    setIsProcessing(true);
+    
+    try {
+      const readings = prepareReadings();
       
-      // Batch insert readings
-      const result = await readingService.bulkImport(readings);
+      // Use bulkSaveReadings instead of bulkImport
+      const result = await readingService.bulkSaveReadings(readings);
       
-      // Log the import
-      await importLogService.create({
-        user_email: user.email,
-        rows_ok: result.rowsOk,
-        rows_err: result.rowsErr,
-        file_name: filename
-      });
+      // Create import log
+      if (user) {
+        await importLogService.createImportLog({
+          user_email: user.email || 'unknown',
+          file_name: fileName,
+          rows_ok: result.inserted,
+          rows_err: result.errors
+        });
+      }
       
-      // Success message with counts
-      toast.success(`Import complete: ${result.rowsOk} rows, ${result.rowsErr} errors`);
-      announce(`Import complete: ${result.rowsOk} rows imported, ${result.rowsErr} errors`);
+      setUploadedCount(result.inserted);
+      setErrorCount(result.errors);
       
-      // Redirect to journal page
+      // Show toast with import results
+      toast.success(`Import complete: ${result.inserted} rows, ${result.errors} errors`);
+      
+      // Navigate to journal
       navigate('/data-quality/journal');
-      
     } catch (error) {
       console.error('Error importing data:', error);
-      toast.error('Import failed');
-      setIsSubmitting(false);
+      toast.error('Failed to import data');
+    } finally {
+      setIsProcessing(false);
     }
-  }, [csvData, user, filename, navigate, announce]);
-  
-  // Define steps for the wizard
-  const steps = [
-    { label: 'Upload', description: 'Upload CSV file' },
-    { label: 'Map Columns', description: 'Configure data mapping' },
-    { label: 'Preview & Confirm', description: 'Verify and complete import' }
-  ];
+  };
   
   return (
-    <div>
-      {announcer} {/* Screen reader announcements */}
+    <div className="container mx-auto py-8">
+      <h1 className="text-2xl font-bold mb-6">CSV Import</h1>
       
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-dark mb-2">CSV Import</h1>
-        <p className="text-gray-600">
-          Import meter readings from a CSV file.
-        </p>
-      </div>
-      
-      {/* Wizard steps */}
       <div className="mb-8">
-        <div className="flex flex-wrap gap-2">
-          {steps.map((step, index) => (
-            <WizardStep
-              key={index}
-              number={index + 1} // Use number instead of step
-              label={step.label}
-              description={step.description}
-              isActive={currentStep === index + 1}
-              isCompleted={currentStep > index + 1}
-            />
-          ))}
+        <div className="flex justify-between items-center">
+          <WizardStep 
+            steps={[
+              { label: 'Upload', id: 'upload', isActive: step === 1, isComplete: step > 1 },
+              { label: 'Validate', id: 'validate', isActive: step === 2, isComplete: step > 2 },
+              { label: 'Import', id: 'import', isActive: step === 3, isComplete: false }
+            ]}
+          />
         </div>
       </div>
       
-      {/* Step content */}
-      <div className="bg-white p-6 rounded-lg shadow-sm">
-        {currentStep === 1 && (
-          <>
-            <h2 className="text-lg font-semibold mb-4">Upload CSV File</h2>
-            <UploadDropZone onFileLoaded={handleFileUploaded} />
-          </>
-        )}
-        
-        {currentStep === 2 && (
-          <>
-            <h2 className="text-lg font-semibold mb-4">Map Columns</h2>
-            <p className="mb-4 text-gray-600">
-              Your file has been processed. Please confirm the mapping below.
+      <Card className="p-6">
+        {step === 1 && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold">Upload CSV File</h2>
+            <p className="text-gray-500">
+              Upload a CSV file containing meter readings. The file should have columns for meter_id, date, and value.
             </p>
             
-            {/* Simple mapping UI - in a real app this would be more interactive */}
-            <div className="mb-6 p-4 border rounded-md">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="font-medium">Source Column</p>
-                  <ul className="mt-2 space-y-1">
-                    <li>meter_id</li>
-                    <li>date</li>
-                    <li>value</li>
-                  </ul>
-                </div>
-                <div>
-                  <p className="font-medium">Maps To</p>
-                  <ul className="mt-2 space-y-1">
-                    <li>Meter ID</li>
-                    <li>Reading Date</li>
-                    <li>Reading Value</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
+            <UploadDropZone 
+              onFileProcessed={handleFileUpload} 
+              isUploading={isUploading}
+              setIsUploading={setIsUploading}
+            />
+          </div>
+        )}
+        
+        {step === 2 && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold">Validate Data</h2>
+            <p className="text-gray-500">
+              Review the data before importing. Make sure the meter IDs and values are correct.
+            </p>
             
-            {/* Navigation buttons */}
-            <div className="flex justify-between mt-6">
-              <Button
-                variant="outline"
-                onClick={() => setSearchParams({ step: '1' })}
-              >
+            <PreviewTable data={csvData} />
+            
+            <div className="flex justify-between pt-4 border-t border-gray-200">
+              <Button variant="outline" onClick={handleBackClick}>
                 Back
               </Button>
-              
-              <Button onClick={handleNextStep}>
+              <Button onClick={handlePreviewNextClick}>
                 Next
               </Button>
             </div>
-          </>
+          </div>
         )}
         
-        {currentStep === 3 && (
-          <>
-            <h2 className="text-lg font-semibold mb-4">Preview & Confirm</h2>
-            <p className="mb-4 text-gray-600">
-              Review the data before completing the import.
+        {step === 3 && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-semibold">Confirm Import</h2>
+            <p className="text-gray-500">
+              Click 'Import' to save {csvData.length} readings to the database.
             </p>
             
-            {/* Preview table - now with fixed headers */}
-            <div className="mb-6">
-              {csvData.length > 0 && (
-                <PreviewTable 
-                  data={csvData.slice(0, 10)} 
-                  headers={Object.keys(csvData[0] || {})} 
-                />
-              )}
-              {csvData.length > 10 && (
-                <p className="mt-2 text-sm text-gray-500">
-                  Showing 10 of {csvData.length} rows
-                </p>
-              )}
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
+              <h3 className="text-sm font-medium text-blue-800">File information:</h3>
+              <ul className="mt-2 text-sm text-blue-700">
+                <li>Filename: {fileName}</li>
+                <li>Total rows: {csvData.length}</li>
+              </ul>
             </div>
             
-            {/* Navigation buttons */}
-            <div className="flex justify-between mt-6">
-              <Button
-                variant="outline"
-                onClick={() => setSearchParams({ step: '2' })}
-                disabled={isSubmitting}
-              >
+            <div className="flex justify-between pt-4 border-t border-gray-200">
+              <Button variant="outline" onClick={handleBackClick} disabled={isProcessing}>
                 Back
               </Button>
-              
-              <Button 
-                onClick={handleConfirmImport}
-                disabled={isSubmitting || !csvData.length}
-                aria-busy={isSubmitting}
-              >
-                {isSubmitting ? 'Importing...' : 'Confirm Import'}
+              <Button onClick={handleConfirmImport} disabled={isProcessing}>
+                {isProcessing ? 'Importing...' : 'Import'}
               </Button>
             </div>
-          </>
+          </div>
         )}
-      </div>
+      </Card>
     </div>
   );
 };

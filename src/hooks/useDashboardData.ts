@@ -13,7 +13,7 @@ export const useDashboardData = (periodType: 'week' | 'month' = 'week', selected
     const fetchData = async () => {
       try {
         // Load sites
-        const sitesData = await siteService.getAll();
+        const sitesData = await siteService.getSites();
         setSites(sitesData);
         
         // Load KPI data
@@ -27,7 +27,7 @@ export const useDashboardData = (periodType: 'week' | 'month' = 'week', selected
           startDate.setDate(startDate.getDate() - 30);
         }
         
-        const kpiResult = await kpiService.getByDateRange(
+        const kpiResult = await kpiService.getAllSitesKpi(
           dateUtils.format(startDate),
           dateUtils.format(endDate)
         );

@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Role } from '@/types';
 import { Eye, EyeOff } from 'lucide-react';
-import { A11yAnnouncer, useAnnouncer } from '@/components/common/A11yAnnouncer';
+import { useAnnouncer } from '@/components/common/A11yAnnouncer';
 
 const Login = () => {
   // Login form state

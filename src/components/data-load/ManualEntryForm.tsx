@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -25,7 +26,7 @@ const ManualEntryForm: React.FC<ManualEntryFormProps> = ({ onSave }) => {
   useEffect(() => {
     const fetchSites = async () => {
       try {
-        const sitesData = await meterService.getSites();
+        const sitesData = await siteService.getSites();
         setSites(sitesData);
       } catch (error) {
         console.error('Error fetching sites:', error);
@@ -47,7 +48,7 @@ const ManualEntryForm: React.FC<ManualEntryFormProps> = ({ onSave }) => {
     const fetchMeters = async () => {
       try {
         setIsLoading(true);
-        const metersData = await meterService.getMetersBySite(selectedSite);
+        const metersData = await meterService.getSiteMeters(selectedSite);
         setMeters(metersData);
         setIsLoading(false);
       } catch (error) {
@@ -70,9 +71,12 @@ const ManualEntryForm: React.FC<ManualEntryFormProps> = ({ onSave }) => {
     const checkExistingReading = async () => {
       try {
         const formattedDate = readingDate.toISOString().split('T')[0];
-        const existingData = await readingService.getByMeterAndDate(
-          selectedMeter,
-          formattedDate
+        // For now, let's use getReadingsByDateRange as a workaround since getByMeterAndDate doesn't exist
+        const readings = await readingService.getMeterReadings(selectedMeter);
+        
+        // Filter readings by date manually
+        const existingData = readings.find(r => 
+          r.ts.split('T')[0] === formattedDate && r.meter_id === selectedMeter
         );
         
         setExistingReading(existingData);
@@ -107,7 +111,7 @@ const ManualEntryForm: React.FC<ManualEntryFormProps> = ({ onSave }) => {
       };
 
       // Insert or update reading
-      await readingService.save(readingData);
+      await readingService.saveReading(readingData);
       
       toast.success('Reading saved');
       onSave();
