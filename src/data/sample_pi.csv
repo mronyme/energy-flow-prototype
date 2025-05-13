@@ -1,102 +1,32 @@
 
 tag_id,tag_name,description,unit,server,status,last_value,last_timestamp
-PI001,SITE1.ELEC.MAIN.KWH,Main electricity meter - Paris Nord,kWh,PI-SERVER1,active,1245.678,2023-11-07T00:00:00Z
-PI002,SITE1.ELEC.BLDG1.KWH,Building 1 submeter - Paris Nord,kWh,PI-SERVER1,active,456.789,2023-11-07T00:00:00Z
-PI003,SITE1.ELEC.BLDG2.KWH,Building 2 submeter - Paris Nord,kWh,PI-SERVER1,active,389.123,2023-11-07T00:00:00Z
-PI004,SITE1.GAS.MAIN.M3,Main gas meter - Paris Nord,m3,PI-SERVER1,active,278.456,2023-11-07T00:00:00Z
-PI005,SITE1.WATER.MAIN.M3,Main water meter - Paris Nord,m3,PI-SERVER1,active,123.789,2023-11-07T00:00:00Z
-PI006,SITE2.ELEC.MAIN.KWH,Main electricity meter - Lyon East,kWh,PI-SERVER1,active,987.654,2023-11-07T00:00:00Z
-PI007,SITE2.ELEC.BLDG1.KWH,Building 1 submeter - Lyon East,kWh,PI-SERVER1,active,345.678,2023-11-07T00:00:00Z
-PI008,SITE2.ELEC.BLDG2.KWH,Building 2 submeter - Lyon East,kWh,PI-SERVER1,active,321.456,2023-11-07T00:00:00Z
-PI009,SITE2.GAS.MAIN.M3,Main gas meter - Lyon East,m3,PI-SERVER1,active,198.765,2023-11-07T00:00:00Z
-PI010,SITE2.WATER.MAIN.M3,Main water meter - Lyon East,m3,PI-SERVER1,active,87.654,2023-11-07T00:00:00Z
-PI011,SITE3.ELEC.MAIN.KWH,Main electricity meter - Marseille Port,kWh,PI-SERVER2,active,1456.789,2023-11-07T00:00:00Z
-PI012,SITE3.ELEC.BLDG1.KWH,Building 1 submeter - Marseille Port,kWh,PI-SERVER2,active,567.123,2023-11-07T00:00:00Z
-PI013,SITE3.ELEC.BLDG2.KWH,Building 2 submeter - Marseille Port,kWh,PI-SERVER2,active,498.765,2023-11-07T00:00:00Z
-PI014,SITE3.GAS.MAIN.M3,Main gas meter - Marseille Port,m3,PI-SERVER2,active,345.678,2023-11-07T00:00:00Z
-PI015,SITE3.WATER.MAIN.M3,Main water meter - Marseille Port,m3,PI-SERVER2,active,156.789,2023-11-07T00:00:00Z
-PI016,SITE1.ELEC.MAIN.KW,Main electricity power - Paris Nord,kW,PI-SERVER1,active,87.654,2023-11-07T00:00:00Z
-PI017,SITE1.ELEC.BLDG1.KW,Building 1 power - Paris Nord,kW,PI-SERVER1,active,34.567,2023-11-07T00:00:00Z
-PI018,SITE1.ELEC.BLDG2.KW,Building 2 power - Paris Nord,kW,PI-SERVER1,active,28.901,2023-11-07T00:00:00Z
-PI019,SITE1.GAS.MAIN.FLOW,Main gas flow - Paris Nord,m3/h,PI-SERVER1,active,12.345,2023-11-07T00:00:00Z
-PI020,SITE1.WATER.MAIN.FLOW,Main water flow - Paris Nord,m3/h,PI-SERVER1,active,5.678,2023-11-07T00:00:00Z
-PI021,SITE2.ELEC.MAIN.KW,Main electricity power - Lyon East,kW,PI-SERVER1,active,76.543,2023-11-07T00:00:00Z
-PI022,SITE2.ELEC.BLDG1.KW,Building 1 power - Lyon East,kW,PI-SERVER1,active,28.456,2023-11-07T00:00:00Z
-PI023,SITE2.ELEC.BLDG2.KW,Building 2 power - Lyon East,kW,PI-SERVER1,active,25.789,2023-11-07T00:00:00Z
-PI024,SITE2.GAS.MAIN.FLOW,Main gas flow - Lyon East,m3/h,PI-SERVER1,active,9.876,2023-11-07T00:00:00Z
-PI025,SITE2.WATER.MAIN.FLOW,Main water flow - Lyon East,m3/h,PI-SERVER1,active,4.321,2023-11-07T00:00:00Z
-PI026,SITE3.ELEC.MAIN.KW,Main electricity power - Marseille Port,kW,PI-SERVER2,active,98.765,2023-11-07T00:00:00Z
-PI027,SITE3.ELEC.BLDG1.KW,Building 1 power - Marseille Port,kW,PI-SERVER2,active,42.123,2023-11-07T00:00:00Z
-PI028,SITE3.ELEC.BLDG2.KW,Building 2 power - Marseille Port,kW,PI-SERVER2,active,38.456,2023-11-07T00:00:00Z
-PI029,SITE3.GAS.MAIN.FLOW,Main gas flow - Marseille Port,m3/h,PI-SERVER2,active,16.789,2023-11-07T00:00:00Z
-PI030,SITE3.WATER.MAIN.FLOW,Main water flow - Marseille Port,m3/h,PI-SERVER2,active,7.123,2023-11-07T00:00:00Z
-PI031,SITE1.ELEC.MAIN.TEMP,Main electricity room temp - Paris Nord,°C,PI-SERVER1,active,24.5,2023-11-07T00:00:00Z
-PI032,SITE1.ELEC.BLDG1.TEMP,Building 1 substation temp - Paris Nord,°C,PI-SERVER1,active,23.7,2023-11-07T00:00:00Z
-PI033,SITE1.ELEC.BLDG2.TEMP,Building 2 substation temp - Paris Nord,°C,PI-SERVER1,active,22.9,2023-11-07T00:00:00Z
-PI034,SITE1.GAS.MAIN.TEMP,Main gas room temp - Paris Nord,°C,PI-SERVER1,active,18.4,2023-11-07T00:00:00Z
-PI035,SITE1.WATER.MAIN.TEMP,Main water supply temp - Paris Nord,°C,PI-SERVER1,active,15.6,2023-11-07T00:00:00Z
-PI036,SITE2.ELEC.MAIN.TEMP,Main electricity room temp - Lyon East,°C,PI-SERVER1,active,25.1,2023-11-07T00:00:00Z
-PI037,SITE2.ELEC.BLDG1.TEMP,Building 1 substation temp - Lyon East,°C,PI-SERVER1,active,24.3,2023-11-07T00:00:00Z
-PI038,SITE2.ELEC.BLDG2.TEMP,Building 2 substation temp - Lyon East,°C,PI-SERVER1,active,23.5,2023-11-07T00:00:00Z
-PI039,SITE2.GAS.MAIN.TEMP,Main gas room temp - Lyon East,°C,PI-SERVER1,active,17.8,2023-11-07T00:00:00Z
-PI040,SITE2.WATER.MAIN.TEMP,Main water supply temp - Lyon East,°C,PI-SERVER1,active,14.9,2023-11-07T00:00:00Z
-PI041,SITE3.ELEC.MAIN.TEMP,Main electricity room temp - Marseille Port,°C,PI-SERVER2,active,26.7,2023-11-07T00:00:00Z
-PI042,SITE3.ELEC.BLDG1.TEMP,Building 1 substation temp - Marseille Port,°C,PI-SERVER2,active,25.9,2023-11-07T00:00:00Z
-PI043,SITE3.ELEC.BLDG2.TEMP,Building 2 substation temp - Marseille Port,°C,PI-SERVER2,active,25.1,2023-11-07T00:00:00Z
-PI044,SITE3.GAS.MAIN.TEMP,Main gas room temp - Marseille Port,°C,PI-SERVER2,active,19.2,2023-11-07T00:00:00Z
-PI045,SITE3.WATER.MAIN.TEMP,Main water supply temp - Marseille Port,°C,PI-SERVER2,active,16.5,2023-11-07T00:00:00Z
-PI046,SITE1.ELEC.MAIN.FREQ,Main electricity frequency - Paris Nord,Hz,PI-SERVER1,active,50.02,2023-11-07T00:00:00Z
-PI047,SITE1.ELEC.MAIN.VOLT,Main electricity voltage - Paris Nord,V,PI-SERVER1,active,230.5,2023-11-07T00:00:00Z
-PI048,SITE1.ELEC.MAIN.PF,Main electricity power factor - Paris Nord,cosφ,PI-SERVER1,active,0.95,2023-11-07T00:00:00Z
-PI049,SITE1.ELEC.BLDG1.VOLT,Building 1 voltage - Paris Nord,V,PI-SERVER1,active,229.8,2023-11-07T00:00:00Z
-PI050,SITE1.ELEC.BLDG1.PF,Building 1 power factor - Paris Nord,cosφ,PI-SERVER1,active,0.93,2023-11-07T00:00:00Z
-PI051,SITE1.ELEC.BLDG2.VOLT,Building 2 voltage - Paris Nord,V,PI-SERVER1,active,230.1,2023-11-07T00:00:00Z
-PI052,SITE1.ELEC.BLDG2.PF,Building 2 power factor - Paris Nord,cosφ,PI-SERVER1,active,0.94,2023-11-07T00:00:00Z
-PI053,SITE1.GAS.MAIN.PRESS,Main gas pressure - Paris Nord,bar,PI-SERVER1,active,2.5,2023-11-07T00:00:00Z
-PI054,SITE1.WATER.MAIN.PRESS,Main water pressure - Paris Nord,bar,PI-SERVER1,active,4.8,2023-11-07T00:00:00Z
-PI055,SITE2.ELEC.MAIN.FREQ,Main electricity frequency - Lyon East,Hz,PI-SERVER1,active,50.01,2023-11-07T00:00:00Z
-PI056,SITE2.ELEC.MAIN.VOLT,Main electricity voltage - Lyon East,V,PI-SERVER1,active,231.2,2023-11-07T00:00:00Z
-PI057,SITE2.ELEC.MAIN.PF,Main electricity power factor - Lyon East,cosφ,PI-SERVER1,active,0.94,2023-11-07T00:00:00Z
-PI058,SITE2.ELEC.BLDG1.VOLT,Building 1 voltage - Lyon East,V,PI-SERVER1,active,230.7,2023-11-07T00:00:00Z
-PI059,SITE2.ELEC.BLDG1.PF,Building 1 power factor - Lyon East,cosφ,PI-SERVER1,active,0.92,2023-11-07T00:00:00Z
-PI060,SITE2.ELEC.BLDG2.VOLT,Building 2 voltage - Lyon East,V,PI-SERVER1,active,230.9,2023-11-07T00:00:00Z
-PI061,SITE2.ELEC.BLDG2.PF,Building 2 power factor - Lyon East,cosφ,PI-SERVER1,active,0.93,2023-11-07T00:00:00Z
-PI062,SITE2.GAS.MAIN.PRESS,Main gas pressure - Lyon East,bar,PI-SERVER1,active,2.4,2023-11-07T00:00:00Z
-PI063,SITE2.WATER.MAIN.PRESS,Main water pressure - Lyon East,bar,PI-SERVER1,active,4.6,2023-11-07T00:00:00Z
-PI064,SITE3.ELEC.MAIN.FREQ,Main electricity frequency - Marseille Port,Hz,PI-SERVER2,active,50.03,2023-11-07T00:00:00Z
-PI065,SITE3.ELEC.MAIN.VOLT,Main electricity voltage - Marseille Port,V,PI-SERVER2,active,229.6,2023-11-07T00:00:00Z
-PI066,SITE3.ELEC.MAIN.PF,Main electricity power factor - Marseille Port,cosφ,PI-SERVER2,active,0.96,2023-11-07T00:00:00Z
-PI067,SITE3.ELEC.BLDG1.VOLT,Building 1 voltage - Marseille Port,V,PI-SERVER2,active,229.3,2023-11-07T00:00:00Z
-PI068,SITE3.ELEC.BLDG1.PF,Building 1 power factor - Marseille Port,cosφ,PI-SERVER2,active,0.94,2023-11-07T00:00:00Z
-PI069,SITE3.ELEC.BLDG2.VOLT,Building 2 voltage - Marseille Port,V,PI-SERVER2,active,229.7,2023-11-07T00:00:00Z
-PI070,SITE3.ELEC.BLDG2.PF,Building 2 power factor - Marseille Port,cosφ,PI-SERVER2,active,0.95,2023-11-07T00:00:00Z
-PI071,SITE3.GAS.MAIN.PRESS,Main gas pressure - Marseille Port,bar,PI-SERVER2,active,2.6,2023-11-07T00:00:00Z
-PI072,SITE3.WATER.MAIN.PRESS,Main water pressure - Marseille Port,bar,PI-SERVER2,active,5.0,2023-11-07T00:00:00Z
-PI073,SITE1.ELEC.MAIN.CURRENT,Main electricity current - Paris Nord,A,PI-SERVER1,active,380.5,2023-11-07T00:00:00Z
-PI074,SITE1.ELEC.BLDG1.CURRENT,Building 1 current - Paris Nord,A,PI-SERVER1,active,150.2,2023-11-07T00:00:00Z
-PI075,SITE1.ELEC.BLDG2.CURRENT,Building 2 current - Paris Nord,A,PI-SERVER1,active,125.7,2023-11-07T00:00:00Z
-PI076,SITE2.ELEC.MAIN.CURRENT,Main electricity current - Lyon East,A,PI-SERVER1,active,330.8,2023-11-07T00:00:00Z
-PI077,SITE2.ELEC.BLDG1.CURRENT,Building 1 current - Lyon East,A,PI-SERVER1,active,123.4,2023-11-07T00:00:00Z
-PI078,SITE2.ELEC.BLDG2.CURRENT,Building 2 current - Lyon East,A,PI-SERVER1,active,111.8,2023-11-07T00:00:00Z
-PI079,SITE3.ELEC.MAIN.CURRENT,Main electricity current - Marseille Port,A,PI-SERVER2,active,430.2,2023-11-07T00:00:00Z
-PI080,SITE3.ELEC.BLDG1.CURRENT,Building 1 current - Marseille Port,A,PI-SERVER2,active,183.5,2023-11-07T00:00:00Z
-PI081,SITE3.ELEC.BLDG2.CURRENT,Building 2 current - Marseille Port,A,PI-SERVER2,active,165.9,2023-11-07T00:00:00Z
-PI082,SITE1.ELEC.MAIN.THD,Main electricity THD - Paris Nord,%,PI-SERVER1,active,3.5,2023-11-07T00:00:00Z
-PI083,SITE1.ELEC.BLDG1.THD,Building 1 THD - Paris Nord,%,PI-SERVER1,active,2.8,2023-11-07T00:00:00Z
-PI084,SITE1.ELEC.BLDG2.THD,Building 2 THD - Paris Nord,%,PI-SERVER1,active,3.1,2023-11-07T00:00:00Z
-PI085,SITE2.ELEC.MAIN.THD,Main electricity THD - Lyon East,%,PI-SERVER1,active,3.2,2023-11-07T00:00:00Z
-PI086,SITE2.ELEC.BLDG1.THD,Building 1 THD - Lyon East,%,PI-SERVER1,active,2.6,2023-11-07T00:00:00Z
-PI087,SITE2.ELEC.BLDG2.THD,Building 2 THD - Lyon East,%,PI-SERVER1,active,2.9,2023-11-07T00:00:00Z
-PI088,SITE3.ELEC.MAIN.THD,Main electricity THD - Marseille Port,%,PI-SERVER2,active,3.7,2023-11-07T00:00:00Z
-PI089,SITE3.ELEC.BLDG1.THD,Building 1 THD - Marseille Port,%,PI-SERVER2,active,3.0,2023-11-07T00:00:00Z
-PI090,SITE3.ELEC.BLDG2.THD,Building 2 THD - Marseille Port,%,PI-SERVER2,active,3.3,2023-11-07T00:00:00Z
-PI091,SITE1.AMBIENT.TEMP,Ambient temperature - Paris Nord,°C,PI-SERVER1,active,21.4,2023-11-07T00:00:00Z
-PI092,SITE1.AMBIENT.HUMIDITY,Ambient humidity - Paris Nord,%,PI-SERVER1,active,45.6,2023-11-07T00:00:00Z
-PI093,SITE2.AMBIENT.TEMP,Ambient temperature - Lyon East,°C,PI-SERVER1,active,22.1,2023-11-07T00:00:00Z
-PI094,SITE2.AMBIENT.HUMIDITY,Ambient humidity - Lyon East,%,PI-SERVER1,active,42.3,2023-11-07T00:00:00Z
-PI095,SITE3.AMBIENT.TEMP,Ambient temperature - Marseille Port,°C,PI-SERVER2,active,23.7,2023-11-07T00:00:00Z
-PI096,SITE3.AMBIENT.HUMIDITY,Ambient humidity - Marseille Port,%,PI-SERVER2,active,48.9,2023-11-07T00:00:00Z
-PI097,SITE1.ELEC.MAIN.DEMAND,Main electricity demand - Paris Nord,kW,PI-SERVER1,inactive,85.6,2023-10-15T00:00:00Z
-PI098,SITE2.ELEC.MAIN.DEMAND,Main electricity demand - Lyon East,kW,PI-SERVER1,inactive,74.3,2023-10-15T00:00:00Z
-PI099,SITE3.ELEC.MAIN.DEMAND,Main electricity demand - Marseille Port,kW,PI-SERVER2,inactive,96.8,2023-10-15T00:00:00Z
-PI100,SITE1.BACKUP.STATUS,Backup generator status - Paris Nord,status,PI-SERVER1,active,0,2023-11-07T00:00:00Z
+PI:TAG001,Plant1_PowerMeter1,Main Power Meter,kW,PISERVER01,active,1458.32,2025-01-15T12:30:00Z
+PI:TAG002,Plant1_GasMeter1,Main Gas Meter,m³/h,PISERVER01,active,124.5,2025-01-15T12:30:00Z
+PI:TAG003,Plant1_WaterMeter1,Main Water Meter,m³/h,PISERVER01,active,45.8,2025-01-15T12:30:00Z
+PI:TAG004,Plant2_PowerMeter1,Main Power Meter,kW,PISERVER01,active,2105.7,2025-01-15T12:30:00Z
+PI:TAG005,Plant2_GasMeter1,Main Gas Meter,m³/h,PISERVER01,active,187.3,2025-01-15T12:30:00Z
+PI:TAG006,Plant2_WaterMeter1,Main Water Meter,m³/h,PISERVER01,active,62.1,2025-01-15T12:30:00Z
+PI:TAG007,Plant3_PowerMeter1,Main Power Meter,kW,PISERVER01,active,1876.4,2025-01-15T12:30:00Z
+PI:TAG008,Plant3_GasMeter1,Main Gas Meter,m³/h,PISERVER01,active,143.2,2025-01-15T12:30:00Z
+PI:TAG009,Plant3_WaterMeter1,Main Water Meter,m³/h,PISERVER01,active,58.9,2025-01-15T12:30:00Z
+PI:TAG010,Plant1_PowerMeter2,Secondary Power Meter,kW,PISERVER01,active,475.6,2025-01-15T12:30:00Z
+PI:TAG011,Plant1_GasMeter2,Secondary Gas Meter,m³/h,PISERVER01,inactive,0,2025-01-15T12:30:00Z
+PI:TAG012,Plant1_WaterMeter2,Secondary Water Meter,m³/h,PISERVER01,active,12.3,2025-01-15T12:30:00Z
+PI:TAG013,Plant2_PowerMeter2,Secondary Power Meter,kW,PISERVER01,active,685.2,2025-01-15T12:30:00Z
+PI:TAG014,Plant2_GasMeter2,Secondary Gas Meter,m³/h,PISERVER01,active,56.8,2025-01-15T12:30:00Z
+PI:TAG015,Plant2_WaterMeter2,Secondary Water Meter,m³/h,PISERVER01,inactive,0,2025-01-15T12:30:00Z
+PI:TAG016,Plant3_PowerMeter2,Secondary Power Meter,kW,PISERVER01,active,543.7,2025-01-15T12:30:00Z
+PI:TAG017,Plant3_GasMeter2,Secondary Gas Meter,m³/h,PISERVER01,active,48.9,2025-01-15T12:30:00Z
+PI:TAG018,Plant3_WaterMeter2,Secondary Water Meter,m³/h,PISERVER01,inactive,0,2025-01-15T12:30:00Z
+PI:TAG019,Plant1_CompressedAir1,Main Compressed Air,m³/h,PISERVER01,active,326.4,2025-01-15T12:30:00Z
+PI:TAG020,Plant2_CompressedAir1,Main Compressed Air,m³/h,PISERVER01,active,412.7,2025-01-15T12:30:00Z
+PI:TAG021,Plant3_CompressedAir1,Main Compressed Air,m³/h,PISERVER01,active,378.5,2025-01-15T12:30:00Z
+PI:TAG022,Plant1_Temp_Ambient,Ambient Temperature,°C,PISERVER01,active,22.5,2025-01-15T12:30:00Z
+PI:TAG023,Plant2_Temp_Ambient,Ambient Temperature,°C,PISERVER01,active,23.1,2025-01-15T12:30:00Z
+PI:TAG024,Plant3_Temp_Ambient,Ambient Temperature,°C,PISERVER01,active,21.8,2025-01-15T12:30:00Z
+PI:TAG025,Plant1_Temp_Process1,Process Temperature 1,°C,PISERVER01,active,85.6,2025-01-15T12:30:00Z
+PI:TAG026,Plant1_Temp_Process2,Process Temperature 2,°C,PISERVER01,active,92.3,2025-01-15T12:30:00Z
+PI:TAG027,Plant1_Temp_Process3,Process Temperature 3,°C,PISERVER01,active,78.9,2025-01-15T12:30:00Z
+PI:TAG028,Plant2_Temp_Process1,Process Temperature 1,°C,PISERVER01,active,84.2,2025-01-15T12:30:00Z
+PI:TAG029,Plant2_Temp_Process2,Process Temperature 2,°C,PISERVER01,active,90.7,2025-01-15T12:30:00Z
+PI:TAG030,Plant2_Temp_Process3,Process Temperature 3,°C,PISERVER01,active,77.5,2025-01-15T12:30:00Z

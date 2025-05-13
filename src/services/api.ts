@@ -1,10 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Site, Meter, Reading, KpiDaily, ImportLog, Anomaly, PiTag } from "../types";
-
-// Mock data for PI tags (since we don't have a real PI connection)
-import piSampleData from "../data/sample_pi.csv";
+import { Site, Meter, Reading, KpiDaily, ImportLog, Anomaly, PiTag, User, Role } from "../types";
 
 // Site service
 export const siteService = {
@@ -100,43 +97,85 @@ export const readingService = {
     }
   },
   
-  save: async (reading: Partial<Reading>): Promise<Reading | null> => {
+  getAll: async (): Promise<Reading[]> => {
     try {
-      // Check if reading exists for this meter and date
-      if (reading.id) {
-        // Update existing reading
-        const { data, error } = await supabase
-          .from('reading')
-          .update({
-            value: reading.value
-          })
-          .eq('id', reading.id)
-          .select();
-        
-        if (error) throw error;
-        return data && data.length > 0 ? data[0] as Reading : null;
-      } else {
-        // Create new reading
-        const { data, error } = await supabase
-          .from('reading')
-          .insert({
-            meter_id: reading.meter_id,
-            ts: reading.ts,
-            value: reading.value
-          })
-          .select();
-        
-        if (error) throw error;
-        return data && data.length > 0 ? data[0] as Reading : null;
-      }
+      const { data, error } = await supabase
+        .from('reading')
+        .select('*');
+      
+      if (error) throw error;
+      return data as Reading[];
     } catch (error) {
-      console.error('Error saving reading:', error);
+      console.error('Error fetching readings:', error);
+      return [];
+    }
+  },
+  
+  getById: async (id: string): Promise<Reading | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('reading')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error) throw error;
+      return data as Reading;
+    } catch (error) {
+      console.error('Error fetching reading by ID:', error);
+      return null;
+    }
+  },
+  
+  create: async (reading: Partial<Reading>): Promise<Reading | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('reading')
+        .insert({
+          meter_id: reading.meter_id,
+          ts: reading.ts,
+          value: reading.value
+        })
+        .select();
+      
+      if (error) throw error;
+      return data && data.length > 0 ? data[0] as Reading : null;
+    } catch (error) {
+      console.error('Error creating reading:', error);
       toast.error('Failed to save reading');
       return null;
     }
   },
   
-  bulkImport: async (readings: Partial<Reading>[]): Promise<{rowsOk: number, rowsErr: number}> => {
+  update: async (reading: Partial<Reading>): Promise<Reading | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('reading')
+        .update({
+          value: reading.value
+        })
+        .eq('id', reading.id)
+        .select();
+      
+      if (error) throw error;
+      return data && data.length > 0 ? data[0] as Reading : null;
+    } catch (error) {
+      console.error('Error updating reading:', error);
+      toast.error('Failed to save reading');
+      return null;
+    }
+  },
+  
+  save: async (reading: Partial<Reading>): Promise<Reading | null> => {
+    // Add backwards compatibility for old code
+    if (reading.id) {
+      return readingService.update(reading);
+    } else {
+      return readingService.create(reading);
+    }
+  },
+  
+  bulkCreate: async (readings: Partial<Reading>[]): Promise<{rowsOk: number, rowsErr: number}> => {
     try {
       const { data, error } = await supabase
         .from('reading')
@@ -153,12 +192,17 @@ export const readingService = {
         rowsErr: 0
       };
     } catch (error) {
-      console.error('Error bulk importing readings:', error);
+      console.error('Error bulk creating readings:', error);
       return {
         rowsOk: 0,
         rowsErr: readings.length
       };
     }
+  },
+  
+  // Alias for bulkCreate for backwards compatibility
+  bulkImport: async (readings: Partial<Reading>[]): Promise<{rowsOk: number, rowsErr: number}> => {
+    return readingService.bulkCreate(readings);
   }
 };
 
@@ -223,12 +267,13 @@ export const importLogService = {
   
   create: async (importLog: Partial<ImportLog>): Promise<ImportLog | null> => {
     try {
-      const { user } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const userEmail = session?.user?.email || importLog.user_email || 'unknown';
       
       const { data, error } = await supabase
         .from('import_log')
         .insert({
-          user_email: importLog.user_email || user?.email || 'unknown',
+          user_email: userEmail,
           rows_ok: importLog.rows_ok || 0,
           rows_err: importLog.rows_err || 0,
           file_name: importLog.file_name || 'unknown'
@@ -260,6 +305,41 @@ export const anomalyService = {
     }
   },
   
+  getByReadingId: async (readingId: string): Promise<Anomaly | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('anomaly')
+        .select('*')
+        .eq('reading_id', readingId)
+        .single();
+      
+      if (error) throw error;
+      return data as Anomaly;
+    } catch (error) {
+      console.error('Error fetching anomaly by reading ID:', error);
+      return null;
+    }
+  },
+  
+  update: async (anomaly: Partial<Anomaly>): Promise<Anomaly | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('anomaly')
+        .update({ 
+          comment: anomaly.comment,
+          delta: anomaly.delta
+        })
+        .eq('id', anomaly.id)
+        .select();
+      
+      if (error) throw error;
+      return data && data.length > 0 ? data[0] as Anomaly : null;
+    } catch (error) {
+      console.error('Error updating anomaly:', error);
+      return null;
+    }
+  },
+  
   updateComment: async (id: string, comment: string): Promise<Anomaly | null> => {
     try {
       const { data, error } = await supabase
@@ -274,22 +354,116 @@ export const anomalyService = {
       console.error('Error updating anomaly comment:', error);
       return null;
     }
+  },
+  
+  getAnomalyDetails: async (): Promise<any[]> => {
+    try {
+      // This is a more complex query that joins anomaly with reading, meter, and site
+      const { data, error } = await supabase
+        .from('anomaly')
+        .select(`
+          id,
+          reading_id,
+          type,
+          delta,
+          comment,
+          reading:reading_id (
+            id,
+            meter_id,
+            ts,
+            value
+          ),
+          meter:reading(meter:meter_id (
+            id,
+            type,
+            site:site_id (
+              id,
+              name
+            )
+          ))
+        `);
+      
+      if (error) throw error;
+      
+      // Transform data to match expected format
+      const transformedData = data.map(anomaly => {
+        const reading = anomaly.reading;
+        const meter = anomaly.meter?.meter;
+        const site = meter?.site;
+        
+        return {
+          id: anomaly.id,
+          readingId: reading?.id || '',
+          meterId: meter?.id || '',
+          siteId: site?.id || '',
+          siteName: site?.name || '',
+          meterType: meter?.type || '',
+          timestamp: reading?.ts || '',
+          value: reading?.value || 0,
+          type: anomaly.type || '',
+          delta: anomaly.delta,
+          comment: anomaly.comment
+        };
+      });
+      
+      return transformedData;
+    } catch (error) {
+      console.error('Error fetching anomaly details:', error);
+      return [];
+    }
   }
 };
 
-// Mock PI Service (since we can't connect to a real PI system)
-export const piService = {
-  getTags: async (): Promise<PiTag[]> => {
-    // This is just returning the sample data
-    // In a real app, this would connect to the PI API
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(piSampleData as unknown as PiTag[]);
-      }, 500);
-    });
+// User service
+export const userService = {
+  createUser: async (email: string, role: Role): Promise<{ id: string }> => {
+    try {
+      // In a real app, this would connect to Supabase Auth
+      // For the prototype, we'll simulate user creation
+      const id = `user-${Math.random().toString(36).substring(2, 11)}`;
+      
+      toast.success(`User ${email} would be created with role ${role}`);
+      return { id };
+    } catch (error) {
+      console.error('Error creating user:', error);
+      toast.error('Failed to create user');
+      throw new Error('Failed to create user');
+    }
+  }
+};
+
+// Emission factor service
+export const factorService = {
+  getEmissionFactors: async () => {
+    // For the prototype, we'll return mock emission factors
+    return [
+      { id: '1', name: 'Electricity France', value: 0.052, unit: 'kgCO2/kWh' },
+      { id: '2', name: 'Natural Gas', value: 0.184, unit: 'kgCO2/kWh' },
+      { id: '3', name: 'Water Processing', value: 0.344, unit: 'kgCO2/m³' }
+    ];
   },
   
-  testTagConnection: async (tagId: string): Promise<boolean> => {
+  updateFactor: async (id: string, value: number) => {
+    // For the prototype, we'll simulate updating a factor
+    toast.success(`Emission factor ${id} updated to ${value}`);
+    return { id, value };
+  }
+};
+
+// PI Service 
+export const piService = {
+  getTags: async (): Promise<PiTag[]> => {
+    // Return mock data since we can't connect to a real PI system
+    // This simulates loading from a CSV file
+    return [
+      { id: '1', name: 'PI:TAG001', description: 'Power Meter', unit: 'kW', status: 'active' },
+      { id: '2', name: 'PI:TAG002', description: 'Gas Flow Rate', unit: 'm³/h', status: 'active' },
+      { id: '3', name: 'PI:TAG003', description: 'Water Flow Rate', unit: 'm³/h', status: 'active' },
+      // More tags would be loaded from the actual CSV in a real app
+    ] as PiTag[];
+  },
+  
+  testTag: async (tagName: string): Promise<boolean> => {
     // Simulate a tag connection test with a 80% success rate
     return new Promise((resolve) => {
       setTimeout(() => {
@@ -298,4 +472,9 @@ export const piService = {
       }, 800);
     });
   }
+};
+
+// Alias piService.testTag as piTagService.testTag for backwards compatibility
+export const piTagService = {
+  testTag: piService.testTag
 };

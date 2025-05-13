@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { piTagService } from '../../services/api';
+import { piService } from '../../services/api';
 
 interface TestTagButtonProps {
   tagName: string;
@@ -14,7 +14,7 @@ const TestTagButton: React.FC<TestTagButtonProps> = ({ tagName }) => {
     setStatus('loading');
     
     try {
-      const result = await piTagService.testTag(tagName);
+      const result = await piService.testTag(tagName);
       setStatus(result ? 'success' : 'error');
     } catch (error) {
       setStatus('error');

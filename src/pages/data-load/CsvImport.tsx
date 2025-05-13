@@ -170,7 +170,7 @@ const CsvImport = () => {
       }));
       
       // Perform the bulk create
-      const result = await readingService.bulkCreate(readingsToImport);
+      const result = await readingService.bulkImport(readingsToImport);
       
       // Create import log
       await importLogService.create({

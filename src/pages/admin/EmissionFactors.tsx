@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { factorService } from '../../services/api';
 import DataGridEditable from '../../components/admin/DataGridEditable';
 import { toast } from 'sonner';
+import { factorService } from '../../services/api';
 
 interface EmissionFactor {
   id: string;

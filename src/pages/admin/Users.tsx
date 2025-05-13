@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { userService } from '../../services/api';
-import { Role } from '../../types';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import UserList from '../../components/admin/UserList';
 import UserForm from '../../components/admin/UserForm';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { Role } from '../../types';
+import { userService } from '../../services/api';
 
 interface User {
   id: string;

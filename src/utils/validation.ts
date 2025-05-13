@@ -32,6 +32,28 @@ export const dateUtils = {
       day: 'numeric',
       year: 'numeric'
     });
+  },
+  
+  // Format display (MM/DD/YYYY)
+  formatDisplay: (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: '2-digit',
+      day: '2-digit',
+      year: 'numeric'
+    });
+  },
+  
+  // Format date and time (MM/DD/YYYY, HH:MM)
+  formatDateTime: (dateTimeString: string): string => {
+    const date = new Date(dateTimeString);
+    return date.toLocaleDateString('en-US', {
+      month: '2-digit',
+      day: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
 };
 
@@ -75,4 +97,15 @@ export const toastMessages = {
   importComplete: (rowsOk: number, rowsErr: number): string => {
     return `Import complete: ${rowsOk} rows, ${rowsErr} errors`;
   }
+};
+
+// CSV validation function
+export const validateCsvRow = (
+  row: Record<string, string>,
+  requiredFields: string[]
+): boolean => {
+  // Check if all required fields exist and are not empty
+  return requiredFields.every(field => {
+    return field in row && row[field]?.trim() !== '';
+  });
 };
