@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { 
   BarChartIcon, LineChartIcon, PieChartIcon, Download, Calendar, AlertTriangle,
-  Turbine, Heat, Gauge, Fuel, Zap, TrendingUp, TrendingDown
+  Wind, Flame, Gauge, Fuel, Zap, TrendingUp, TrendingDown
 } from 'lucide-react';
 import { useDashboardData } from '@/hooks/useDashboardData';
 import ExportPanel from '@/components/dashboard/ExportPanel';

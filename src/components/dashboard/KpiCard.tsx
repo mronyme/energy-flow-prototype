@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowDownIcon, ArrowUpIcon, Turbine, Heat, Gauge, Fuel, Zap } from 'lucide-react';
+import { ArrowDownIcon, ArrowUpIcon, Wind, Flame, Gauge, Fuel, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface KpiCardProps {
@@ -65,7 +65,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
             {isPositive ? (
               <ArrowUpIcon className={cn("h-4 w-4 mr-1", isGood ? "text-green-600" : "text-red-600")} />
             ) : (
-              <ArrowDownIcon className={cn("h-4 w-4 mr-1", isGood ? "text-red-600" : "text-green-600")} />
+              <ArrowDownIcon className={cn("h-4 w-4 mr-1", isGood ? "text-green-600" : "text-red-600")} />
             )}
             <span 
               className={cn(

@@ -46,9 +46,12 @@ const ExportPanel: React.FC<ExportPanelProps> = ({
       const csvData = data.map(item => ({
         Date: dateUtils.formatDisplay(item.day),
         Site: siteName,
-        'Energy (kWh)': item.kwh.toFixed(2),
+        'Consommation (MWh)': item.fuel_consumption_mwh.toFixed(2),
+        'Production Électricité (MWh)': item.electricity_production_mwh.toFixed(2),
+        'Production Chaleur (MWh)': item.heat_production_mwh.toFixed(2),
+        'Rendement (%)': item.efficiency_percent.toFixed(2),
         'CO2 (kg)': item.co2.toFixed(2),
-        'Cost (EUR)': item.cost_eur.toFixed(2)
+        'Coût (EUR)': item.cost_eur.toFixed(2)
       }));
       
       // Generate a filename with the date range

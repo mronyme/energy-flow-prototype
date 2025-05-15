@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Site, Meter, MeterType, Reading, KpiDaily, ImportLog, Anomaly, AnomalyType, User, Role } from '@/types';
 
@@ -329,6 +330,24 @@ const meterService = {
 };
 
 const kpiService = {
+  // Fonction d'aide pour convertir les données de l'ancienne structure à la nouvelle
+  _convertKpiData: (data: any): KpiDaily => {
+    return {
+      id: data.id,
+      site_id: data.site_id,
+      day: data.day,
+      // Map kwh to fuel_consumption_mwh for backwards compatibility
+      fuel_consumption_mwh: data.fuel_consumption_mwh ?? data.kwh ?? 0,
+      co2: data.co2 ?? 0,
+      cost_eur: data.cost_eur ?? 0,
+      // Ajouter les nouvelles propriétés avec des valeurs par défaut si elles n'existent pas
+      electricity_production_mwh: data.electricity_production_mwh ?? (data.kwh ? data.kwh * 0.6 : 0), // 60% de rendement par défaut
+      heat_production_mwh: data.heat_production_mwh ?? (data.kwh ? data.kwh * 0.2 : 0), // 20% de chaleur par défaut
+      efficiency_percent: data.efficiency_percent ?? 80, // 80% de rendement par défaut
+      availability_percent: data.availability_percent ?? 95, // 95% de disponibilité par défaut
+    };
+  },
+  
   async getKpiDaily(): Promise<KpiDaily[]> {
     try {
       let { data, error } = await supabase
@@ -338,7 +357,7 @@ const kpiService = {
         .limit(100);
 
       if (error) throw error;
-      return data as KpiDaily[];
+      return data ? data.map(this._convertKpiData) : [];
     } catch (error) {
       console.error('Error getting KPI daily data:', error);
       return [];
@@ -355,7 +374,7 @@ const kpiService = {
         .limit(100);
 
       if (error) throw error;
-      return data as KpiDaily[];
+      return data ? data.map(this._convertKpiData) : [];
     } catch (error) {
       console.error('Error getting KPI daily data by site:', error);
       return [];
@@ -372,7 +391,7 @@ const kpiService = {
         .order('day', { ascending: false });
 
       if (error) throw error;
-      return data as KpiDaily[];
+      return data ? data.map(this._convertKpiData) : [];
     } catch (error) {
       console.error('Error getting KPI daily data by date range:', error);
       return [];
@@ -390,7 +409,7 @@ const kpiService = {
         .order('day', { ascending: false });
 
       if (error) throw error;
-      return data as KpiDaily[];
+      return data ? data.map(this._convertKpiData) : [];
     } catch (error) {
       console.error('Error getting KPI daily data by site and date range:', error);
       return [];
@@ -406,7 +425,7 @@ const kpiService = {
         .single();
 
       if (error) throw error;
-      return data as KpiDaily;
+      return data ? this._convertKpiData(data) : null;
     } catch (error) {
       console.error('Error getting KPI daily data by id:', error);
       return null;
@@ -415,14 +434,25 @@ const kpiService = {
 
   async createKpiDaily(kpiDaily: KpiDaily): Promise<KpiDaily | null> {
     try {
+      // Convertir en ancien format pour la compatibilité avec la base de données
+      const dbData = {
+        id: kpiDaily.id,
+        site_id: kpiDaily.site_id,
+        day: kpiDaily.day,
+        kwh: kpiDaily.fuel_consumption_mwh, // Conserver la compatibilité arrière
+        co2: kpiDaily.co2,
+        cost_eur: kpiDaily.cost_eur,
+        // Note: les nouvelles propriétés ne sont pas stockées dans la DB existante
+      };
+      
       const { data, error } = await supabase
         .from('kpi_daily')
-        .insert([kpiDaily])
+        .insert([dbData])
         .select('*')
         .single();
 
       if (error) throw error;
-      return data as KpiDaily;
+      return data ? this._convertKpiData(data) : null;
     } catch (error) {
       console.error('Error creating KPI daily data:', error);
       return null;
@@ -431,15 +461,26 @@ const kpiService = {
 
   async updateKpiDaily(kpiDaily: KpiDaily): Promise<KpiDaily | null> {
     try {
+      // Convertir en ancien format pour la compatibilité avec la base de données
+      const dbData = {
+        id: kpiDaily.id,
+        site_id: kpiDaily.site_id,
+        day: kpiDaily.day,
+        kwh: kpiDaily.fuel_consumption_mwh, // Conserver la compatibilité arrière
+        co2: kpiDaily.co2,
+        cost_eur: kpiDaily.cost_eur,
+        // Note: les nouvelles propriétés ne sont pas stockées dans la DB existante
+      };
+      
       const { data, error } = await supabase
         .from('kpi_daily')
-        .update(kpiDaily)
+        .update(dbData)
         .eq('id', kpiDaily.id)
         .select('*')
         .single();
 
       if (error) throw error;
-      return data as KpiDaily;
+      return data ? this._convertKpiData(data) : null;
     } catch (error) {
       console.error('Error updating KPI daily data:', error);
       return null;
@@ -472,7 +513,7 @@ const kpiService = {
         .order('day', { ascending: false });
 
       if (error) throw error;
-      return data as KpiDaily[];
+      return data ? data.map(this._convertKpiData) : [];
     } catch (error) {
       console.error('Error getting KPI data for all sites:', error);
       return [];
