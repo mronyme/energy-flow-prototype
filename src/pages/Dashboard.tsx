@@ -212,38 +212,24 @@ const Dashboard: React.FC = () => {
         </div>
       )}
       
-      {/* View selector tabs */}
+      {/* View selector tabs - FIX: Wrap TabsList inside Tabs */}
       <div className="mb-6">
-        <TabsList className="w-full border-b">
-          <TabsTrigger 
-            value="production" 
-            onClick={() => handleViewChange('production')}
-            className={selectedView === 'production' ? 'border-b-2 border-primary' : ''}
-          >
-            Production
-          </TabsTrigger>
-          <TabsTrigger 
-            value="performance" 
-            onClick={() => handleViewChange('performance')}
-            className={selectedView === 'performance' ? 'border-b-2 border-primary' : ''}
-          >
-            Performance
-          </TabsTrigger>
-          <TabsTrigger 
-            value="consumption" 
-            onClick={() => handleViewChange('consumption')}
-            className={selectedView === 'consumption' ? 'border-b-2 border-primary' : ''}
-          >
-            Consommation
-          </TabsTrigger>
-          <TabsTrigger 
-            value="environmental" 
-            onClick={() => handleViewChange('environmental')}
-            className={selectedView === 'environmental' ? 'border-b-2 border-primary' : ''}
-          >
-            Impact Environnemental
-          </TabsTrigger>
-        </TabsList>
+        <Tabs value={selectedView} onValueChange={handleViewChange}>
+          <TabsList className="w-full border-b">
+            <TabsTrigger value="production">
+              Production
+            </TabsTrigger>
+            <TabsTrigger value="performance">
+              Performance
+            </TabsTrigger>
+            <TabsTrigger value="consumption">
+              Consommation
+            </TabsTrigger>
+            <TabsTrigger value="environmental">
+              Impact Environnemental
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
       
       {/* KPI Cards based on selected view */}
