@@ -39,10 +39,10 @@ const TrendLineChart: React.FC<TrendLineChartProps> = ({
 }) => {
   // Default dataKeys if not provided
   const chartDataKeys = dataKeys || [
-    { key: 'fuel_consumption_mwh', color: '#f59e0b', name: 'Consommation (MWh)', yAxisId: "left" },
-    { key: 'electricity_production_mwh', color: '#3b82f6', name: 'Production Électricité (MWh)', yAxisId: "left" },
-    { key: 'heat_production_mwh', color: '#ef4444', name: 'Production Chaleur (MWh)', yAxisId: "left" },
-    { key: 'efficiency_percent', color: '#10b981', name: 'Rendement (%)', yAxisId: "right" },
+    { key: 'fuel_consumption_mwh', color: '#f59e0b', name: 'Fuel Consumption (MWh)', yAxisId: "left" },
+    { key: 'electricity_production_mwh', color: '#3b82f6', name: 'Electricity Production (MWh)', yAxisId: "left" },
+    { key: 'heat_production_mwh', color: '#ef4444', name: 'Heat Production (MWh)', yAxisId: "left" },
+    { key: 'efficiency_percent', color: '#10b981', name: 'Efficiency (%)', yAxisId: "right" },
   ];
   
   // Format X-axis tick values for date strings
@@ -52,12 +52,12 @@ const TrendLineChart: React.FC<TrendLineChartProps> = ({
   };
   
   return (
-    <div className="bg-white rounded-lg p-5 shadow-sm ring-1 ring-dark/10">
+    <div className="bg-white rounded-lg p-3 sm:p-5 shadow-sm ring-1 ring-dark/10">
       {title && (
-        <h3 className="text-lg font-medium text-dark mb-4">{title}</h3>
+        <h3 className="text-base sm:text-lg font-medium text-dark mb-4">{title}</h3>
       )}
       
-      <div className="h-80">
+      <div className="h-64 sm:h-80">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={data}
@@ -88,7 +88,7 @@ const TrendLineChart: React.FC<TrendLineChartProps> = ({
             <Tooltip 
               formatter={(value: any, name: string) => {
                 // Add % symbol to efficiency and availability values
-                if (name.includes('Rendement') || name.includes('Disponibilité')) {
+                if (name.includes('Efficiency') || name.includes('Availability')) {
                   return [`${value}%`, name];
                 }
                 return [`${value}`, name];

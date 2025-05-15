@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
@@ -12,9 +12,12 @@ import {
   ClipboardList, 
   Settings,
   Users,
-  ChevronRight
+  ChevronRight,
+  ChevronsLeft,
+  Menu
 } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -30,6 +33,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle }) => {
   const [dataLoadOpen, setDataLoadOpen] = useState(false);
   const [dataQualityOpen, setDataQualityOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
+  
+  // Mini mode state - retrieve from localStorage or default to false
+  const [miniMode, setMiniMode] = useState(() => {
+    const saved = localStorage.getItem('sidebar-mini-mode');
+    return saved ? JSON.parse(saved) : false;
+  });
+  
+  // Save mini mode preference to localStorage
+  useEffect(() => {
+    localStorage.setItem('sidebar-mini-mode', JSON.stringify(miniMode));
+  }, [miniMode]);
   
   // Update open states based on current route
   React.useEffect(() => {
@@ -47,7 +61,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle }) => {
   const isActive = (path: string) => location.pathname === path;
   
   const navLinkClass = (active: boolean) => `
-    flex items-center gap-3 px-4 py-2.5 text-sm 
+    flex items-center gap-3 px-4 py-2.5 text-sm overflow-hidden whitespace-nowrap
     ${active 
       ? 'bg-primary text-white font-medium rounded-md' 
       : 'text-gray-700 hover:bg-gray-100 rounded-md transition-standard'
@@ -70,13 +84,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle }) => {
     return allowedRoles.includes(user.role);
   };
 
+  const toggleMiniMode = () => {
+    setMiniMode(!miniMode);
+  };
+
+  const sidebarWidth = miniMode && !isMobile ? 'w-16' : 'w-64';
+
   return (
     <div 
       id="main-sidebar"
       className={`
         fixed inset-y-0 left-0 z-20 
-        w-64 bg-white border-r border-gray-200 
-        transform transition-transform duration-200 ease-in-out
+        ${sidebarWidth} bg-white border-r border-gray-200 
+        transform transition-all duration-200 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         md:translate-x-0 md:static
       `}
@@ -85,14 +105,28 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle }) => {
       aria-hidden={isMobile && !isOpen ? "true" : "false"}
     >
       <div className="h-full flex flex-col">
-        <div className="p-4 border-b border-gray-200 md:hidden">
-          <button 
-            onClick={toggle}
-            className="text-gray-500 hover:text-gray-700"
-            aria-label="Close sidebar"
-          >
-            Close
-          </button>
+        <div className="p-4 flex justify-between items-center border-b border-gray-200">
+          {!miniMode && (
+            <span className="font-semibold text-dark">ENGIE Monitor</span>
+          )}
+          
+          {isMobile ? (
+            <button 
+              onClick={toggle}
+              className="text-gray-500 hover:text-gray-700"
+              aria-label="Close sidebar"
+            >
+              <ChevronsLeft size={20} />
+            </button>
+          ) : (
+            <button
+              onClick={toggleMiniMode}
+              className="text-gray-500 hover:text-gray-700 ml-auto"
+              aria-label={miniMode ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {miniMode ? <Menu size={18} /> : <ChevronsLeft size={18} />}
+            </button>
+          )}
         </div>
         
         <div className="flex-1 overflow-y-auto py-4">
@@ -100,7 +134,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle }) => {
             {/* Dashboard - All roles */}
             <Link to="/" className={navLinkClass(isActive('/'))} aria-current={isActive('/') ? 'page' : undefined}>
               <ChartBar size={18} aria-hidden="true" />
-              <span>Dashboard</span>
+              {!miniMode && <span>Dashboard</span>}
             </Link>
             
             {/* Data Loading - Operator, DataManager */}
@@ -108,7 +142,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle }) => {
               <div>
                 <div 
                   className={groupHeaderClass(dataLoadOpen)}
-                  onClick={() => setDataLoadOpen(!dataLoadOpen)}
+                  onClick={() => !miniMode && setDataLoadOpen(!dataLoadOpen)}
                   role="button"
                   aria-expanded={dataLoadOpen}
                   aria-controls="data-loading-menu"
@@ -116,53 +150,57 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle }) => {
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
-                      setDataLoadOpen(!dataLoadOpen);
+                      !miniMode && setDataLoadOpen(!dataLoadOpen);
                     }
                   }}
                 >
                   <div className="flex items-center gap-3">
                     <GaugeCircle size={18} aria-hidden="true" />
-                    <span>Data Loading</span>
+                    {!miniMode && <span>Data Loading</span>}
                   </div>
-                  <ChevronRight
-                    className={`w-4 h-4 transition-transform ${dataLoadOpen ? 'rotate-90' : ''}`}
-                    aria-hidden="true"
-                  />
+                  {!miniMode && (
+                    <ChevronRight
+                      className={`w-4 h-4 transition-transform ${dataLoadOpen ? 'rotate-90' : ''}`}
+                      aria-hidden="true"
+                    />
+                  )}
                 </div>
                 
-                <div 
-                  id="data-loading-menu" 
-                  className={groupContentClass(dataLoadOpen)}
-                  role="region" 
-                  aria-labelledby="data-loading-header"
-                >
-                  <Link 
-                    to="/data-load/manual-entry" 
-                    className={navLinkClass(isActive('/data-load/manual-entry'))}
-                    aria-current={isActive('/data-load/manual-entry') ? 'page' : undefined}
+                {(!miniMode || isMobile) && (
+                  <div 
+                    id="data-loading-menu" 
+                    className={groupContentClass(dataLoadOpen)}
+                    role="region" 
+                    aria-labelledby="data-loading-header"
                   >
-                    <FileText size={18} aria-hidden="true" />
-                    <span>Manual Entry</span>
-                  </Link>
-                  
-                  <Link 
-                    to="/data-load/csv-import" 
-                    className={navLinkClass(isActive('/data-load/csv-import'))}
-                    aria-current={isActive('/data-load/csv-import') ? 'page' : undefined}
-                  >
-                    <Upload size={18} aria-hidden="true" />
-                    <span>CSV Import</span>
-                  </Link>
-                  
-                  <Link 
-                    to="/data-load/pi-preview" 
-                    className={navLinkClass(isActive('/data-load/pi-preview'))}
-                    aria-current={isActive('/data-load/pi-preview') ? 'page' : undefined}
-                  >
-                    <Database size={18} aria-hidden="true" />
-                    <span>PI Preview</span>
-                  </Link>
-                </div>
+                    <Link 
+                      to="/data-load/manual-entry" 
+                      className={navLinkClass(isActive('/data-load/manual-entry'))}
+                      aria-current={isActive('/data-load/manual-entry') ? 'page' : undefined}
+                    >
+                      <FileText size={18} aria-hidden="true" />
+                      <span>Manual Entry</span>
+                    </Link>
+                    
+                    <Link 
+                      to="/data-load/csv-import" 
+                      className={navLinkClass(isActive('/data-load/csv-import'))}
+                      aria-current={isActive('/data-load/csv-import') ? 'page' : undefined}
+                    >
+                      <Upload size={18} aria-hidden="true" />
+                      <span>CSV Import</span>
+                    </Link>
+                    
+                    <Link 
+                      to="/data-load/pi-preview" 
+                      className={navLinkClass(isActive('/data-load/pi-preview'))}
+                      aria-current={isActive('/data-load/pi-preview') ? 'page' : undefined}
+                    >
+                      <Database size={18} aria-hidden="true" />
+                      <span>PI Preview</span>
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
             
@@ -171,7 +209,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle }) => {
               <div>
                 <div 
                   className={groupHeaderClass(dataQualityOpen)}
-                  onClick={() => setDataQualityOpen(!dataQualityOpen)}
+                  onClick={() => !miniMode && setDataQualityOpen(!dataQualityOpen)}
                   role="button"
                   aria-expanded={dataQualityOpen}
                   aria-controls="data-quality-menu"
@@ -179,44 +217,48 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle }) => {
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
-                      setDataQualityOpen(!dataQualityOpen);
+                      !miniMode && setDataQualityOpen(!dataQualityOpen);
                     }
                   }}
                 >
                   <div className="flex items-center gap-3">
                     <AlertTriangle size={18} aria-hidden="true" />
-                    <span>Data Quality</span>
+                    {!miniMode && <span>Data Quality</span>}
                   </div>
-                  <ChevronRight
-                    className={`w-4 h-4 transition-transform ${dataQualityOpen ? 'rotate-90' : ''}`}
-                    aria-hidden="true"
-                  />
+                  {!miniMode && (
+                    <ChevronRight
+                      className={`w-4 h-4 transition-transform ${dataQualityOpen ? 'rotate-90' : ''}`}
+                      aria-hidden="true"
+                    />
+                  )}
                 </div>
                 
-                <div 
-                  id="data-quality-menu" 
-                  className={groupContentClass(dataQualityOpen)}
-                  role="region" 
-                  aria-labelledby="data-quality-header"
-                >
-                  <Link 
-                    to="/data-quality/anomalies" 
-                    className={navLinkClass(isActive('/data-quality/anomalies'))}
-                    aria-current={isActive('/data-quality/anomalies') ? 'page' : undefined}
+                {(!miniMode || isMobile) && (
+                  <div 
+                    id="data-quality-menu" 
+                    className={groupContentClass(dataQualityOpen)}
+                    role="region" 
+                    aria-labelledby="data-quality-header"
                   >
-                    <AlertTriangle size={18} aria-hidden="true" />
-                    <span>Anomalies</span>
-                  </Link>
-                  
-                  <Link 
-                    to="/data-quality/journal" 
-                    className={navLinkClass(isActive('/data-quality/journal'))}
-                    aria-current={isActive('/data-quality/journal') ? 'page' : undefined}
-                  >
-                    <ClipboardList size={18} aria-hidden="true" />
-                    <span>Import Journal</span>
-                  </Link>
-                </div>
+                    <Link 
+                      to="/data-quality/anomalies" 
+                      className={navLinkClass(isActive('/data-quality/anomalies'))}
+                      aria-current={isActive('/data-quality/anomalies') ? 'page' : undefined}
+                    >
+                      <AlertTriangle size={18} aria-hidden="true" />
+                      <span>Anomalies</span>
+                    </Link>
+                    
+                    <Link 
+                      to="/data-quality/journal" 
+                      className={navLinkClass(isActive('/data-quality/journal'))}
+                      aria-current={isActive('/data-quality/journal') ? 'page' : undefined}
+                    >
+                      <ClipboardList size={18} aria-hidden="true" />
+                      <span>Import Journal</span>
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
             
@@ -225,7 +267,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle }) => {
               <div>
                 <div 
                   className={groupHeaderClass(adminOpen)}
-                  onClick={() => setAdminOpen(!adminOpen)}
+                  onClick={() => !miniMode && setAdminOpen(!adminOpen)}
                   role="button"
                   aria-expanded={adminOpen}
                   aria-controls="admin-menu"
@@ -233,53 +275,63 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle }) => {
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
-                      setAdminOpen(!adminOpen);
+                      !miniMode && setAdminOpen(!adminOpen);
                     }
                   }}
                 >
                   <div className="flex items-center gap-3">
                     <Settings size={18} aria-hidden="true" />
-                    <span>Administration</span>
+                    {!miniMode && <span>Administration</span>}
                   </div>
-                  <ChevronRight
-                    className={`w-4 h-4 transition-transform ${adminOpen ? 'rotate-90' : ''}`}
-                    aria-hidden="true"
-                  />
+                  {!miniMode && (
+                    <ChevronRight
+                      className={`w-4 h-4 transition-transform ${adminOpen ? 'rotate-90' : ''}`}
+                      aria-hidden="true"
+                    />
+                  )}
                 </div>
                 
-                <div 
-                  id="admin-menu" 
-                  className={groupContentClass(adminOpen)}
-                  role="region" 
-                  aria-labelledby="admin-header"
-                >
-                  <Link 
-                    to="/admin/units-factors" 
-                    className={navLinkClass(isActive('/admin/units-factors'))}
-                    aria-current={isActive('/admin/units-factors') ? 'page' : undefined}
+                {(!miniMode || isMobile) && (
+                  <div 
+                    id="admin-menu" 
+                    className={groupContentClass(adminOpen)}
+                    role="region" 
+                    aria-labelledby="admin-header"
                   >
-                    <Settings size={18} aria-hidden="true" />
-                    <span>Emission Factors</span>
-                  </Link>
-                  
-                  <Link 
-                    to="/admin/users" 
-                    className={navLinkClass(isActive('/admin/users'))}
-                    aria-current={isActive('/admin/users') ? 'page' : undefined}
-                  >
-                    <Users size={18} aria-hidden="true" />
-                    <span>Users</span>
-                  </Link>
-                </div>
+                    <Link 
+                      to="/admin/units-factors" 
+                      className={navLinkClass(isActive('/admin/units-factors'))}
+                      aria-current={isActive('/admin/units-factors') ? 'page' : undefined}
+                    >
+                      <Settings size={18} aria-hidden="true" />
+                      <span>Emission Factors</span>
+                    </Link>
+                    
+                    <Link 
+                      to="/admin/users" 
+                      className={navLinkClass(isActive('/admin/users'))}
+                      aria-current={isActive('/admin/users') ? 'page' : undefined}
+                    >
+                      <Users size={18} aria-hidden="true" />
+                      <span>Users</span>
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
           </nav>
         </div>
         
-        <div className="p-4 border-t border-gray-200">
+        <div className={cn("p-4 border-t border-gray-200", miniMode && "text-center")}>
           <div className="text-xs text-gray-500">
-            <p>MAXI V2 - Energy Monitoring</p>
-            <p>© 2025 ENGIE</p>
+            {!miniMode ? (
+              <>
+                <p>ENGIE Monitor V2</p>
+                <p>© 2025 ENGIE</p>
+              </>
+            ) : (
+              <p>ENGIE</p>
+            )}
           </div>
         </div>
       </div>

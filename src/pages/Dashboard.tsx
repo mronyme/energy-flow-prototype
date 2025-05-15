@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import KpiCard from '@/components/dashboard/KpiCard';
@@ -118,29 +119,29 @@ const Dashboard: React.FC = () => {
     switch (selectedView) {
       case 'production':
         return [
-          { key: 'electricity_production_mwh', color: '#3b82f6', name: 'Production Électricité (MWh)', yAxisId: "left" },
-          { key: 'heat_production_mwh', color: '#ef4444', name: 'Production Chaleur (MWh)', yAxisId: "left" },
-          { key: 'efficiency_percent', color: '#10b981', name: 'Rendement (%)', yAxisId: "right" },
+          { key: 'electricity_production_mwh', color: '#3b82f6', name: 'Electricity Production (MWh)', yAxisId: "left" },
+          { key: 'heat_production_mwh', color: '#ef4444', name: 'Heat Production (MWh)', yAxisId: "left" },
+          { key: 'efficiency_percent', color: '#10b981', name: 'Efficiency (%)', yAxisId: "right" },
         ];
       case 'performance':
         return [
-          { key: 'efficiency_percent', color: '#10b981', name: 'Rendement (%)', yAxisId: "right" },
-          { key: 'availability_percent', color: '#8b5cf6', name: 'Disponibilité (%)', yAxisId: "right" },
+          { key: 'efficiency_percent', color: '#10b981', name: 'Efficiency (%)', yAxisId: "right" },
+          { key: 'availability_percent', color: '#8b5cf6', name: 'Availability (%)', yAxisId: "right" },
         ];
       case 'consumption':
         return [
-          { key: 'fuel_consumption_mwh', color: '#f59e0b', name: 'Consommation (MWh)', yAxisId: "left" },
-          { key: 'cost_eur', color: '#9333ea', name: 'Coût (EUR)', yAxisId: "left" },
+          { key: 'fuel_consumption_mwh', color: '#f59e0b', name: 'Fuel Consumption (MWh)', yAxisId: "left" },
+          { key: 'cost_eur', color: '#9333ea', name: 'Cost (EUR)', yAxisId: "left" },
         ];
       case 'environmental':
         return [
-          { key: 'co2', color: '#64748b', name: 'Émissions CO₂ (kg)', yAxisId: "left" },
-          { key: 'electricity_production_mwh', color: '#3b82f6', name: 'Production Électricité (MWh)', yAxisId: "left" },
+          { key: 'co2', color: '#64748b', name: 'CO₂ Emissions (kg)', yAxisId: "left" },
+          { key: 'electricity_production_mwh', color: '#3b82f6', name: 'Electricity Production (MWh)', yAxisId: "left" },
         ];
       default:
         return [
-          { key: 'electricity_production_mwh', color: '#3b82f6', name: 'Production Électricité (MWh)', yAxisId: "left" },
-          { key: 'heat_production_mwh', color: '#ef4444', name: 'Production Chaleur (MWh)', yAxisId: "left" },
+          { key: 'electricity_production_mwh', color: '#3b82f6', name: 'Electricity Production (MWh)', yAxisId: "left" },
+          { key: 'heat_production_mwh', color: '#ef4444', name: 'Heat Production (MWh)', yAxisId: "left" },
         ];
     }
   };
@@ -149,23 +150,23 @@ const Dashboard: React.FC = () => {
   const hasData = dashboardData && dashboardData.length > 0;
   
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto py-6 px-2 md:px-4 lg:px-6">
       <div className="flex flex-col md:flex-row justify-between items-start mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Tableau de Bord ENGIE</h1>
-          <p className="text-gray-500">Suivi de performance des sites de production d'énergie</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-800">ENGIE Energy Dashboard</h1>
+          <p className="text-gray-500">Production Site Performance Monitoring</p>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-4 mt-4 md:mt-0">
+        <div className="flex flex-col sm:flex-row gap-3 mt-4 md:mt-0 w-full md:w-auto">
           <Select
             value={selectedSite}
             onValueChange={handleSiteChange}
           >
-            <SelectTrigger className="w-[220px]">
-              <SelectValue placeholder="Sélectionner un site" />
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="Select a site" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tous les Sites</SelectItem>
+              <SelectItem value="all">All Sites</SelectItem>
               {sites && sites.map(site => (
                 <SelectItem key={site.id} value={site.id}>{site.name}</SelectItem>
               ))}
@@ -176,15 +177,15 @@ const Dashboard: React.FC = () => {
             value={selectedPeriod}
             onValueChange={handlePeriodChange}
           >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Sélectionner une période" />
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="Select period" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="week">7 derniers jours</SelectItem>
-              <SelectItem value="month">Mois en cours</SelectItem>
-              <SelectItem value="quarter">Trimestre en cours</SelectItem>
-              <SelectItem value="year">Année en cours</SelectItem>
-              <SelectItem value="custom">Période personnalisée</SelectItem>
+              <SelectItem value="week">Last 7 days</SelectItem>
+              <SelectItem value="month">Current month</SelectItem>
+              <SelectItem value="quarter">Current quarter</SelectItem>
+              <SelectItem value="year">Current year</SelectItem>
+              <SelectItem value="custom">Custom period</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -193,7 +194,7 @@ const Dashboard: React.FC = () => {
       {selectedPeriod === 'custom' && (
         <div className="flex flex-wrap gap-4 mb-6">
           <div>
-            <Label>Date de début</Label>
+            <Label>Start date</Label>
             <DatePicker
               selected={startDate}
               onSelect={setStartDate}
@@ -201,7 +202,7 @@ const Dashboard: React.FC = () => {
             />
           </div>
           <div>
-            <Label>Date de fin</Label>
+            <Label>End date</Label>
             <DatePicker
               selected={endDate}
               onSelect={setEndDate}
@@ -223,21 +224,21 @@ const Dashboard: React.FC = () => {
               Performance
             </TabsTrigger>
             <TabsTrigger value="consumption">
-              Consommation
+              Consumption
             </TabsTrigger>
             <TabsTrigger value="environmental">
-              Impact Environnemental
+              Environmental Impact
             </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
       
       {/* KPI Cards based on selected view */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
         {selectedView === 'production' && (
           <>
             <KpiCard
-              title="Production Électricité"
+              title="Electricity Production"
               value={totalElectricityProduction.toLocaleString(undefined, {maximumFractionDigits: 1})}
               unit="MWh"
               change={electricityChange}
@@ -248,7 +249,7 @@ const Dashboard: React.FC = () => {
             />
             
             <KpiCard
-              title="Production Chaleur"
+              title="Heat Production"
               value={totalHeatProduction.toLocaleString(undefined, {maximumFractionDigits: 1})}
               unit="MWh"
               change={heatChange}
@@ -259,7 +260,7 @@ const Dashboard: React.FC = () => {
             />
             
             <KpiCard
-              title="Rendement Global"
+              title="Overall Efficiency"
               value={avgEfficiency.toLocaleString(undefined, {maximumFractionDigits: 1})}
               unit="%"
               change={efficiencyChange}
@@ -275,7 +276,7 @@ const Dashboard: React.FC = () => {
         {selectedView === 'performance' && (
           <>
             <KpiCard
-              title="Rendement Global"
+              title="Overall Efficiency"
               value={avgEfficiency.toLocaleString(undefined, {maximumFractionDigits: 1})}
               unit="%"
               change={efficiencyChange}
@@ -287,7 +288,7 @@ const Dashboard: React.FC = () => {
             />
             
             <KpiCard
-              title="Disponibilité"
+              title="Availability"
               value={avgAvailability.toLocaleString(undefined, {maximumFractionDigits: 1})}
               unit="%"
               change={availabilityChange}
@@ -299,7 +300,7 @@ const Dashboard: React.FC = () => {
             />
             
             <KpiCard
-              title="Coût Opérationnel"
+              title="Operational Cost"
               value={totalCost.toLocaleString(undefined, {maximumFractionDigits: 1})}
               unit="EUR"
               change={costChange}
@@ -313,7 +314,7 @@ const Dashboard: React.FC = () => {
         {selectedView === 'consumption' && (
           <>
             <KpiCard
-              title="Consommation Combustible"
+              title="Fuel Consumption"
               value={totalFuelConsumption.toLocaleString(undefined, {maximumFractionDigits: 1})}
               unit="MWh"
               change={fuelChange}
@@ -323,7 +324,7 @@ const Dashboard: React.FC = () => {
             />
             
             <KpiCard
-              title="Coût Opérationnel"
+              title="Operational Cost"
               value={totalCost.toLocaleString(undefined, {maximumFractionDigits: 1})}
               unit="EUR"
               change={costChange}
@@ -333,7 +334,7 @@ const Dashboard: React.FC = () => {
             />
             
             <KpiCard
-              title="Production Totale"
+              title="Total Production"
               value={(totalElectricityProduction + totalHeatProduction).toLocaleString(undefined, {maximumFractionDigits: 1})}
               unit="MWh"
               change={(electricityChange + heatChange) / 2} // Average of both changes
@@ -346,7 +347,7 @@ const Dashboard: React.FC = () => {
         {selectedView === 'environmental' && (
           <>
             <KpiCard
-              title="Émissions CO₂"
+              title="CO₂ Emissions"
               value={totalCo2.toLocaleString(undefined, {maximumFractionDigits: 1})}
               unit="kg"
               change={co2Change}
@@ -356,7 +357,7 @@ const Dashboard: React.FC = () => {
             />
             
             <KpiCard
-              title="CO₂ par MWh électrique"
+              title="CO₂ per MWh"
               value={totalElectricityProduction > 0 ? 
                 (totalCo2 / totalElectricityProduction).toLocaleString(undefined, {maximumFractionDigits: 1}) : 0}
               unit="kg/MWh"
@@ -366,7 +367,7 @@ const Dashboard: React.FC = () => {
             />
             
             <KpiCard
-              title="Production Renouvelable"
+              title="Renewable Production"
               value={selectedSite === '2' ? 
                 totalElectricityProduction.toLocaleString(undefined, {maximumFractionDigits: 1}) : 0}
               unit="MWh"
@@ -381,15 +382,15 @@ const Dashboard: React.FC = () => {
       
       {/* Tabs for different views */}
       <Tabs defaultValue="chart">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
           <TabsList>
-            <TabsTrigger value="chart">Graphique</TabsTrigger>
-            <TabsTrigger value="details">Détails</TabsTrigger>
+            <TabsTrigger value="chart">Chart</TabsTrigger>
+            <TabsTrigger value="details">Details</TabsTrigger>
           </TabsList>
           
           <Button variant="outline" onClick={toggleExportPanel}>
             <Download className="w-4 h-4 mr-2" />
-            Exporter les données
+            Export data
           </Button>
         </div>
         
@@ -402,11 +403,11 @@ const Dashboard: React.FC = () => {
             <Card>
               <CardContent className="flex flex-col items-center justify-center p-8">
                 <AlertTriangle size={48} className="text-amber-500 mb-4" />
-                <h3 className="text-xl font-medium mb-2">Aucune donnée disponible</h3>
+                <h3 className="text-xl font-medium mb-2">No data available</h3>
                 <p className="text-center text-gray-600">
                   {selectedSite !== 'all' 
-                    ? `Aucune donnée disponible pour le site et la période sélectionnés.` 
-                    : `Aucune donnée disponible pour la période sélectionnée.`}
+                    ? `No data available for the selected site and period.` 
+                    : `No data available for the selected period.`}
                 </p>
               </CardContent>
             </Card>
@@ -416,10 +417,10 @@ const Dashboard: React.FC = () => {
               data={dashboardData} 
               dataKeys={getDataKeys()}
               focusMetric={selectedKpi}
-              title={selectedView === 'production' ? "Production et rendement" : 
-                     selectedView === 'performance' ? "Indicateurs de performance" : 
-                     selectedView === 'consumption' ? "Consommation et coûts" : 
-                     "Impact environnemental"}
+              title={selectedView === 'production' ? "Production and efficiency" : 
+                     selectedView === 'performance' ? "Performance indicators" : 
+                     selectedView === 'consumption' ? "Consumption and costs" : 
+                     "Environmental impact"}
               dualYAxis={showDualYAxis}
             />
           )}
@@ -428,10 +429,10 @@ const Dashboard: React.FC = () => {
         <TabsContent value="details">
           <Card>
             <CardHeader>
-              <CardTitle>Données détaillées</CardTitle>
+              <CardTitle>Detailed data</CardTitle>
             </CardHeader>
             <CardContent>
-              <p>Les données détaillées seront affichées ici sous forme de tableau.</p>
+              <p>Detailed data will be displayed here as a table.</p>
             </CardContent>
           </Card>
         </TabsContent>

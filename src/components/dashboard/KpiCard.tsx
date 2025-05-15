@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowDownIcon, ArrowUpIcon, Wind, Flame, Gauge, Fuel, Zap } from 'lucide-react';
+import { ArrowDownIcon, ArrowUpIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface KpiCardProps {
@@ -41,21 +41,21 @@ const KpiCard: React.FC<KpiCardProps> = ({
   return (
     <Card 
       className={cn(
-        "shadow-sm ring-1 ring-dark/10 transition-all duration-100 ease-out",
+        "shadow-sm ring-1 ring-dark/10 transition-all duration-100 ease-out h-full",
         onClick && "cursor-pointer hover:shadow-md",
         isActive && "ring-2 ring-primary/80 bg-blue-50/50"
       )}
       onClick={onClick}
     >
-      <CardContent className="p-5">
+      <CardContent className="p-4 sm:p-5">
         <div className="flex justify-between items-start mb-2">
-          <h3 className="text-base font-medium text-dark">{title}</h3>
-          <div className="text-gray-600">{icon || <Zap size={18} />}</div>
+          <h3 className="text-sm sm:text-base font-medium text-dark">{title}</h3>
+          <div className="text-gray-600 shrink-0 ml-2">{icon}</div>
         </div>
         
         <div className="flex flex-col gap-1">
-          <div className="flex items-baseline gap-1">
-            <span className={cn("text-2xl font-bold", valueColor ? valueColor : "text-dark")}>
+          <div className="flex items-baseline gap-1 flex-wrap">
+            <span className={cn("text-xl sm:text-2xl font-bold", valueColor ? valueColor : "text-dark")}>
               {typeof value === 'number' ? value.toLocaleString(undefined, {maximumFractionDigits: 1}) : value}
             </span>
             <span className="text-sm text-gray-600">{unit}</span>
@@ -75,7 +75,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
             >
               {formattedChange}%
             </span>
-            <span className="text-xs text-gray-500 ml-1">vs. période précédente</span>
+            <span className="text-xs text-gray-500 ml-1">vs. prev. period</span>
           </div>
         </div>
       </CardContent>
