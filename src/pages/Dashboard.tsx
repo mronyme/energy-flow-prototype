@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import KpiCard from '@/components/dashboard/KpiCard';
@@ -256,7 +255,7 @@ const Dashboard: React.FC = () => {
               value={totalElectricityProduction.toLocaleString(undefined, {maximumFractionDigits: 1})}
               unit="MWh"
               change={electricityChange}
-              icon={<Turbine className="h-5 w-5" />}
+              icon={<Wind className="h-5 w-5" />}
               onClick={() => handleKpiSelect('electricity_production_mwh')}
               isActive={selectedKpi === 'electricity_production_mwh'}
               inverseChange={true} // For production, positive change is good
@@ -267,7 +266,7 @@ const Dashboard: React.FC = () => {
               value={totalHeatProduction.toLocaleString(undefined, {maximumFractionDigits: 1})}
               unit="MWh"
               change={heatChange}
-              icon={<Heat className="h-5 w-5" />}
+              icon={<Flame className="h-5 w-5" />}
               onClick={() => handleKpiSelect('heat_production_mwh')}
               isActive={selectedKpi === 'heat_production_mwh'}
               inverseChange={true} // For production, positive change is good
@@ -386,7 +385,7 @@ const Dashboard: React.FC = () => {
                 totalElectricityProduction.toLocaleString(undefined, {maximumFractionDigits: 1}) : 0}
               unit="MWh"
               change={selectedSite === '2' ? electricityChange : 0}
-              icon={<Turbine className="h-5 w-5" />}
+              icon={<Wind className="h-5 w-5" />}
               valueColor="text-green-600"
               inverseChange={true} // For renewable production, positive change is good
             />
