@@ -36,7 +36,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
   // For some metrics like efficiency, a positive change is good
   // For others like consumption, a positive change is bad
   // inverseChange allows us to flip the color logic
-  const isGood = inverseChange ? !isPositive : isPositive;
+  const isGood = inverseChange ? isPositive : !isPositive;
   
   return (
     <Card 
