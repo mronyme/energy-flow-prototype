@@ -212,7 +212,7 @@ const Dashboard: React.FC = () => {
         </div>
       )}
       
-      {/* View selector tabs - FIX: Wrap TabsList inside Tabs */}
+      {/* View selector tabs */}
       <div className="mb-6">
         <Tabs value={selectedView} onValueChange={handleViewChange}>
           <TabsList className="w-full border-b">
