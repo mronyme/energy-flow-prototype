@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowDownIcon, ArrowUpIcon, BarChart } from 'lucide-react';
+import { ArrowDownIcon, ArrowUpIcon, Turbine, Heat, Gauge, Fuel, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface KpiCardProps {
@@ -12,6 +12,8 @@ interface KpiCardProps {
   icon?: React.ReactNode;
   onClick?: () => void;
   isActive?: boolean;
+  valueColor?: string;
+  inverseChange?: boolean;
 }
 
 const KpiCard: React.FC<KpiCardProps> = ({
@@ -21,12 +23,20 @@ const KpiCard: React.FC<KpiCardProps> = ({
   change,
   icon,
   onClick,
-  isActive = false
+  isActive = false,
+  valueColor,
+  inverseChange = false
 }) => {
   // Format change to have at most 1 decimal place
   const formattedChange = Math.abs(parseFloat(change.toFixed(1)));
-  // For display purposes, positive change is bad for consumption metrics
+  
+  // Determine if change is positive or negative
   const isPositive = change >= 0;
+  
+  // For some metrics like efficiency, a positive change is good
+  // For others like consumption, a positive change is bad
+  // inverseChange allows us to flip the color logic
+  const isGood = inverseChange ? !isPositive : isPositive;
   
   return (
     <Card 
@@ -40,30 +50,32 @@ const KpiCard: React.FC<KpiCardProps> = ({
       <CardContent className="p-5">
         <div className="flex justify-between items-start mb-2">
           <h3 className="text-base font-medium text-dark">{title}</h3>
-          <div className="text-gray-600">{icon || <BarChart size={18} />}</div>
+          <div className="text-gray-600">{icon || <Zap size={18} />}</div>
         </div>
         
         <div className="flex flex-col gap-1">
           <div className="flex items-baseline gap-1">
-            <span className="text-2xl font-bold text-dark">{value}</span>
+            <span className={cn("text-2xl font-bold", valueColor ? valueColor : "text-dark")}>
+              {typeof value === 'number' ? value.toLocaleString(undefined, {maximumFractionDigits: 1}) : value}
+            </span>
             <span className="text-sm text-gray-600">{unit}</span>
           </div>
           
           <div className="flex items-center mt-1">
             {isPositive ? (
-              <ArrowUpIcon className="h-4 w-4 text-red-600 mr-1" />
+              <ArrowUpIcon className={cn("h-4 w-4 mr-1", isGood ? "text-green-600" : "text-red-600")} />
             ) : (
-              <ArrowDownIcon className="h-4 w-4 text-green-600 mr-1" />
+              <ArrowDownIcon className={cn("h-4 w-4 mr-1", isGood ? "text-red-600" : "text-green-600")} />
             )}
             <span 
               className={cn(
                 "text-sm font-medium",
-                isPositive ? "text-red-600" : "text-green-600"
+                isGood ? "text-green-600" : "text-red-600"
               )}
             >
               {formattedChange}%
             </span>
-            <span className="text-xs text-gray-500 ml-1">vs. previous period</span>
+            <span className="text-xs text-gray-500 ml-1">vs. période précédente</span>
           </div>
         </div>
       </CardContent>

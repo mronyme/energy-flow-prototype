@@ -8,6 +8,7 @@ export interface Site {
   id: string;
   name: string;
   country: string;
+  type?: 'CCGT' | 'Biomass' | 'Thermal'; // Added site type
 }
 
 export interface Meter {
@@ -29,9 +30,15 @@ export interface KpiDaily {
   id: string;
   site_id: string;
   day: string;
-  kwh: number;
+  // Renamed and extended metrics
+  fuel_consumption_mwh: number;  // Renamed from kwh
   co2: number;
   cost_eur: number;
+  // New energy production metrics
+  electricity_production_mwh: number;
+  heat_production_mwh: number;
+  efficiency_percent: number;
+  availability_percent: number;
 }
 
 export interface ImportLog {

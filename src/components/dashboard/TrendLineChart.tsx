@@ -21,10 +21,12 @@ interface TrendLineChartProps {
     key: string;
     color: string;
     name: string;
+    yAxisId?: string;
   }>;
   xAxisDataKey?: string;
   title?: string;
   focusMetric?: string;
+  dualYAxis?: boolean;
 }
 
 const TrendLineChart: React.FC<TrendLineChartProps> = ({
@@ -32,13 +34,15 @@ const TrendLineChart: React.FC<TrendLineChartProps> = ({
   dataKeys,
   xAxisDataKey = 'day',
   title,
-  focusMetric
+  focusMetric,
+  dualYAxis = false
 }) => {
   // Default dataKeys if not provided
   const chartDataKeys = dataKeys || [
-    { key: 'kwh', color: '#3b82f6', name: 'Consumption (kWh)' },
-    { key: 'co2', color: '#10b981', name: 'CO₂ Emissions' },
-    { key: 'cost_eur', color: '#f59e0b', name: 'Cost (EUR)' }
+    { key: 'fuel_consumption_mwh', color: '#f59e0b', name: 'Consommation (MWh)', yAxisId: "left" },
+    { key: 'electricity_production_mwh', color: '#3b82f6', name: 'Production Électricité (MWh)', yAxisId: "left" },
+    { key: 'heat_production_mwh', color: '#ef4444', name: 'Production Chaleur (MWh)', yAxisId: "left" },
+    { key: 'efficiency_percent', color: '#10b981', name: 'Rendement (%)', yAxisId: "right" },
   ];
   
   // Format X-axis tick values for date strings
@@ -67,9 +71,28 @@ const TrendLineChart: React.FC<TrendLineChartProps> = ({
               angle={-15}
               textAnchor="end"
             />
-            <YAxis tick={{ fontSize: 12 }} />
+            <YAxis 
+              yAxisId="left"
+              tick={{ fontSize: 12 }} 
+              label={{ value: 'MWh', angle: -90, position: 'insideLeft' }}
+            />
+            {dualYAxis && (
+              <YAxis 
+                yAxisId="right" 
+                orientation="right" 
+                tick={{ fontSize: 12 }}
+                domain={[0, 100]}
+                label={{ value: '%', angle: 90, position: 'insideRight' }}
+              />
+            )}
             <Tooltip 
-              formatter={(value: any) => [`${value}`, '']}
+              formatter={(value: any, name: string) => {
+                // Add % symbol to efficiency and availability values
+                if (name.includes('Rendement') || name.includes('Disponibilité')) {
+                  return [`${value}%`, name];
+                }
+                return [`${value}`, name];
+              }}
               labelFormatter={(label) => formatXAxis(label)}
             />
             <Legend />
@@ -85,6 +108,7 @@ const TrendLineChart: React.FC<TrendLineChartProps> = ({
                 dot={{ r: 4 }}
                 activeDot={{ r: 6 }}
                 opacity={focusMetric && focusMetric !== dataKey.key ? 0.3 : 1}
+                yAxisId={dataKey.yAxisId || "left"}
               />
             ))}
           </LineChart>
