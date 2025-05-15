@@ -5,13 +5,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Check, Download, X } from 'lucide-react';
-import { DateRange } from 'react-day-picker';
 
 interface ExportPanelProps {
   isOpen: boolean;
   onClose: () => void;
   data: any[];
-  dateRange?: DateRange;
+  dateRange?: {
+    startDate?: Date;
+    endDate?: Date;
+  };
 }
 
 const ExportPanel: React.FC<ExportPanelProps> = ({ isOpen, onClose, data, dateRange }) => {
@@ -124,8 +126,8 @@ const ExportPanel: React.FC<ExportPanelProps> = ({ isOpen, onClose, data, dateRa
           <div>
             <Label htmlFor="date-range">Date Range</Label>
             <div id="date-range" className="mt-1 p-2 border rounded bg-gray-50 text-sm">
-              {dateRange?.from && dateRange?.to ? (
-                <>From <strong>{formatDate(dateRange.from)}</strong> to <strong>{formatDate(dateRange.to)}</strong></>
+              {dateRange?.startDate && dateRange?.endDate ? (
+                <>From <strong>{formatDate(dateRange.startDate)}</strong> to <strong>{formatDate(dateRange.endDate)}</strong></>
               ) : (
                 <>All available data</>
               )}
