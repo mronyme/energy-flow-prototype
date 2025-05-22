@@ -1,5 +1,5 @@
 
-# ENGIE Energy Data Platform
+# MAXI V2 Prototype
 
 ## Project Overview
 
