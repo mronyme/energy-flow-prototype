@@ -1,73 +1,100 @@
-# Welcome to your Lovable project
 
-## Project info
+# ENGIE Energy Data Platform
 
-**URL**: https://lovable.dev/projects/11c9f0a2-06c2-4927-8817-30cbf9d8e0da
+## Project Overview
 
-## How can I edit this code?
+This web application provides an energy data management platform designed for ENGIE teams to monitor, analyze, and manage energy consumption data across multiple sites. The platform includes features for data visualization, anomaly detection, manual data entry, CSV imports, PI system integration, and administrative functions.
 
-There are several ways of editing your application.
+## Table of Contents
 
-**Use Lovable**
+- [Quick Start](#quick-start)
+- [Features](#features)
+- [Documentation](#documentation)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Local Development](#local-development)
+- [Database Setup](#database-setup)
+- [Authentication](#authentication)
+- [Contributing](#contributing)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/11c9f0a2-06c2-4927-8817-30cbf9d8e0da) and start prompting.
+## Quick Start
 
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+Follow these steps to get the application running locally:
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# 1. Clone the repository
+git clone <your-repository-url>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# 2. Navigate to the project directory
+cd <project-directory>
 
-# Step 3: Install the necessary dependencies.
-npm i
+# 3. Install dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# 4. Set up local Supabase (see docs/database-setup.md)
+# Follow the Database Setup guide
+
+# 5. Start the development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Features
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- **Interactive Dashboard**: Visualize key performance indicators (KPIs) and energy consumption trends
+- **Data Management**: Import, validate, and manage energy consumption data
+- **Anomaly Detection**: Identify and manage anomalies in energy data
+- **Role-based Access Control**: Different permissions for Operators, Data Managers, Managers, and Admins
+- **Data Export**: Export data in various formats (CSV, JSON)
+- **Multi-site Support**: Manage data across multiple geographical locations
 
-**Use GitHub Codespaces**
+## Documentation
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Detailed documentation is available in the `docs` directory:
 
-## What technologies are used for this project?
+- [Technical Documentation](docs/technical-documentation.md): Architecture, components, and data flow
+- [Database Setup](docs/database-setup.md): Setting up and configuring Supabase locally
+- [User Guide](docs/user-guide.md): Detailed guide for using the application by role
+- [Maintenance Guide](docs/maintenance-guide.md): Instructions for maintaining and extending the platform
 
-This project is built with:
+## Prerequisites
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- Node.js (v16+)
+- npm (v7+) or yarn
+- Supabase CLI
+- PostgreSQL (if running Supabase locally)
 
-## How can I deploy this project?
+## Installation
 
-Simply open [Lovable](https://lovable.dev/projects/11c9f0a2-06c2-4927-8817-30cbf9d8e0da) and click on Share -> Publish.
+See [Installation Guide](docs/installation.md) for detailed instructions.
 
-## Can I connect a custom domain to my Lovable project?
+## Local Development
 
-Yes, you can!
+```sh
+# Start development server
+npm run dev
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+# Run tests
+npm test
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+# Build for production
+npm run build
+```
+
+## Database Setup
+
+The application uses Supabase for database and authentication. See [Database Setup](docs/database-setup.md) for detailed instructions on setting up Supabase locally.
+
+## Authentication
+
+The application uses Supabase Authentication for user management. By default, there are four roles:
+
+- **Admin**: Full access to all features and settings
+- **Manager**: Access to dashboards and reports
+- **DataManager**: Responsible for data quality and management
+- **Operator**: Can enter and import data
+
+See the [User Guide](docs/user-guide.md) for more information on roles and permissions.
+
+## Contributing
+
+Please refer to [Contributing Guidelines](docs/contributing.md) for details on our code of conduct and the process for submitting pull requests.
